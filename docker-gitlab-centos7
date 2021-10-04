@@ -1,7 +1,7 @@
 FROM centos:centos7
 
 RUN yum -y update; yum -y install yum-utils which sudo wget unzip; yum -y groupinstall development;
-RUN yum -y install https://centos7.iuscommunity.org/ius-release.rpm
+RUN yum install -y https://repo.ius.io/ius-release-el7.rpm
 RUN yum install -y python36u python36u-libs python36u-devel python36u-pip;
 RUN yum install -y java-1.8.0-openjdk
 

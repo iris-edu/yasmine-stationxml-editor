@@ -62,9 +62,6 @@ class SeletiounTestMixin(unittest.TestCase):
         'is_masked': "Ext.getBody().isMasked()"
     }
 
-
-
-
     def setUp(self):
         options = webdriver.ChromeOptions()
         options.add_argument('headless')
