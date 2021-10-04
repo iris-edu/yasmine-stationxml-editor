@@ -18,8 +18,8 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - run: |
-        cd frontend
-        sencha app build
+          cd frontend
+          sencha app build
 
 
 
