@@ -1,0 +1,37 @@
+---
+- Comment:
+   Value: Station is down
+   subject: 
+- Comment:
+   Value: Maintenance in progress
+   subject: 
+- Comment:
+   Value: The station is temporarily interrupted
+   subject: 
+- Comment:
+   Value: Station located in high background noise area
+   subject: 
+- Comment:
+   Value: Station frequently exposed to bad weather conditions
+   subject: 
+- Comment:
+   Value: The coordinates correspond to the wished (theoretical) position of the station
+   subject: 
+- Comment:
+   Value: Communication issue, but station still recording
+   subject: 
+- Comment:
+   Value: Weak communication link - realtime data transfer issue may occurs
+   subject: 
+- Comment:
+   Value: Occasional data loss due to power problems
+   subject: 
+- Comment:
+   Value: Occasional data loss due to transmission issues
+   subject: 
+- Comment:
+   Value: Frequent data loss due to power problems
+   subject: 
+- Comment:
+   Value: Frequent data loss due to transmission issues
+   subject: 

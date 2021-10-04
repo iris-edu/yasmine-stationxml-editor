@@ -1,0 +1,18 @@
+#  Site records
+- 
+ Site:
+  Name: Banne
+  Description: Fort de Banne
+  Town: 07024, Banne
+  County:
+  Region: Auvergne-Rhône-Alpes
+  Country: FR
+- 
+ Site:
+  Name: CDST
+  Description: Centre de decouverte des Sciences de la Terre
+  Town: 97225, Saint-Pierre
+  County:
+  Region: Martinique
+  Country: FR
+  

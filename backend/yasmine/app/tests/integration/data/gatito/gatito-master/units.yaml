@@ -1,0 +1,17 @@
+# Units, https://github.com/iris-edu/stationxml-validator/wiki/Name-name-overview-for-IRIS-StationXML-validator
+- 
+ Name: m
+ Description: meter
+-
+ Name: m/s**2
+ Description: acceleration
+- 
+ Name: min
+ Description: minute
+- 
+ Name: J
+ Description: joule
+-
+ Name: ohm
+ Description: resistivity
+

@@ -1,0 +1,16 @@
+*.pyc
+dist
+*.egg-info
+.settings
+.idea
+geckodriver.log
+build
+/ghostdriver.log
+/.pydevproject
+.vscode/*
+/debug.log
+*ghostdriver.log
+*debug.log
+/yasmine/static/js/yasmine/
+/yasmine/app/tests/integration/out/
+/venv/

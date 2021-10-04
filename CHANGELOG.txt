@@ -1,0 +1,6 @@
+Yasmine v2.1.0, 2019/12/06
+
+- 1. Extract specific elements from a stationXML file to populate the user libraries
+- 2. Use of a user-defined instrument atomic library
+- 3. Use of user-defined objects libraries (comments, geology, vault, units ....)
+- 11. Environment setup

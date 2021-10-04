@@ -1,0 +1,29 @@
+/*
+ * This is is imported by virtue of "sass.etc" in "app.json".
+ */
+
+.fa-minus-circle {
+  color: #dd6550 !important;
+}
+
+.x-menu-no-icon a.x-menu-item-link .x-menu-item-text {
+  margin-left: 5px;
+}
+
+.library-btn .x-btn-inner {
+  font-size: x-large;
+  height: 18px;
+}
+
+#diff-panel a {
+  display: none;
+}
+
+.trash-icon-color {
+  color: #dd6550 !important;
+}
+
+.x-breadcrumb-btn .x-btn-wrap-plain-toolbar-small.x-btn-arrow:after {
+  width: 20px;
+  background-image: none !important;
+}

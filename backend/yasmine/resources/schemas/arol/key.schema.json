@@ -1,0 +1,120 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": [
+    "filters",
+    "responses"
+  ],
+  "properties": {
+    "filters": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "description": "list of available filters",
+      "items": {
+        "$ref": "#/definitions/filter"
+      },
+      "anyOf": [
+        {
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "pattern": "sensors_manufacturer"
+                  }
+                }
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "pattern": "sensors_model"
+                  }
+                }
+              }
+            }
+          ]
+        },
+        {
+          "allOf": [
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "pattern": "digitizer_manufacturer"
+                  }
+                }
+              }
+            },
+            {
+              "contains": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "pattern": "digitizer_model"
+                  }
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "responses": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "description": "list of available responses",
+      "items": {
+        "$ref": "#/definitions/response"
+      }
+    }
+  },
+  "definitions": {
+    "filter": {
+      "type": "object",
+      "required": [
+        "name",
+        "code",
+        "help"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "code": {
+          "type": "string",
+          "minLength": 1
+        },
+        "help": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "response": {
+      "type": "object",
+      "required": [
+        "path",
+        "applicable_filters"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "path": {
+          "type": "string",
+          "minLength": 1
+        },
+        "applicable_filters": {
+          "type": "object"
+        }
+      }
+    }
+  }
+}

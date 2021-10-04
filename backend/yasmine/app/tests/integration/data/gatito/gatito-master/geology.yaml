@@ -1,0 +1,34 @@
+---
+-
+ Geology: S (sediment based on surface geological observations)
+ Help:
+-
+ Geology: R (rock based on surface geological observations)
+ Help:
+-
+ Geology: A (rock or stiff geological formation (Vs30>800 m/s)
+ Help:
+-
+ Geology: B (Stff deposits of sand, gravel or overconsolidated clays (Vs30>360m/s and Vs30<800 m/s))
+ Help:
+-
+ Geology: C (deep deposit of medium dense sand, gravel or medium stiff clays (Vs30>180m/s and Vs30<360 m/s))
+ Help:
+-
+ Geology: E (loose cohesionless soil deposits (Vs30<180 m/s))
+ Help:
+-
+ Geology: S1 (soil made up of superficial alluvial layer, with a thickness ranging from 5 to 20m with Vs30 value in class C and D ranges covering stiffer deposits (class A))
+ Help:
+-
+ Geology: S2 (deposits consisting of a level of soft clays with a thickness of at least 10m, with a high plasticity indices and a high water content (Vs30<100m/s) liquefiable soils and soil profiles not included in the soil classes A-E or S1
+ Help:
+-
+ Geology: Bhd(Borehole sensors)
+ Help: d=depth in meters
+-
+ Geology: Bm.n (Sensors in building) 
+ Help: m=total number of stories of the building including ground floor, n=floor where the instrument is installed
+-
+ Geology: O (other)
+ Help:
