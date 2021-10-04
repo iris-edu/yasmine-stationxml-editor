@@ -24,6 +24,7 @@ jobs:
       - uses: actions/checkout@v2
       - name: Build application
         env:
+          VERSION_FILE: yasmine/static/js/yasmine/classic/app.js
           CI_JOB_TIMESTAMP: "${{ steps.time.outputs.time }}"
         run: |
           cd frontend
