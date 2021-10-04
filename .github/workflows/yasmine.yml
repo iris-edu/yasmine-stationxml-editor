@@ -33,8 +33,7 @@ jobs:
           echo "$(echo var buildTimestamp=\"$CI_JOB_TIMESTAMP\" | cat - $VERSION_FILE)" > $VERSION_FILE
           echo "$(echo var commitRevision=\"$CI_COMMIT_SHORT_SHA\" | cat - $VERSION_FILE)" > $VERSION_FILE
           python3.6 setup.py sdist
-      - name: Upload artifact
-        uses: actions/upload-artifact@v2
+      - uses: actions/upload-artifact@v2
         with:
           name: yasmine
           path: backend/dist/*.gz
