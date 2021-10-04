@@ -10,5 +10,4 @@ jobs:
         with:
           python-version: '3.6.x'
       - run: pip install pep8
-      - run: cd backend
-      - run: pep8 yasmine
+      - run: pep8 backend/yasmine
