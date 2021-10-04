@@ -16,16 +16,13 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
     steps:
-      - name: Get Time
-        id: time
-        uses: nanzm/get-time-action@v1.1
-        with:
-          format: 'YYYY-MM-DD-HH-mm-ss'
       - uses: actions/checkout@v2
+      - name: Add $CI_COMMIT_SHORT_SHA env property with commit short sha
+        run: echo "$CI_COMMIT_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       - name: Build application
         env:
-          VERSION_FILE: yasmine/static/js/yasmine/classic/app.js
-          CI_JOB_TIMESTAMP: "${{ steps.time.outputs.time }}"
+          VERSION_FILE: "yasmine/static/js/yasmine/classic/app.js"
+          CI_JOB_TIMESTAMP: "$(date --utc --rfc-2822)"
         run: |
           cd frontend
           sencha app build
