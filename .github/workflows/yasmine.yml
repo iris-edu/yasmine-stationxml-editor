@@ -22,7 +22,7 @@ jobs:
       - name: Build application
         env:
           VERSION_FILE: "yasmine/static/js/yasmine/classic/app.js"
-          CI_JOB_TIMESTAMP: "$(date --utc --rfc-2822)"
+          CI_JOB_TIMESTAMP: $(date --utc --rfc-2822)
         run: |
           cd frontend
           sencha app build
