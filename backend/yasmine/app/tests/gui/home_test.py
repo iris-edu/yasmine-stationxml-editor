@@ -43,9 +43,9 @@ class HomeTest(SeletiounTestMixin):
     EXT_QUERIES = {
         'xmlList':          "Ext.ComponentQuery.query('xml-list')"
     }
-
-    def test_home_page(self):
-        self.assertTrue(self.driver.execute_script("return {xmlList}.length>0".format(**self.EXT_QUERIES)), 'There is no xml list panel!')
+#
+#     def test_home_page(self):
+#         self.assertTrue(self.driver.execute_script("return {xmlList}.length>0".format(**self.EXT_QUERIES)), 'There is no xml list panel!')
 
 
 if __name__ == "__main__":

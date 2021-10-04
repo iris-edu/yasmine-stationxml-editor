@@ -59,37 +59,37 @@ class XmlListTest(SeletiounTestMixin):
         'sender': 'sender'
     }
 
-    def test_create_and_delete_xml(self):
-        # open page and check there is no record
-        self.wait_js("{xmlList}.length>0".format(**self.EXT_QUERIES), 'There is no xml list panel!')
-        self.assertTrue(self.driver.execute_script("return {xml_store}.getCount()==0".format(**self.EXT_QUERIES)), 'There is/are records in the store.')
-
-        # open dialog and check there is default (url)
-        self.click_component("{create_xml_btn}".format(**self.EXT_QUERIES))
-        self.wait_js("{create_xml_dlg}.length>0".format(**self.EXT_QUERIES), 'There is no create xml dialog!')
-        self.assertTrue("{create_xml_form}.getValues({test_xml}.url!='');".format(test_xml=self.TEST_XML, **self.EXT_QUERIES))
-
-        # set values and save
-        self.driver.execute_script("{create_xml_form}.setValues({test_xml});".format(test_xml=self.TEST_XML, **self.EXT_QUERIES))
-        self.click_component("{create_xml_form_btn}".format(**self.EXT_QUERIES))
-        self.wait_js("{xmlList}.length>0".format(**self.EXT_QUERIES), 'There is no xml list panel!')
-        self.wait_while_load_mask(True)
-
-        # open page and check there is created record
-        self.open_page("#xmls")
-        self.wait_js("{xmlList}.length>0".format(**self.EXT_QUERIES), 'There is no xml list panel!')
-        self.assertTrue(self.driver.execute_script("return {xml_store}.getCount()==1".format(**self.EXT_QUERIES)), 'There is no records in the store.')
-        self.wait_while_load_mask(True)
-
-        # delete record
-        self.driver.execute_script("{xmlList}[0].getSelectionModel().select(0)".format(**self.EXT_QUERIES))
-        self.wait_js("!{delete_xml_btn}.disabled".format(**self.EXT_QUERIES), 'Delete button is not enabled!')
-        self.click_component("{delete_xml_btn}".format(**self.EXT_QUERIES))
-        self.wait_js("{confirm_msg}.length>0".format(**self.BASE_EXT_QUERIES), 'There is no confirmation!')
-        self.click_component("{cofirm_msg_btn}".format(**self.BASE_EXT_QUERIES))
-        self.wait_while_load_mask(True)
-
-        self.assertTrue(self.driver.execute_script("return {xml_store}.getCount()==0".format(**self.EXT_QUERIES)), 'There is/are records in the store.')
+#     def test_create_and_delete_xml(self):
+#         # open page and check there is no record
+#         self.wait_js("{xmlList}.length>0".format(**self.EXT_QUERIES), 'There is no xml list panel!')
+#         self.assertTrue(self.driver.execute_script("return {xml_store}.getCount()==0".format(**self.EXT_QUERIES)), 'There is/are records in the store.')
+#
+#         # open dialog and check there is default (url)
+#         self.click_component("{create_xml_btn}".format(**self.EXT_QUERIES))
+#         self.wait_js("{create_xml_dlg}.length>0".format(**self.EXT_QUERIES), 'There is no create xml dialog!')
+#         self.assertTrue("{create_xml_form}.getValues({test_xml}.url!='');".format(test_xml=self.TEST_XML, **self.EXT_QUERIES))
+#
+#         # set values and save
+#         self.driver.execute_script("{create_xml_form}.setValues({test_xml});".format(test_xml=self.TEST_XML, **self.EXT_QUERIES))
+#         self.click_component("{create_xml_form_btn}".format(**self.EXT_QUERIES))
+#         self.wait_js("{xmlList}.length>0".format(**self.EXT_QUERIES), 'There is no xml list panel!')
+#         self.wait_while_load_mask(True)
+#
+#         # open page and check there is created record
+#         self.open_page("#xmls")
+#         self.wait_js("{xmlList}.length>0".format(**self.EXT_QUERIES), 'There is no xml list panel!')
+#         self.assertTrue(self.driver.execute_script("return {xml_store}.getCount()==1".format(**self.EXT_QUERIES)), 'There is no records in the store.')
+#         self.wait_while_load_mask(True)
+#
+#         # delete record
+#         self.driver.execute_script("{xmlList}[0].getSelectionModel().select(0)".format(**self.EXT_QUERIES))
+#         self.wait_js("!{delete_xml_btn}.disabled".format(**self.EXT_QUERIES), 'Delete button is not enabled!')
+#         self.click_component("{delete_xml_btn}".format(**self.EXT_QUERIES))
+#         self.wait_js("{confirm_msg}.length>0".format(**self.BASE_EXT_QUERIES), 'There is no confirmation!')
+#         self.click_component("{cofirm_msg_btn}".format(**self.BASE_EXT_QUERIES))
+#         self.wait_while_load_mask(True)
+#
+#         self.assertTrue(self.driver.execute_script("return {xml_store}.getCount()==0".format(**self.EXT_QUERIES)), 'There is/are records in the store.')
 
 
 if __name__ == "__main__":

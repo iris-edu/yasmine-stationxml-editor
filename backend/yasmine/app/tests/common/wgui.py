@@ -110,6 +110,6 @@ class SeletiounTestMixin(unittest.TestCase):
         self.driver.get(self.driver.current_url)
         self.wait_content_is_ready()
 
-    def tearDown(self):
-        self.driver.close()
-        self.driver.quit()
+#     def tearDown(self):
+#         self.driver.close()
+#         self.driver.quit()
