@@ -22,7 +22,6 @@ jobs:
       - name: Get the version
         id: get_version
         run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
-#        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
       - name: Get TIMESTAMP
         id: date
         run: echo "::set-output name=date::$(date --utc --rfc-2822)"
@@ -41,10 +40,25 @@ jobs:
           python3.6 setup.py sdist
       - uses: actions/upload-artifact@v2
         with:
-          name: yasmine
+          name: yasmine-artifact
           path: backend/dist/*.gz
 
-
+  test_app:
+    runs-on: ubuntu-latest
+    container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+    needs: [build_app]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: yasmine-artifact
+      - name: Install Yasmine
+        run: |
+#          sudo pip3.6 install numpy
+          sudo pip3.6 install YASMINE-1.0.tar.gz
+#          yasmineapp.py syncdb upgrade heads
+#          yasmineapp.py runserver &>/dev/null&
+#          sleep 10
+#          yasmineapp.py test
 
 
 #  docker:
