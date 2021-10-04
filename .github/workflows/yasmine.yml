@@ -17,8 +17,8 @@ jobs:
     container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
     steps:
       - uses: actions/checkout@v2
-      - name: Add $CI_COMMIT_SHORT_SHA env property with commit short sha
-        run: echo "$CI_COMMIT_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Add CI_COMMIT_SHORT_SHA env property with commit short sha
+        run: echo "CI_COMMIT_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       - name: Build application
         env:
           VERSION_FILE: "yasmine/static/js/yasmine/classic/app.js"
