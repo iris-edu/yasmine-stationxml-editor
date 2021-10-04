@@ -29,7 +29,7 @@ jobs:
         env:
           VERSION_FILE: "yasmine/static/js/yasmine/classic/app.js"
           CI_JOB_TIMESTAMP: "${{ steps.date.outputs.date }}"
-          CI_COMMIT_TAG: "{{ steps.get_version.outputs.VERSION }}"
+          CI_COMMIT_TAG: "${{ steps.get_version.outputs.VERSION }}"
         run: |
           cd frontend
           sencha app build
