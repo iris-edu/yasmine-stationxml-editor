@@ -16,7 +16,10 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
     steps:
-      - run: sencha --version
+      - uses: actions/checkout@v2
+      - run: |
+        cd frontend
+        sencha app build
 
 
 
