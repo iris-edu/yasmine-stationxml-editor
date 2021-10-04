@@ -22,10 +22,10 @@ jobs:
         with:
           format: 'YYYY-MM-DD-HH-mm-ss'
       - uses: actions/checkout@v2
-      - name: $CI_JOB_TIMESTAMP
+      - name: Build application
         env:
           CI_JOB_TIMESTAMP: "${{ steps.time.outputs.time }}"
-      - run: |
+        run: |
           cd frontend
           sencha app build
           cd ../backend
