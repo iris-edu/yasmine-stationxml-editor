@@ -21,7 +21,8 @@ jobs:
         run: echo "CI_COMMIT_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+#        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
       - name: Get TIMESTAMP
         id: date
         run: echo "::set-output name=date::$(date --utc --rfc-2822)"
