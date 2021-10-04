@@ -16,11 +16,28 @@ jobs:
     runs-on: ubuntu-latest
     container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
     steps:
+      - name: Get Time
+        id: time
+        uses: nanzm/get-time-action@v1.1
+        with:
+          format: 'YYYY-MM-DD-HH-mm-ss'
       - uses: actions/checkout@v2
+      - name: $CI_JOB_TIMESTAMP
+        env:
+          CI_JOB_TIMESTAMP: "${{ steps.time.outputs.time }}"
       - run: |
           cd frontend
           sencha app build
-
+          cd ../backend
+          echo "$(echo var releaseVersion=\"$CI_COMMIT_TAG\" | cat - $VERSION_FILE)" > $VERSION_FILE
+          echo "$(echo var buildTimestamp=\"$CI_JOB_TIMESTAMP\" | cat - $VERSION_FILE)" > $VERSION_FILE
+          echo "$(echo var commitRevision=\"$CI_COMMIT_SHORT_SHA\" | cat - $VERSION_FILE)" > $VERSION_FILE
+          python3.6 setup.py sdist
+      - name: Upload artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: yasmine
+          path: backend/dist/*.gz
 
 
 
