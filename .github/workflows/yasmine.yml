@@ -1,0 +1,80 @@
+name: Yasmine
+on: [ push ]
+jobs:
+  lint_python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python 3.6
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.6.x'
+      - run: pip install pep8
+      - run: pep8 backend/yasmine
+
+  build_app:
+    runs-on: ubuntu-latest
+    container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Add CI_COMMIT_SHORT_SHA env property with commit short sha
+        run: echo "CI_COMMIT_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
+      - name: Get TIMESTAMP
+        id: date
+        run: echo "::set-output name=date::$(date --utc --rfc-2822)"
+      - name: Build application
+        env:
+          VERSION_FILE: "yasmine/static/js/yasmine/classic/app.js"
+          CI_JOB_TIMESTAMP: "${{ steps.date.outputs.date }}"
+          CI_COMMIT_TAG: "${{ steps.get_version.outputs.VERSION }}"
+        run: |
+          cd frontend
+          sencha app build
+          cd ../backend
+          echo "$(echo var releaseVersion=\"$CI_COMMIT_TAG\" | cat - $VERSION_FILE)" > $VERSION_FILE
+          echo "$(echo var buildTimestamp=\"$CI_JOB_TIMESTAMP\" | cat - $VERSION_FILE)" > $VERSION_FILE
+          echo "$(echo var commitRevision=\"$CI_COMMIT_SHORT_SHA\" | cat - $VERSION_FILE)" > $VERSION_FILE
+          python3.6 setup.py sdist
+      - uses: actions/upload-artifact@v2
+        with:
+          name: yasmine-artifact
+          path: backend/dist/*.gz
+
+  test_app:
+    runs-on: ubuntu-latest
+    container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+    needs: [build_app]
+    steps:
+      - uses: actions/download-artifact@v2
+        with:
+          name: yasmine-artifact
+      - name: Install and Run Yasmine tests
+        run: |
+          sudo pip3.6 install numpy
+          sudo pip3.6 install YASMINE-1.0.tar.gz
+          yasmineapp.py syncdb upgrade heads
+          yasmineapp.py runserver &>/dev/null&
+          sleep 10
+          yasmineapp.py test
+
+
+#  docker:
+#    runs-on: ubuntu-latest
+#    permissions:
+#      contents: read
+#      packages: write
+#    steps:
+#      - name: Check Out Repo
+#        uses: actions/checkout@v2
+#
+#      - name: Log in to registry
+#        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+#
+#      - name: Build image
+#        run: docker build . --file docker-gitlab-centos7 --tag ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+#
+#      - name: Push image
+#        run: docker push ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest

@@ -1,0 +1,36 @@
+FROM centos:centos7
+
+RUN yum -y update; yum -y install yum-utils which sudo wget unzip; yum -y groupinstall development;
+RUN yum install -y https://repo.ius.io/ius-release-el7.rpm
+RUN yum install -y python36u python36u-libs python36u-devel python36u-pip;
+RUN yum install -y java-1.8.0-openjdk
+
+RUN mkdir -p /opt/Sencha/Cmd/6.5.3.6
+
+RUN cd /tmp && \
+    wget http://cdn.sencha.com/cmd/6.5.3.6/no-jre/SenchaCmd-6.5.3.6-linux-amd64.sh.zip -O senchacmd.zip --progress=bar:force && \
+    unzip -q -p senchacmd.zip > SenchaCmd-6.5.3.6-linux-amd64.sh && \
+    rm senchacmd.zip && \
+    chmod +x SenchaCmd-6.5.3.6-linux-amd64.sh
+
+RUN /tmp/SenchaCmd-6.5.3.6-linux-amd64.sh -q -dir /opt/Sencha/Cmd/6.5.3.6 -Dall=true
+RUN rm /tmp/SenchaCmd-6.5.3.6-linux-amd64.sh && chmod +x /opt/Sencha/Cmd/6.5.3.6/sencha
+
+
+RUN sh -c 'echo "[google-chrome]" > /etc/yum.repos.d/google-chrome.repo'
+RUN sh -c 'echo "name=google-chrome" >> /etc/yum.repos.d/google-chrome.repo'
+RUN sh -c 'echo "baseurl=http://dl.google.com/linux/chrome/rpm/stable/x86_64" >> /etc/yum.repos.d/google-chrome.repo'
+RUN sh -c 'echo "enabled=1" >> /etc/yum.repos.d/google-chrome.repo'
+RUN sh -c 'echo "gpgcheck=1" >> /etc/yum.repos.d/google-chrome.repo'
+RUN sh -c 'echo "gpgkey=https://dl-ssl.google.com/linux/linux_signing_key.pub" >> /etc/yum.repos.d/google-chrome.repo'
+
+RUN yum -y install google-chrome-stable
+
+RUN cd /tmp && \
+    wget https://chromedriver.storage.googleapis.com/76.0.3809.126/chromedriver_linux64.zip -O chromedriver.zip --progress=bar:force && \
+    mkdir /opt/chromedriver && unzip -q -p chromedriver.zip > /opt/chromedriver/chromedriver && \
+    ln -s /opt/chromedriver/chromedriver /usr/local/bin/chromedriver && \
+    rm chromedriver.zip && \
+    chmod +x /opt/chromedriver/chromedriver
+
+ENV PATH="$PATH:/opt/Sencha/Cmd/6.5.3.6"

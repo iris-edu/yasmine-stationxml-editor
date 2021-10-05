@@ -1,0 +1,60 @@
+# ****************************************************************************
+#
+# This file is part of the yasmine editing tool.
+#
+# yasmine (Yet Another Station Metadata INformation Editor), a tool to
+# create and edit station metadata information in FDSN stationXML format,
+# is a common development of IRIS and RESIF.
+# Development and addition of new features is shared and agreed between * IRIS and RESIF.
+#
+#
+# Version 1.0 of the software was funded by SAGE, a major facility fully
+# funded by the National Science Foundation (EAR-1261681-SAGE),
+# development done by ISTI and led by IRIS Data Services.
+# Version 2.0 of the software was funded by CNRS and development led by * RESIF.
+#
+# This program is free software; you can redistribute it
+# and/or modify it under the terms of the GNU Lesser General Public
+# License as published by the Free Software Foundation; either
+# version 3 of the License, or (at your option) any later version. *
+# This program is distributed in the hope that it will be
+# useful, but WITHOUT ANY WARRANTY; without even the implied warranty
+# of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+# GNU Lesser General Public License (GNU-LGPL) for more details. *
+# You should have received a copy of the GNU Lesser General Public
+# License along with this software. If not, see
+# <https://www.gnu.org/licenses/>
+#
+#
+# 2019/10/07 : version 2.0.0 initial commit
+#
+# ****************************************************************************/
+
+
+class NrlKeyCreator:
+
+    def create_keys(self, sensors, dataloggers):
+        return self.get_level_info(sensors), self.get_level_info(dataloggers)
+
+    def get_level_info(self, level):
+        data = []
+        if not isinstance(level, tuple):
+            try:
+                for level_key in level.keys():
+                    child = level[level_key]
+                    if not isinstance(child, tuple):
+                        data.append({
+                            'text': level._question,
+                            'key': level_key,
+                            'leaf': False,
+                            'children': self.get_level_info(level[level_key])
+                        })
+                    else:
+                        data.append({
+                            'key': level_key,
+                            'text': child[0],
+                            'leaf': True
+                        })
+            except:  # @IgnorePep8
+                pass
+        return data

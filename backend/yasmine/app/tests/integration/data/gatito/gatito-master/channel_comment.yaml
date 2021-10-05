@@ -1,0 +1,64 @@
+---
+- Comment:
+   Value: Channel is down
+   subject: 
+- Comment:
+   Value: Sensor calibration in progress
+   subject: 
+- Comment:
+   Value: Sensor replacement
+   subject: 
+- Comment:
+   Value: Digitizer replacement
+   subject: 
+- Comment:
+   Value: Mass centering issues
+   subject: 
+- Comment:
+   Value: Mass centering in progress
+   subject: 
+- Comment:
+   Value: Occasional data loss
+   subject: 
+- Comment:
+   Value: Frequent data loss
+   subject: 
+- Comment:
+   Value: Occasional spikes in data
+   subject: 
+- Comment:
+   Value: Frequent spikes in data
+   subject: 
+- Comment:
+   Value: Data quality is poor
+   subject: 
+- Comment:
+   Value: Uncertain Timing of samples
+   subject: 
+- Comment:
+   Value: Time has been corrected
+   subject: 
+- Comment:
+   Value: Day contains negative leap second (86399 s/day)
+   subject: 
+- Comment:
+   Value: Day contains positive leap second (86401 s/day)
+   subject: 
+- Comment:
+   Value: Time correction does not include leap second, (-1000ms)
+   subject: 
+- Comment:
+   Value: Seismometer orientation may be in error
+   subject: 
+- Comment:
+   Value: Response information not available at this time
+   subject: 
+- Comment:
+   Value: Seismometer electronics is failing
+   subject: 
+- Comment:
+   Value: Digitizer clock unsaved on GPS
+   subject: 
+- Comment:
+   Value: The coordinates correspond to the wished (theoretical) position of the station
+   subject:

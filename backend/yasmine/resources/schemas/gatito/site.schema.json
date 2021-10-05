@@ -1,0 +1,40 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "Site": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "Name": {
+            "type": "string"
+          },
+          "Description": {
+            "type": ["string", "null"]
+          },
+          "Town": {
+            "type": ["string", "null"]
+          },
+          "County": {
+            "type": ["string", "null"]
+          },
+          "Region": {
+            "type": ["string", "null"]
+          },
+          "Country": {
+            "type": ["string", "null"]
+          }
+        },
+        "required": [
+          "Name"
+        ]
+      }
+    },
+    "required": [
+      "Site"
+    ]
+  }
+}

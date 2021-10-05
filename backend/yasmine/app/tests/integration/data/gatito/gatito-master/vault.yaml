@@ -1,0 +1,45 @@
+---
+- Vault: Tunnel
+  Help: a man-made subterranean gallery typically with cylindrical shape with diameter between 1-10m, allowing human passage
+- Vault: Underground shelter
+  Help: a man-made buried (typically concrete) structure for human presence or storage
+- Vault: Underground gallery
+  Help:
+- Vault: Cave
+  Help: a natural chamber or series of chambers in the earth or in the side of a hill or cliff (Merriam-Webster dictionary)
+- Vault: Seismic borehole vault (or Borehole Vault)
+  Help:
+- Vault: Borehole
+  Help: small-diameter (up to 1m, not fit for human passage) typically vertical well hosting a sensor or series of sensors
+- Vault: Shelter/cabin
+  Help:
+- Vault: Occupied building (underground)
+  Help:
+- Vault: Unoccupied building (underground)
+  Help:
+- Vault: Occupied building (ground floor)
+  Help:
+- Vault: Unoccupied building (ground floor)
+  Help:
+- Vault: Occupied building (upper story)
+  Help:
+- Vault: Unoccupied building (upper story)
+  Help:
+- Vault: Outdoor site
+  Help:
+- Vault: Outdoor site - buried
+  Help:
+- Vault: Seafloor
+  Help:
+- Vault: Seafloor - buried
+  Help:
+- Vault: Urban free field
+  Help: for sensors located less than 5m below surface and within 1 x height of the surrounding structures. Can often be located inside 1-story buildings.
+- Vault: free field
+  Help: for sensors located less than 5m below surface and further than 1 x height of the surrounding structures
+- Vault: Dam
+  Help:
+- Vault: Bridge
+  Help:
+- Vault: Other Structure
+  Help:

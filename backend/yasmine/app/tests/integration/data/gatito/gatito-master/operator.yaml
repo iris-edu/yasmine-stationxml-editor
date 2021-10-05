@@ -1,0 +1,48 @@
+# Operator records
+- Operator:
+  Agency: Observatoire des Sciences de l'Univers de Grenoble (OSUG)
+  Contact:
+    - Name:
+        - test name 1
+          test name 2
+      Agency:
+      Email:
+      Phone:
+        - CountryCode: '1'
+          AreaCode: 11
+          PhoneNumber: 1234-5678
+          Description: desc
+        - CountryCode: '2'
+          AreaCode: 22
+          PhoneNumber: 1111-2222
+          Description: desc2
+    - Name:
+        - test name 3
+      Agency:
+      Email:
+  WebSite: http://www.osug.fr
+  Help: do not fill name or nominative email for RESIF
+- Operator:
+  Agency: Observatoire de la Côte d'Azur (OCA)
+  Contact:
+    - Name:
+      Agency:
+      Email:
+  WebSite: https://www.oca.eu
+  Help: do not fill name or nominative email for RESIF
+- Operator:
+  Agency: Bureau des Ressources Géologiques et Minières (BRGM)
+  Contact:
+    - Name:
+      Agency:
+      Email:
+  WebSite: http://www.brgm.fr/
+  Help: do not fill name or nominative email for RESIF
+- Operator:
+  Agency: Observatoire des Sciences de l'Univers de Grenoble (OSUG)
+  Contact:
+    - Name: Service d'Instrumentation Géophysique de l'ISTerre
+      Agency: Institut des Sciences de la Terre (ISTerre)
+      Email: isterre-sig@univ-grenoble-alpes.fr
+  WebSite: https://www.isterre.fr/french/services-plateformes/gis-geophysical-instrumentations/
+  Help: do not fill name or nominative email for RESIF

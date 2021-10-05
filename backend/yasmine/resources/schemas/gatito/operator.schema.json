@@ -1,0 +1,99 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "Agency": {
+        "type": "string"
+      },
+      "Operator": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "WebSite": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "Help": {
+        "type": [
+          "string",
+          "null"
+        ]
+      },
+      "Contact": {
+        "type": "array",
+        "items": {
+          "type": "object",
+          "additionalProperties": false,
+          "properties": {
+            "Name": {
+              "type": [
+                "array",
+                "string",
+                "null"
+              ]
+            },
+            "Agency": {
+              "type": [
+                "array",
+                "string",
+                "null"
+              ]
+            },
+            "Email": {
+              "type": [
+                "array",
+                "string",
+                "null"
+              ]
+            },
+            "Phone": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "CountryCode": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "AreaCode": {
+                    "type": [
+                      "number"
+                    ]
+                  },
+                  "PhoneNumber": {
+                    "type": [
+                      "string"
+                    ]
+                  },
+                  "Description": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "AreaCode",
+                  "PhoneNumber"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "required": [
+      "Agency"
+    ]
+  }
+}

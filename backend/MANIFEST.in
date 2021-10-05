@@ -1,0 +1,10 @@
+include README.rst
+include requirements.txt
+recursive-include  yasmine/static *
+recursive-include  yasmine/templates *
+recursive-include  yasmine/resources *
+recursive-include  yasmine/app/tests/integration/data *
+recursive-include  yasmine/app/tests/unit/data *
+recursive-include  yasmine *.ini
+recursive-include  yasmine/alembic *
+recursive-include  yasmine/tests *
