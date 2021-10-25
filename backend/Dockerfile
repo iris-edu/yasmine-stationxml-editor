@@ -48,6 +48,7 @@ RUN cd /tmp && \
     rm chromedriver.zip && \
     chmod +x /opt/chromedriver/chromedriver
 
+RUN pip install --upgrade pip setuptools
 RUN pip install -r requirements.txt
 CMD python yasmineapp.py syncdb upgrade heads ; python yasmineapp.py runserver --debug
 
