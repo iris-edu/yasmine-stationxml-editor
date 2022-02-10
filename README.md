@@ -1,6 +1,15 @@
 # YASMINE
 
-YASMINE (instrumentation metadata construction tool) is a python web application developed to generate metadata XML for a seismic stations.
+YASMINE (Yet Another Station Metadata INformation Editor), is a python web application to create and edit station metadata information in FDSN stationXML format.
+It is a common development of IRIS and Résif.
+Development and addition of new features is shared and agreed between IRIS and Résif.
+
+
+## Known issues
+Even if we have performed a lot of tests, YASMINE is currently released in beta version and some bugs and limitations might still be found.
+
+The new **AROL** (Atomic Response Objects Library) instrument response library, from Résif, is still in depoyment stage and only includes a limited set of instruments.
+Users are encouraged to use the **NRL** library, also available.
 
 ## Instructions for users
 ### Installation using Python
