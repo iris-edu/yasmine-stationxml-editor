@@ -39,7 +39,7 @@ If there is no internet connection, unzip the bundled NRL (IRIS.zip) in to the a
 
 
 ## More information
-Incorporated Research Institutions for Seismology (IRIS) Data Services - https://ds.iris.edu
-réseau sismologique et géodésique français (Résif) - https://www.resif.fr/
-FDSN StationXML Manual - https://stationxml-doc.readthedocs.io/en/release-1.1.0/
-Nominal Response Library (NRL) - https://ds.iris.edu/ds/nrl/
+* Incorporated Research Institutions for Seismology (IRIS) Data Services - https://ds.iris.edu
+* réseau sismologique et géodésique français (Résif) - https://www.resif.fr/
+* FDSN StationXML Manual - https://stationxml-doc.readthedocs.io/en/release-1.1.0/
+* Nominal Response Library (NRL) - https://ds.iris.edu/ds/nrl/
