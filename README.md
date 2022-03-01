@@ -8,6 +8,8 @@ Development and addition of new features is shared and agreed upon between IRIS 
 ## Known issues
 Even if we have performed a lot of tests, YASMINE is currently released in beta version and some bugs and limitations might still be found.
 
+Installation setup currently fails with `numpy-1.22.2`. It is recommended to use `numpy-1.21.5` instead.
+
 The new **AROL** (Atomic Response Objects Library) instrument response library, from Résif, is still in depoyment stage and only includes a limited set of instruments.
 Users are encouraged to use the **NRL** library, also available.
 
