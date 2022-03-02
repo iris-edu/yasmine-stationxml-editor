@@ -31,10 +31,9 @@
 # ****************************************************************************/
 
 FROM python:3.6.5-slim
-ADD . /opt/YASMINE/src
 WORKDIR /opt/YASMINE/src
 
-RUN apt-get update && apt-get install -y wget unzip gnupg
+RUN apt-get update && apt-get install -y wget unzip gnupg gcc
 
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 RUN sh -c 'echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
@@ -48,7 +47,8 @@ RUN cd /tmp && \
     rm chromedriver.zip && \
     chmod +x /opt/chromedriver/chromedriver
 
-RUN pip install --upgrade pip setuptools
-RUN pip install -r requirements.txt
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+COPY . .
 CMD python yasmineapp.py syncdb upgrade heads ; python yasmineapp.py runserver --debug
-

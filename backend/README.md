@@ -13,6 +13,7 @@ If GUI is required to be used, please see `../frontend/README.md` before using b
 ### Using Docker
 1. Install Docker <https://www.docker.com/products/docker-desktop>
 2. Build Docker image: `docker build -t yasmine/backend .`
+    - If running alone without frontend, adding `--network host` may be necessary
 3. Run Docker image: `docker run --rm -p 80:80 yasmine/backend`
 4. Go to GUI url: <http://localhost>
 5. Go to REST API endpoint: <http://localhost/api/>
