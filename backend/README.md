@@ -22,3 +22,4 @@ If GUI is required to be used, please see `../frontend/README.md` before using b
 1. To generate a DB migration script: `python yasmineapp.py syncdb revision --autogenerate` 
 2. To apply DB migrations: `python yasmineapp.py syncdb upgrade heads`
 3. To run all unittests `python yasmineapp.py test`
+4. If there is no internet connection, unzip the bundled NRL (IRIS.zip) in to the application data folder "/opt/YASMINE/_media/" or "c:/YASMINE/_media/nrl/" on Windows based machines.
