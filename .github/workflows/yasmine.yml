@@ -1,6 +1,15 @@
 name: Yasmine
 on: [ push ]
 jobs:
+  build-compose:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: action-docker-compose
+      uses: sudo-bot/action-docker-compose@latest
+      with:
+        cli-args: "up"
+
   lint_python:
     runs-on: ubuntu-latest
     steps:
