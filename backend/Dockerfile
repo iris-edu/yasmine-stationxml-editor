@@ -30,15 +30,8 @@
 #
 # ****************************************************************************/
 
-FROM python:3.6-slim AS python-deps
-RUN apt-get update && apt-get install -y --no-install-recommends gcc libc6-dev
-COPY requirements.txt /
-RUN pip install --no-cache-dir --upgrade pip setuptools
-RUN pip install --no-cache-dir -r /requirements.txt
-
-FROM python:3.6-slim
+FROM python:3.6.5-slim
 WORKDIR /opt/YASMINE/src
-COPY . .
 
 RUN apt-get update && apt-get install -y wget unzip gnupg gcc
 
@@ -54,7 +47,8 @@ RUN cd /tmp && \
     rm chromedriver.zip && \
     chmod +x /opt/chromedriver/chromedriver
 
-# Get the dependencies from previous stage
-COPY --from=python-deps /usr/local/lib/python3.10/site-packages /usr/local/lib/python3.10/site-packages
-
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install -r requirements.txt
+COPY . .
 CMD python yasmineapp.py syncdb upgrade heads ; python yasmineapp.py runserver --debug

@@ -8,7 +8,7 @@ jobs:
     - name: action-docker-compose
       uses: sudo-bot/action-docker-compose@latest
       with:
-        cli-args: "up"
+        cli-args: "build --no-cache"
 
   lint_python:
     runs-on: ubuntu-latest
