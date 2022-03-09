@@ -84,8 +84,8 @@ IAL_ROOT = os.path.join(MEDIA_ROOT, 'ial')
 
 NRL_CRON = {'hour': 23, 'minute': 0, 'second': 0}
 NRL_URL = 'http://ds.iris.edu/NRL/IRIS.zip'
-IAL_FOLDER = 'arol-isti_mandatory_filters'  # arol-master
-IAL_URL = f'https://gitlab.com/resif/arol/-/archive/isti_mandatory_filters/arol-isti_mandatory_filters.zip'
+IAL_FOLDER = 'arol-master'
+IAL_URL = f'https://gitlab.com/resif/arol/-/archive/master/arol-master.zip'
 
 LOGIING_CONSOLE_CONFIG = {
     'class': 'logging.StreamHandler',
