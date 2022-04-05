@@ -1,4 +1,3 @@
-version: "3.8"
 services:
   yasmine-frontend:
     image: iris-edu/yasmine-stationxml-editor
