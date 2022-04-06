@@ -26,14 +26,14 @@ Please read the included .docx manual for instructions on how to get started usi
 5. Run `pip install YASMINE-x.x.tar.gz`
 6. Run `sudo yasmineapp.py syncdb upgrade heads`
 7. Run `sudo yasmineapp.py runserver`
-8. Visit `http://localhost`
+8. Visit <http://localhost:1841>
 
 If there is no internet connection, unzip the bundled NRL (IRIS.zip) in to the application data folder "/opt/YASMINE/_media/" or "c:/YASMINE/_media/nrl/" depending on OS (Linux/Windows based).
 
 ### Installation using Docker
-1. Install Docker <https://www.docker.com/products/docker-desktop>
+1. Install [Docker Compose](https://docs.docker.com/compose/install/) or [Docker Desktop](https://www.docker.com/products/docker-desktop)
 2. Run `docker-compose up` to download, build and deploy docker container
-3. Visit `http://localhost`
+3. Visit <http://localhost:1841>
 
 ## Instructions for developers
 1. To develop frontend, please go to `frontend` folder and see `README.md` file
@@ -41,7 +41,7 @@ If there is no internet connection, unzip the bundled NRL (IRIS.zip) in to the a
 
 
 ## More information
-* Incorporated Research Institutions for Seismology (IRIS) Data Services - https://ds.iris.edu
-* réseau sismologique et géodésique français (Résif) - https://www.resif.fr/
-* FDSN StationXML Manual - https://stationxml-doc.readthedocs.io/en/release-1.1.0/
-* Nominal Response Library (NRL) - https://ds.iris.edu/ds/nrl/
+* [Incorporated Research Institutions for Seismology (IRIS) Data Services](https://ds.iris.edu)
+* [réseau sismologique et géodésique français (Résif)](https://www.resif.fr/)
+* [FDSN StationXML Manual](https://stationxml-doc.readthedocs.io/en/release-1.1.0/)
+* [Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
