@@ -15,7 +15,7 @@ services:
         build: backend
         image: yasmine/backend
         ports:
-            - "80:80"
+            - "8080:80"
         volumes:
             - yasmine-backend:/opt/yasmine
             - ./backend:/opt/yasmine/src  
