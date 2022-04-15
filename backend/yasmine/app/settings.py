@@ -39,9 +39,9 @@ from yasmine.app.utils.op_sys import is_windows
 ROOT_DIR = os.path.join(os.path.dirname(__file__), '..')
 
 if is_windows():
-    APP_DIR = os.path.join('c:', os.sep, 'YASMINE')
+    APP_DIR = os.path.join('c:', os.sep, 'yasmine')
 else:
-    APP_DIR = os.path.join(os.sep, 'opt', 'YASMINE')
+    APP_DIR = os.path.join(os.sep, 'opt', 'yasmine')
 
 RUN_ROOT = os.path.join(APP_DIR, '_run')
 

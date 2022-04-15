@@ -31,7 +31,7 @@
 # ****************************************************************************/
 
 FROM python:3.6.5-slim
-WORKDIR /opt/YASMINE/src
+WORKDIR /opt/yasmine/src
 
 RUN apt-get update && apt-get install -y wget unzip gnupg gcc
 
