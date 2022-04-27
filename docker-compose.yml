@@ -2,24 +2,18 @@ version: '3'
 services:
     yasmine-frontend:
         container_name: yasmine-frontend
-        build:
-            network: host
-            context: ./frontend
-            dockerfile: ./Dockerfile
+        build: frontend
+        image: yasmine/frontend
         ports:
             - "1841:1841"   
         volumes:
             - ./:/code
         networks:
             - yasmine
-        depends_on:
-            - yasmine-backend
     yasmine-backend:
         container_name: yasmine-backend
-        build:
-            network: host
-            context: ./backend
-            dockerfile: ./Dockerfile
+        build: backend
+        image: yasmine/backend
         ports:
             - "8080:80"
         volumes:
