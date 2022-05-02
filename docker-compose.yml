@@ -15,15 +15,13 @@ services:
         build: backend
         image: yasmine/backend
         ports:
-            - "80:80"
+            - "8080:80"
         volumes:
-            - yasmine-backend:/opt/yasmine
+            - ./data:/opt/yasmine/data
             - ./backend:/opt/yasmine/src  
         networks:
             - yasmine             
         stdin_open: true
         tty: true        
-volumes:
-    yasmine-backend:
 networks: 
     yasmine:
