@@ -4,6 +4,7 @@ services:
         container_name: yasmine-frontend
         build: frontend
         image: yasmine/frontend
+        platform: linux/arm64
         ports:
             - "1841:1841"   
         volumes:
