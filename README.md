@@ -18,6 +18,8 @@ Users are encouraged to use the **NRL** library, also available.
 ### User Manual
 Please read the included .docx manual for instructions on how to get started using Yasmine.
 
+If there is no internet connection, unzip the bundled NRL (IRIS.zip) in the `data` folder at the root of this repository.
+
 ### Installation using Python
 1. Install Python 3.6.5 or greater
 2. Run `python -m venv env`
@@ -28,12 +30,13 @@ Please read the included .docx manual for instructions on how to get started usi
 7. Run `sudo yasmineapp.py runserver`
 8. Visit <http://localhost:1841>
 
-If there is no internet connection, unzip the bundled NRL (IRIS.zip) in to the application data folder "/opt/YASMINE/_media/" or "c:/YASMINE/_media/nrl/" depending on OS (Linux/Windows based).
-
 ### Installation using Docker
 1. Install [Docker Compose](https://docs.docker.com/compose/install/) or [Docker Desktop](https://www.docker.com/products/docker-desktop)
-2. Run `docker-compose up` to download, build and deploy docker container
+2. Run `docker-compose up -d` to run the application
 3. Visit <http://localhost:1841>
+4. Run `docker-compose down` to stop
+
+If you are running on an Apple M1 machine, uncomment the lines indicating the target platform in the `docker-compose.yml` file.
 
 ## Instructions for developers
 1. To develop frontend, please go to `frontend` folder and see `README.md` file
