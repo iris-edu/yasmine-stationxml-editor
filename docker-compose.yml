@@ -4,6 +4,7 @@ services:
         container_name: yasmine-frontend
         build: frontend
         image: yasmine/frontend
+        # platform: linux/arm64 # for M1 users
         ports:
             - "1841:1841"   
         volumes:
@@ -14,6 +15,7 @@ services:
         container_name: yasmine-backend
         build: backend
         image: yasmine/backend
+        # platform: linux/amd64 # for M1 users
         ports:
             - "8080:80"
         volumes:

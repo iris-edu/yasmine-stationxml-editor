@@ -30,11 +30,14 @@
 #
 # ****************************************************************************/
 
+FROM eclipse-temurin:8u332-b09-jre-focal
 
-FROM openjdk:8-jre-stretch
+RUN apt-get update
+RUN apt-get install -y wget unzip
+RUN apt-get install -y libc6-arm64-cross libc6-amd64-cross libstdc++6-arm64-cross  libstdc++6-amd64-cross
+RUN apt-get install -y zlib1g
 
-RUN apt-get update && \
-    apt-get install -y wget unzip
+RUN ln -s /usr/x86_64-linux-gnu/lib64/ /lib64
 
 RUN useradd -m sencha && \
     cd && cp -R .bashrc .profile /home/sencha && \
@@ -43,6 +46,7 @@ RUN useradd -m sencha && \
 
 USER sencha
 ENV HOME /home/sencha
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:/lib64:/usr/x86_64-linux-gnu/lib:/usr/aarch64-linux-gnu/lib:/lib/aarch64-linux-gnu"
 
 RUN cd /home/sencha && \
 	wget http://cdn.sencha.com/cmd/6.5.3.6/no-jre/SenchaCmd-6.5.3.6-linux-amd64.sh.zip -O senchacmd.zip --progress=bar:force && \
@@ -53,8 +57,9 @@ RUN cd /home/sencha && \
 RUN /home/sencha/SenchaCmd-6.5.3.6-linux-amd64.sh -q -dir /opt/Sencha/Cmd/6.5.3.6 -Dall=true
 RUN rm /home/sencha/SenchaCmd-6.5.3.6-linux-amd64.sh && chmod +x /opt/Sencha/Cmd/6.5.3.6/sencha
 
-RUN cd opt/Sencha/SDK && wget http://cdn.sencha.com/ext/gpl/ext-6.2.0-gpl.zip --progress=bar:force && unzip -q ext-6.2.0-gpl.zip
+RUN cd /opt/Sencha/SDK && wget http://cdn.sencha.com/ext/gpl/ext-6.2.0-gpl.zip --progress=bar:force && unzip -q ext-6.2.0-gpl.zip
 
 ENV PATH="$PATH:/opt/Sencha/Cmd/6.5.3.6"
+
 WORKDIR /code/frontend
-CMD sencha app watch --j2ee
+CMD sencha app build; sleep 5; echo "starting up UI"; sencha app watch --j2ee
