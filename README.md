@@ -32,7 +32,7 @@ If there is no internet connection, unzip the bundled NRL (IRIS.zip) in the `dat
 
 ### Installation using Docker
 1. Install [Docker Compose](https://docs.docker.com/compose/install/) or [Docker Desktop](https://www.docker.com/products/docker-desktop)
-2. Run `docker-compose up -d` to run the application
+2. Run `docker-compose up` to start
 3. Visit <http://localhost:1841>
 4. Run `docker-compose down` to stop
 
