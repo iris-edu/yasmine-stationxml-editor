@@ -1,12 +1,12 @@
-# YASMINE
+# Yasmine
 
-YASMINE (Yet Another Station Metadata INformation Editor), is a Python web application to create and edit geophysical station metadata information in FDSN stationXML format.
+Yasmine (Yet Another Station Metadata INformation Editor), is a Python web application to create and edit geophysical station metadata information in FDSN stationXML format.
 This is a joint development of IRIS and Résif.
 Development and addition of new features is shared and agreed upon between IRIS and Résif.
 
 
 ## Known issues
-Even if we have performed a lot of tests, YASMINE is currently released in beta version and some bugs and limitations might still be found.
+Even if we have performed a lot of tests, Yasmine is currently released in beta version and some bugs and limitations might still be found.
 
 Installation setup currently fails with `numpy-1.22.2`. It is recommended to use `numpy-1.21.5` instead.
 
