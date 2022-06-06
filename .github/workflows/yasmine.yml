@@ -23,7 +23,7 @@ jobs:
 
   build_app:
     runs-on: ubuntu-latest
-    container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+    container: ghcr.io/iris-edu/yasmine-stationxml-editor:latest
     steps:
       - uses: actions/checkout@v2
       - name: Add CI_COMMIT_SHORT_SHA env property with commit short sha
@@ -54,7 +54,7 @@ jobs:
 
   test_app:
     runs-on: ubuntu-latest
-    container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+    container: ghcr.io/iris-edu/yasmine-stationxml-editor:latest
     needs: [build_app]
     steps:
       - uses: actions/download-artifact@v2
@@ -83,7 +83,7 @@ jobs:
 #        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 #
 #      - name: Build image
-#        run: docker build . --file docker-gitlab-centos7 --tag ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+#        run: docker build . --file docker-gitlab-centos7 --tag ghcr.io/iris-edu/yasmine-stationxml-editorlatest
 #
 #      - name: Push image
-#        run: docker push ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+#        run: docker push ghcr.io/iris-edu/yasmine-stationxml-editor:latest
