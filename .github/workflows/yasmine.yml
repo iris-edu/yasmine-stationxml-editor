@@ -23,6 +23,7 @@ jobs:
 
   build_app:
     runs-on: ubuntu-latest
+    permissions: write-all
     container: ghcr.io/iris-edu/yasmine-stationxml-editor:latest
     steps:
       - uses: actions/checkout@v2
@@ -54,6 +55,7 @@ jobs:
 
   test_app:
     runs-on: ubuntu-latest
+    permissions: write-all
     container: ghcr.io/iris-edu/yasmine-stationxml-editor:latest
     needs: [build_app]
     steps:
