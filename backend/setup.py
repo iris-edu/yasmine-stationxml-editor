@@ -41,7 +41,7 @@ with open('requirements.txt', 'rt') as f:
 
 setup(
     name='YASMINE',
-    version='1.0',
+    version='4.1.0-beta',
     packages=find_packages(),
     package_data={
         '': ['*.xml', 'data/*.*', 'arol/*.json', 'gatito/*.json']

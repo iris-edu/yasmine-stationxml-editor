@@ -65,7 +65,8 @@ jobs:
       - name: Install and Run Yasmine tests
         run: |
           pip3.6 install --upgrade pip setuptools
-          sudo pip3.6 install YASMINE-1.0.tar.gz
+          pip3.6 install -r requirements.txt
+          sudo pip3.6 install YASMINE-4.1.0-beta.tar.gz
           yasmineapp.py syncdb upgrade heads
           yasmineapp.py runserver &>/dev/null&
           sleep 10
