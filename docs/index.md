@@ -2,9 +2,14 @@
 
 Latest version: `v4.1.0-beta`
  
-
 - User Guide
+- Downloads
 - Resources
+- 
+### Downloads
+
+- [NRL](http://ds.iris.edu/NRL/IRIS.zip)
+- [AROL](https://gitlab.com/resif/arol/-/archive/master/arol-master.zip)
 
 ### Resources
 
