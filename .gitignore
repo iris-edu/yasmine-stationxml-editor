@@ -4,8 +4,5 @@
 /.gradle/
 /.idea/
 data/
-docs/_site
-docs/.sass-cache
-docs/.jekyll-cache
-docs/.jekyll-metadata
-docs/vendor
+Yasmine-Documentations-3.0.1.pdf
+NOTES.md
