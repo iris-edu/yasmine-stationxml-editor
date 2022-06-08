@@ -3,12 +3,12 @@
 # To modify the layout, see https://jekyllrb.com/docs/themes/#overriding-theme-defaults
 
 layout: home
-permalink: /about/
+title: About
 ---
-
-### About
 
     Latest version: v4.1.0-beta
 
 
-Yasmine (Yet Another Station Metadata INformation Editor)
+<!-- 
+About
+Yasmine (Yet Another Station Metadata INformation Editor) -->
