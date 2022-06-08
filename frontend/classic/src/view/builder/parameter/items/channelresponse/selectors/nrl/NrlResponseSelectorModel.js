@@ -43,6 +43,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
     dataloggerKeys: [],
     dataloggerPreview: null,
 
+    minFrequency: 0.001,
+    maxFrequency: null,
+
     channelResponseImageUrl: null,
     channelResponseCsvUrl: null,
     channelResponseText: null
