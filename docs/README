@@ -1,0 +1,11 @@
+# README
+
+The GitHub Pages site for Yasmine is located here:
+<https://iris-edu.github.io/yasmine-stationxml-editor/>
+
+
+## Local Development
+
+> cd docs/yasmine-stationxml-editor
+> bundle install
+> bundle exec jekyll serve --livereload
