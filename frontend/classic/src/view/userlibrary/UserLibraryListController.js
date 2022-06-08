@@ -42,6 +42,12 @@ Ext.define('yasmine.view.userlibrary.UserLibraryListController', {
   onEditLibraryClick: function () {
     this.startEditing(this.getSelectedLibrary())
   },
+  onCellEdit: function (editor, context) {
+    if (!context.record.dirty) {
+      return;
+    }
+    context.record.save();
+  },
   onDeleteLibraryClick: function () {
     Ext.MessageBox.confirm('Confirm', 'Are you sure you want to delete a selected library?', function (btn) {
       if (btn === 'yes') {
@@ -57,7 +63,9 @@ Ext.define('yasmine.view.userlibrary.UserLibraryListController', {
     this.getView().findPlugin('rowediting').startEdit(record, 0);
   },
   deleteSelectedLibrary: function () {
-    this.getLibraryStore().remove(this.getSelectedLibrary());
+    const store = this.getLibraryStore()
+    store.remove(this.getSelectedLibrary());
+    store.sync();
   },
   getSelectedLibrary: function () {
     return this.getViewModel().get('selectedUserLibrary')

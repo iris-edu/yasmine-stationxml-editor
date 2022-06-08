@@ -42,7 +42,7 @@ Ext.define('yasmine.view.userlibrary.UserLibraryListModel', {
       model: 'yasmine.model.UserLibrary',
       autoLoad: true,
       remoteFilter: true,
-      autoSync: true,
+      autoSync: false,
       sorters: [{
         property: 'name',
         direction: 'ASC'

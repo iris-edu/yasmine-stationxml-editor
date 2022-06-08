@@ -167,7 +167,7 @@ class XmlNodeAttrHandler(EquipmentMixin, ExtJsHandler):
     def serialize(self, q_object, fields):
         resp = super(XmlNodeAttrHandler, self).serialize(q_object, fields)
         value_obj = resp['value_obj']
-        if q_object.attr.name == 'response':
+        if q_object.attr.name == 'response' and value_obj:
             resp['value_obj'] = polynomial_or_polezero_response(value_obj)
         _, _, _, required = self.application.config.get_cfg_by_node_id(q_object.node_inst.node_id)
         resp['required'] = q_object.attr_name in required

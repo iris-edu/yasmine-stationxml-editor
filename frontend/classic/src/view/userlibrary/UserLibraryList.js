@@ -53,7 +53,8 @@ Ext.define('yasmine.view.userlibrary.UserLibrary', {
         if (opt.record.phantom && !opt.record.dirty) {
           editor.grid.store.remove(opt.record)
         }
-      }
+      },
+      edit: 'onCellEdit',
     }
   }],
   selModel: 'rowmodel',
