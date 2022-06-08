@@ -6,6 +6,9 @@ layout: home
 permalink: /about/
 ---
 
-## Yasmine (Yet Another Station Metadata INformation Editor)
+### About
 
     Latest version: v4.1.0-beta
+
+
+Yasmine (Yet Another Station Metadata INformation Editor)
