@@ -11,6 +11,10 @@ layout: home
 
 [Installation][installation]
 
+[stationxml]: /yasmine-stationxml-editor/stationxml "FDSN StationXML"
+
+[FDSN StationXML][stationxml]
+
 [user-guide]: /yasmine-stationxml-editor/user-guide "User Guide"
 
 [User Guide][user-guide]

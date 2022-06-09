@@ -51,3 +51,4 @@ application is available:
  sudo yasmineapp.py syncdb upgrade heads
  sudo yasmineapp.py runserver
 ```
+### Data Persistance
