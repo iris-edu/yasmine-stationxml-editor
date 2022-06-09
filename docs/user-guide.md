@@ -9,6 +9,8 @@ permalink: /user-guide/
 - Overview
 - The 5 Levels of Response Detail
 - Instrument Response
+ 
+To begin this tutorial, follow the [Installation](yasmine-stationxml-editor/installation) instructions to get the Yasmine up and running.
 
 ### 1. Seismic Instrumentation
 
@@ -29,7 +31,13 @@ In this tutorial, we will walk through this heirarchy from the top-down, beginni
 > **Note:**
 > If you are are unfamiliar with the format, read this introduction to [FDSN StationXML](yasmine-stationxml-editor/stationxml).
 
-The quickest way to start producing metadata with Yasmine is work from existing StationXML files.
+The quickest way to begin working with metadata with Yasmine is to import existing StationXML files.
+
+Let's fetch some StationXML from the IRIS [fdsnws-station](http://service.iris.edu/fdsnws/station/1) service and save it to a file called `out.xml`:
+
+```console
+ curl --output out.xml 'https://service.iris.edu/fdsnws/station/1/query?net=XB&station=ELYSE&channel=MHU&level=response'
+```
 
 #### 2.2. Network
 

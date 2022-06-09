@@ -6,7 +6,7 @@ permalink: /stationxml/
 
 ```Namespace: http://www.fdsn.org/xml/station/1```
 
-[StationXML](http://www.fdsn.org/xml/station) was developed through the International Federation of Digital Seismograph Networks (FDSN) to provide 
+[FDSN StationXML](http://www.fdsn.org/xml/station) was developed through the International Federation of Digital Seismograph Networks (FDSN) to provide 
 a standard format for geophysical metadata. It was intended as a sucessor to [SEED 2.4](http://www.fdsn.org/publications.htm).
 
 <em>Example 1: A sample StationXML file</em>
