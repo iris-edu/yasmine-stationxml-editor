@@ -3,7 +3,7 @@ layout: page
 title: Resources
 permalink: /resources/
 ---
-### Links
+### 1. Links
 
 - [StationXML Documentation (latest)](https://docs.fdsn.org/_/downloads/stationxml/en/latest/pdf/)
 - [Yasmine GitHub Pages settings](https://github.com/iris-edu/yasmine-stationxml-editor/settings/pages)
@@ -14,8 +14,8 @@ basic-writing-and-formatting-syntax)
 - [GitHub Pages Editor](https://github.com/iris-edu/yasmine-stationxml-editor/edit/gh-pages/docs/index.md) 
 - [NRL](http://ds.iris.edu/ds/nrl/)
 - [FDSN StationXML GitHub](https://github.com/FDSN/StationXML.git)
-- 
-### Downloads
+
+### 2. Downloads
 
 - [NRL](http://ds.iris.edu/NRL/IRIS.zip)
 - [AROL](https://gitlab.com/resif/arol/-/archive/master/arol-master.zip)

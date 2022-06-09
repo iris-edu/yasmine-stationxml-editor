@@ -21,17 +21,22 @@
 title: Yasmine
 email: feedback@ds.iris.edu
 description: >- # this means to ignore newlines until "baseurl:"
-  Yasmine is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
+  Yasmine (Yet Another Station Metadata INformation Editor) is designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 baseurl: "/yasmine-stationxml-editor" # the subpath of your site, e.g. /blog
 url: "" # the base hostname & protocol for your site, e.g. http://example.com
-
 # Build settings
 theme: minima
 plugins:
   - jekyll-feed
+  - jekyll-gist
+gems: [jekyll-mermaid, kramdown-syntax-coderay]
 toc:
-    enabled: true
-extensions: [fenced_code_blocks, jekyll-toc]
+  enabled: true
+include:
+  - images/
+kramdown:
+  syntax_highlighter: coderay
+extensions: [fenced_code_blocks, jekyll-toc, kramdown-parser-gfm]
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to
