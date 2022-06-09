@@ -10,17 +10,19 @@ permalink: /user-guide/
 - Instrument Response Libraries
 
 
-## FDSN StationXML
+### What is FDSN StationXML?
 
     Namespace: http://www.fdsn.org/xml/station/1
 
-[StationXML](www.fdsn.org/xml/station) was developed through the International Federation of Digital Seismograph Networks (FDSN) to provide a standard format for geophysical metadata. It was intended as a sucessor to [SEED 2.4](http://www.fdsn.org/publications.htm).
+[StationXML](www.fdsn.org/xml/station) was developed through the International Federation of Digital Seismograph Networks (FDSN) to provide a standard format 
+for geophysical metadata. It was intended as a sucessor to [SEED 2.4](http://www.fdsn.org/publications.htm).
 
 <em>Example 1</em>  A StationXML file
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
 <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fdsn.org/xml/station/1 http://www.fdsn.org/xml/station/fdsn-station-1.2.xsd" schemaVersion="1.2">
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.fdsn.org/xml/station/1 http://www.fdsn.org/xml/station/fdsn-station-1.
+2.xsd" schemaVersion="1.2">
     <Source>IRISDMC</Source>
     <Sender>IRISDMC</Sender>
     <Module>Yasmine</Module>
@@ -78,34 +80,30 @@ subsequent levels.
 4. Channel
 5. Response
 
-<div class="mermaid">
-graph LR
-FDSNStationXML-->Network
-Network-->Station
-Station-->Channel
-Channel-->Response
-</div> 
-
 #### I Create a StationXML file
 #### II Create a network
 #### III Create a station
 #### IV Create a channel
 #### V Create a response
 
+### Digitizers
+
+Digitizers, or Analog to Digital Converters (ADC), translate a continuous voltage signals into a form our computer's can understand, namely discrete signals cromprising sequences of bits.
+
 ### Instrument Response
 
-- https://docs.fdsn.org/_/downloads/stationxml/en/latest/pdf/
-- https://www.analog.com/en/analog-dialogue/articles/analog-to-digital-converter-clock-optimization.html
 A recording system comprises two parts:
 1. Sensor
-2. Datalogger, or a Analog-to-Digital Converter (ADC)
+2. Dataloggers
 
-def. instrument response : The signature a recording instruments imparts on the geophysical data.
+Instrument response libraries provide access to schema object definition files for well-known components that fall into these classes.
 
-
-#### Instrument Response Libraries
+From within Yasmine, you have access to the following repositories:
 
 1. [NRL](https://ds.iris.edu/ds/nrl/)
-2. [The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/) 
+2. [The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
+    - The AROL contains metadata descriptions of earth science observation instruments.
 
-The AROL contains metadata descriptions of earth science observation instruments.
+#### Definitions
+
+    def.  instrument response : The signature a recording instruments imparts on the geophysical data.

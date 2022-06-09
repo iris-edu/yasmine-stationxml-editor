@@ -13,7 +13,8 @@ basic-writing-and-formatting-syntax)
 - [Jekyll](https://jekyllrb.com/)
 - [GitHub Pages Editor](https://github.com/iris-edu/yasmine-stationxml-editor/edit/gh-pages/docs/index.md) 
 - [NRL](http://ds.iris.edu/ds/nrl/)
-
+- [FDSN StationXML GitHub](https://github.com/FDSN/StationXML.git)
+- 
 ### Downloads
 
 - [NRL](http://ds.iris.edu/NRL/IRIS.zip)

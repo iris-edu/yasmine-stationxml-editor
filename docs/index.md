@@ -7,8 +7,5 @@ title: About
 ---
 
     Latest version: v4.1.0-beta
-
-
-<!-- 
-About
-Yasmine (Yet Another Station Metadata INformation Editor) -->
+    
+Yasmine (Yet Another Station Metadata INformation Editor)
