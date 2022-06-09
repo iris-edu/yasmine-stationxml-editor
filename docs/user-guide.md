@@ -12,20 +12,21 @@ permalink: /user-guide/
 
 ### 1. Seismic Instrumentation
 
-Geophysical data are recorded by an instrument that imparts its own signature onto the data. 
+Geophysical data are recorded by an instrument that imparts its own signature onto the data.
 
 A recording system (sensor + datalogger)
 
 ### 2. FDSN StationXML
 
-    Namespace: http://www.fdsn.org/xml/station/1
+```Namespace: http://www.fdsn.org/xml/station/1```
 
 [StationXML](http://www.fdsn.org/xml/station) was developed through the International Federation of Digital Seismograph Networks (FDSN) to provide a standard format 
 for geophysical metadata. It was intended as a sucessor to [SEED 2.4](http://www.fdsn.org/publications.htm).
 
 <em>Example 1: A sample StationXML file</em>
+
 ```xml
-<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" 
+ <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" 
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
     xsi:schemaLocation="http://www.fdsn.org/xml/station/1  http://www.fdsn.org/xml/station/fdsn-station-1.2.xsd" 
     schemaVersion="1.2">
@@ -70,7 +71,7 @@ for geophysical metadata. It was intended as a sucessor to [SEED 2.4](http://www
                  </Channel>
         </Station>
     </Network>
-<FDSNStationXML>
+ <FDSNStationXML>
 ```
 
 ### 3. The 5 Levels of Response Detail
