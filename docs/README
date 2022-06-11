@@ -7,10 +7,14 @@ The GitHub Pages site for Yasmine is located here:
 ## Local Development
 
 Locally serving the GitHub Pages documentation:
-> cd docs
-> bundle install && bundle exec jekyll serve --livereload
+> cd docs && bundle install && 
+> bundle exec jekyll serve --livereload
 
 Installing plugins:
 > sudo gem install jekyll-mermaid
 
 > bundle add kramdown-syntax-coderay
+
+Visit:
+
+> <http://127.0.0.1:4000/yasmine-stationxml-editor/>

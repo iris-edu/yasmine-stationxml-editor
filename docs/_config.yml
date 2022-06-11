@@ -29,14 +29,21 @@ theme: minima
 plugins:
   - jekyll-feed
   - jekyll-gist
-gems: [jekyll-mermaid, kramdown-syntax-coderay]
+  - jekyll-commonmark-ghpages
+gems: [jekyll-mermaid, kramdown-syntax-coderay, jekyll-commonmark-ghpages]
 toc:
   enabled: true
 include:
-  - images/
+  - /images/
+  - /assets/
+markdown: CommonMarkGhPages
 kramdown:
   syntax_highlighter: coderay
+  input: GFM
 extensions: [fenced_code_blocks, jekyll-toc, kramdown-parser-gfm]
+commonmark:
+  options: ["SMART", "FOOTNOTES"]
+  extensions: ["strikethrough", "autolink", "tables"]
 # Exclude from processing.
 # The following items will not be processed, by default.
 # Any item listed under the `exclude:` key here will be automatically added to

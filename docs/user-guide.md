@@ -3,96 +3,186 @@ layout: page
 title: User Guide
 permalink: /user-guide/
 ---
+- [Seismic Instrumentation](#seismic-instrumentation)
+- [Instrument Response](#instrument-response)
+- [FDSN StationXML](#fdsn-stationxml)
+  - [Managing Metadata with Yasmine](#managing-metadata-with-yasmine)
+- [Levels of Response Detail](#levels-of-response-detail)
+  - [Creating Metadata with Yasmine](#creating-metadata-with-yasmine)
+- [Instrument Response Libraries](#instrument-response-libraries)
 
-- Seismic Instrumentation
-- FDSN StationXML
-- Overview
-- The 5 Levels of Response Detail
-- Instrument Response
- 
-To begin this tutorial, follow the [Installation](yasmine-stationxml-editor/installation) instructions to get the Yasmine up and running.
+Before you begin, follow the [Installation](installation) instructions to get Yasmine up and running.
 
-### 1. Seismic Instrumentation
+## Seismic Instrumentation
+
+---
+
+<img src="/yasmine-stationxml-editor/assets/images/from-instrument-to-data.drawio.png"/>
+
+<em> Figure: An abstreact representation of a seismic network</em>
+
+Modern seismic networks are desinged to support the communication of ground motion data between analog sensors and digital computers. ocmmuniaground motion into digital machine-readable sequences to central archiving facilities for storage.
+
+Each observation made by a senso
+Most seismic data is sent to central datacenters like the DMC for .
+Seismic signals are measured, recorded, and transmitt
+
+Modern seismic networks are local, regional, and global in nature.
+
+## Instrument Response
+
+> "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a messaage selected at another point."
+
+*Claude Shannon (1948)*
 
 Geophysical data are recorded by an instrument that imparts its own signature onto the data.
 
-### 2. The 5 Levels of Response Detail
+## FDSN StationXML
 
-In this tutorial, we will walk through this heirarchy from the top-down, beginning with the FDSN StationXML declaration itself and adding increasingly more specific metadata at subsequent levels.
+---
 
-1. FDSN StationXML
-2. Network
-3. Station
-4. Channel
-5. Response
+```xml
+ <?xml version="1.0" encoding="UTF-8"?>
+ <FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" 
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+    xsi:schemaLocation="http://www.fdsn.org/xml/station/1  http://www.fdsn.org/xml/station/fdsn-station-1.2.xsd" 
+    schemaVersion="1.2">
+```
 
-#### 2.1. FDSN StationXML
+<em>Figure: StationXML file declaration</em>
 
-> **Note:**
-> If you are are unfamiliar with the format, read this introduction to [FDSN StationXML](yasmine-stationxml-editor/stationxml).
+[FDSN StationXML](http://www.fdsn.org/xml/station) is a standard XML format to represent geophysical metadata developed by the International Federation of Digital Seismograph Networks (FDSN) as a sucessor to [SEED 2.4](http://www.fdsn.org/publications.htm). The current version of [StationXML v1.2](https://docs.fdsn.org/projects/stationxml/en/latest/) is described here:
 
-The quickest way to begin working with metadata with Yasmine is to import existing StationXML files.
+> Namespace: <http://www.fdsn.org/xml/station/1><br/>
+> Schema: <https://www.fdsn.org/xml/station/fdsn-station-1.2.xsd>
 
-Let's fetch some StationXML from the IRIS [fdsnws-station](http://service.iris.edu/fdsnws/station/1) service and save it to a file called `out.xml`:
+### Managing Metadata with Yasmine
 
-```console
+The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files. Yasmine uses this version of the schema without applying additional organization-specific rules such as those required by IRIS and used by the [StationXML Validator](http://github.com/iris-edu/stationxml-validator).
+
+
+<img src="/yasmine-stationxml-editor/assets/images/xml-button.png" />
+
+<details>
+
+<summary>Exercise: Import XML</summary>
+
+<input type="checkbox" /> Select an existing StationXML file or fetch one from the IRIS [fdsnws-station](http://service.iris.edu/fdsnws/station/1) service:
+
+```bash
  curl --output out.xml 'https://service.iris.edu/fdsnws/station/1/query?net=XB&station=ELYSE&channel=MHU&level=response'
 ```
 
-#### 2.2. Network
+<input type="checkbox" /> From the `XML` tab, select `Import XML` then  your file
 
-#### 2.3. Station
+</details>
 
-#### 2.4. Channel
+<details>
 
-1. Describe a channel
-   - Location code
-   - Start date
-   - End date
-   - Latitude
-   - Longitude
-   - Elevation
-   - Depth
-2. Select an Instrument Response Library
-    - AROL, NRL or I don't need a response
-3. Describe the response
-   1. Describe the Datalogger
-      - Manufacturer, Kinemetrics
-      - Model, e.g. Etna
-      - Pre-amplifier gain. e.g. 6db
-      - Sample rate, e.g. 1000 sps
-      - Final filter phase type, e.g. Linear Phase
-   2. Describe the Sensor
-      - Manufacturer, e.g. Streckeisen
-      - Model, e.g. STS-1
-      - Gain or samples per second
-   3. Response
-Channel prefix and orientation
-Channel, dip, azimuth
+   <summary>Exercise: Validate XML</summary>
 
-#### 2.5. Instrument Response
+<input type="checkbox" /> From the `XML` tab, double-click a filename then `File -> Validate`
 
-A recording system comprises two parts:
+</details>
 
-1. Sensors
-2. Dataloggers
+<details>
 
-Instrument response libraries provide access to schema object definition files for well-known components that fall into these classes.
+   <summary>Exercise: Extract XML</summary>
 
-From within Yasmine, you have access to the following repositories:
+<input type="checkbox" /> From the `User Library` tab, select `Create a new library` and provide a name
 
-1. [The Nominal Response Library](https://ds.iris.edu/ds/nrl/)
-2. [The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
-    - The AROL contains metadata descriptions of earth science observation instruments.
-  
-##### 2.5.1. Sensors
+<input type="checkbox" /> From the `XML` tab, double-click a filename and select a Network element then `Export -> Extract a selected network to user library`
 
-##### 2.5.2. Dataloggers
+</details>
 
-To convert the analog signal of a seismometer into into a machine-readable digital signal, we use a Dataloggers, otherwise known as Digitizers or Analog to Digital Converters (ADC).
+<details>
 
-### 3. Definitions
+<summary>Exercise: Export XML</summary>
 
-*def.*  instrument response : The signature a recording instruments imparts on the geophysical data.
+<input type="checkbox" /> From the `XML` tab, highlight the filename then `Export as XML`
 
-*def.*  sampling rate : How often the digitizer takes a voltage and converts it to counts, typically measure in Hertz or samples per second
+</details>
+
+## Levels of Response Detail
+
+---
+
+<img src="/yasmine-stationxml-editor/assets/images/response-level-details.drawio.png"/>
+
+<em>Figure: Levels of StationXML metadata</em>
+
+The XML data model is semistructured and describes relations heirarchically where top-level elements releate to lower ones and those at the bottom are most specific.
+
+### Creating Metadata with Yasmine
+
+
+It is helpful to keep the data model in constructing your own StationXML. Yasmine facilitates a top-down approach to the creation of StationXML, beginning with the FDSN StationXML declaration itself and adding increasingly more specific metadata at subsequent levels
+
+<details>
+   <summary>Network</summary>
+</details>
+
+<details>
+   <summary>Station</summary>
+</details>
+
+<details>
+
+   <summary>Channel</summary>
+
+- Location code
+- Start date
+- End date
+- Latitude
+- Longitude
+- Elevation
+- Depth
+
+</details>
+
+<details>
+
+   <summary>Response</summary>
+
+    1. Sensors
+    2. Dataloggers
+
+To convert the analog signal of a seismometer into into a machine-readable
+digital signal, we use a Dataloggers, otherwise known as Digitizers orAnalog to Digital Converters (ADC).
+
+    1. Select an Instrument Response Library
+        a. AROL, NRL or I don't need a response
+    2. Describe the response
+       a. Describe the Datalogger
+           - Manufacturer, Kinemetrics
+           - Model, e.g. Etna
+           - Pre-amplifier gain. e.g. 6db
+           - Sample rate, e.g. 1000 sps
+           - Final filter phase type, e.g. Linear Phase
+      B. Describe the Sensor
+         - Manufacturer, e.g. Streckeisen
+         - Model, e.g. STS-1
+         - Gain or samples per second
+      C. Response
+    3. Channel prefix and orientation
+    4. Channel, dip, azimuth
+
+## Instrument Response Libraries
+
+---
+
+> Schema: <https://ds.iris.edu/files/xml/station/fdsn-station-response-1.1.xsd>
+
+These dictionaries provide access to schema object definition files for well-known components that fall into these classes.
+
+1. [The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
+
+- A library of recommended nominal responses created by IRIS from docunentation or  direct communication with the manufacturer's documentation and checked validty
+
+1. [The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
+   - Contains metadata descriptions of earth science observation instruments.
+   - A new instrument response library under development by Résif
+   - Easier, faster selection of instrument configurations
+   - Includes a smaller set of instruments
+
+</details>
