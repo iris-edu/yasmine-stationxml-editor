@@ -8,6 +8,10 @@ permalink: /sage-gage-2022/
 
 **Location:** SAGE/GAGE Community Science Workshop, Short Course, June 13, 2022, Pittsburgh, PA
 
-<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vRIzOPJ8qSMLAKw6uxw-mbcdz86Axc4nMJDgxr4cproHFeLQF67HDvCZ-o2scG3P-rUInfcnSH5oKeb/embed?start=false&loop=false&delayms=3000#slide=id.p1" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
-
-
+<style>
+.responsive-wrap iframe{ max-width: 100%;}
+</style>
+<div class="responsive-wrap">
+ <iframe src="https://docs.google.com/presentation/d/e/2PACX-1vTqwbNVYpHz3n0mygkQNPjaCtsJVR_MDw64NbM4CMPYtl0uMhYBiWhLCLqQ0_wiun2QC8Jr7mi8_T5J/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+</div>
+<iframe src="https://docs.google.com/presentation/d/e/2PACX-1vTqwbNVYpHz3n0mygkQNPjaCtsJVR_MDw64NbM4CMPYtl0uMhYBiWhLCLqQ0_wiun2QC8Jr7mi8_T5J/embed?start=false&loop=false&delayms=3000" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
