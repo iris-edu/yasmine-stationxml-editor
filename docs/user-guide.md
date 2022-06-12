@@ -11,7 +11,7 @@ permalink: /user-guide/
 
 **Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 
-Before you begin, follow the [Installation](installation) instructions to get Yasmine up and running.
+Before you begin, follow the [Installation](/yasmine-stationxml-editor/installation) instructions to get Yasmine up and running.
 
 ## FDSN StationXML
 
