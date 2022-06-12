@@ -4,7 +4,7 @@ title: User Guide
 permalink: /user-guide/
 ---
 - [FDSN StationXML](#fdsn-stationxml)
-  - [Exercise: Managing StationXML with Yasmine](#exercise-managing-stationxml-with-yasmine)
+  - [*Exercise: Manage StationXML with Yasmine*](#exercise-manage-stationxml-with-yasmine)
 - [Levels of Response Detail](#levels-of-response-detail)
   - [Instrument Response Libraries](#instrument-response-libraries)
   - [*Exercise: Create StationXML With Yasmine*](#exercise-create-stationxml-with-yasmine)
@@ -35,7 +35,7 @@ running.
    StationXML sent to IRIS should be verified with the [StationXML
    Validator](http://github.com/iris-edu/stationxml-validator).
 
-### Exercise: Managing StationXML with Yasmine
+### *Exercise: Manage StationXML with Yasmine*
 
    The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files.
 
