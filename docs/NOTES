@@ -1,0 +1,34 @@
+
+1. Select an Instrument Response Library
+    a. AROL, NRL or I don't need a response
+2. Describe the response
+   a. Describe the Datalogger
+       - Manufacturer, Kinemetrics
+       - Model, e.g. Etna
+       - Pre-amplifier gain. e.g. 6db
+       - Sample rate, e.g. 1000 sps
+       - Final filter phase type, e.g. Linear Phase
+  B. Describe the Sensor
+     - Manufacturer, e.g. Streckeisen
+     - Model, e.g. STS-1
+     - Gain or samples per second
+  C. Response
+3. Channel prefix and orientation
+4. Channel, dip, azimuth
+
+{% gist c08ee0f2726fd0e3909d %}
+
+
+> "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a messaage selected at another point."
+> *Claude Shannon (1948)*
+
+
+Modern seismic networks are designed to support the communication of ground motion data between analog sensors and digital computers. ocmmuniaground motion into digital machine-readable sequences to central archiving facilities for storage.
+
+Each observation made by a senso
+Most seismic data is sent to central datacenters like the DMC for .
+Seismic signals are measured, recorded, and transmitt
+
+Modern seismic networks are local, regional, and global in nature.
+
+Geophysical data are recorded by an instrument that imparts its own signature onto the data.
