@@ -4,9 +4,6 @@
 
 layout: home
 ---
-
-## Table of Contents
-
 [installation]: /yasmine-stationxml-editor/installation "Installation"
 
 [Installation][installation]
