@@ -30,6 +30,7 @@ plugins:
   - jekyll-feed
   - jekyll-gist
   - jekyll-commonmark-ghpages
+  - kramdown-parser-gfm
 gems: [jekyll-mermaid, kramdown-syntax-coderay, github-pages, jekyll-commonmark-ghpages]
 toc:
   enabled: true
