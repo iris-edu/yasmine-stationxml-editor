@@ -4,10 +4,10 @@ title: User Guide
 permalink: /user-guide/
 ---
 - [FDSN StationXML](#fdsn-stationxml)
-- [Exercise: Managing StationXML with Yasmine](#exercise-managing-stationxml-with-yasmine)
-- [The Levels of Response Detail](#the-levels-of-response-detail)
-- [Instrument Response Libraries](#instrument-response-libraries)
-- [Exercise: Create StationXML With Yasmine](#exercise-create-stationxml-with-yasmine)
+  - [Exercise: Managing StationXML with Yasmine](#exercise-managing-stationxml-with-yasmine)
+- [Levels of Response Detail](#levels-of-response-detail)
+  - [Instrument Response Libraries](#instrument-response-libraries)
+  - [*Exercise: Create StationXML With Yasmine*](#exercise-create-stationxml-with-yasmine)
 
 **Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the
 creation of geophysical station metadata in FDSN StationXML format.
@@ -35,7 +35,7 @@ running.
    StationXML sent to IRIS should be verified with the [StationXML
    Validator](http://github.com/iris-edu/stationxml-validator).
 
-   #### Exercise: Managing StationXML with Yasmine
+### Exercise: Managing StationXML with Yasmine
 
    The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files.
 
@@ -62,7 +62,7 @@ running.
          </tr>
       </table>
 
-   </details>
+</details>
 
    <details>
 
@@ -107,7 +107,7 @@ running.
 
    </details>
 
-   ## The Levels of Response Detail
+## Levels of Response Detail
 
    ![Levels of StationXML metadata
    description](/yasmine-stationxml-editor/assets/images/response-level-details.drawio.png)
@@ -118,7 +118,7 @@ running.
    relations where top-level elements are most general and the lower ones most specific. StationXML beginning with the
    FDSN StationXML declaration itself and adding increasingly more specific metadata at subsequent levels
 
-   ### Instrument Response Libraries
+### Instrument Response Libraries
 
    ![Figure: An abstract representation of a modern seismic
    network](/yasmine-stationxml-editor/assets/images/from-instrument-to-data.drawio.png)
@@ -136,7 +136,7 @@ running.
    : A new instrument response library under development by Résif containing a smaller albeit easier and faster set of
    descriptions than the NRL
 
-   #### Exercise: Create StationXML With Yasmine
+### *Exercise: Create StationXML With Yasmine*
 
    Yasmine encourages a top-down approach when creating StationXML . A wizard is provided to step you though this
    process.
