@@ -23,8 +23,6 @@ layout: home
 
 [Resources][resources]
 
-## Overview
-
 **Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 
 Yasmine is a set of two independent Python-based applications:
