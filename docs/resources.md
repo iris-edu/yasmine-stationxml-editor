@@ -12,4 +12,4 @@ permalink: /resources/
 - [NRL webservice](http://ds.iris.edu/ds/nrl/)
 - [NRL schema](https://ds.iris.edu/files/xml/station/fdsn-station-response-1.1.xsd)
 - [AROL bundled](https://gitlab.com/resif/arol/-/archive/master/arol-master.zip)
-- [SAGE/GAGE 2021 Short Course Slides]("https://docs.google.com/presentation/d/e/2PACX-1vRIzOPJ8qSMLAKw6uxw-mbcdz86Axc4nMJDgxr4cproHFeLQF67HDvCZ-o2scG3P-rUInfcnSH5oKeb/embed?start=false&loop=false&delayms=3000")
+- [SAGE/GAGE 2021 Short Course Slides](https://docs.google.com/presentation/d/e/2PACX-1vRIzOPJ8qSMLAKw6uxw-mbcdz86Axc4nMJDgxr4cproHFeLQF67HDvCZ-o2scG3P-rUInfcnSH5oKeb/embed?start=false&loop=false&delayms=3000)
