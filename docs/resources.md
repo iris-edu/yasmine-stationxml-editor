@@ -3,22 +3,13 @@ layout: page
 title: Resources
 permalink: /resources/
 ---
-## Documentation
 
-- [StationXML Documentation (latest)](https://docs.fdsn.org/_/downloads/stationxml/en/latest/pdf/)
-- [GitHub Pages Basics](https://docs.github.com/categories/github-pages-basics/)
-- [Writing on GitHub](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
-- [Jekyll](https://jekyllrb.com/)
-- [GitHub Pages Editor](https://github.com/iris-edu/yasmine-stationxml-editor/edit/gh-pages/docs/index.md) 
-- [NRL Webservice](http://ds.iris.edu/ds/nrl/)
-
-## Source code
-
-- [Yasmine StationXML Editor GitHub](https://github.com/iris-edu/yasmine-stationxml-editor)
-- [Yasmine CLI GitHub](https://github.com/iris-edu/yasmine-stationxml-cli)
+- [Yasmine StationXML Editor Github](https://github.com/iris-edu/yasmine-stationxml-editor)
+- [Yasmine stationXML CLI GitHub](https://github.com/iris-edu/yasmine-stationxml-cli)
+- [StationXML documentation (latest)](https://docs.fdsn.org/_/downloads/stationxml/en/latest/pdf/)
 - [FDSN StationXML GitHub](https://github.com/FDSN/StationXML.git)
-
-## Downloads
-
-- [NRL.zip](http://ds.iris.edu/NRL/IRIS.zip)
-- [AROL.zip](https://gitlab.com/resif/arol/-/archive/master/arol-master.zip)
+- [NRL bundled](http://ds.iris.edu/NRL/IRIS.zip)
+- [NRL webservice](http://ds.iris.edu/ds/nrl/)
+- [NRL schema](https://ds.iris.edu/files/xml/station/fdsn-station-response-1.1.xsd)
+- [AROL bundled](https://gitlab.com/resif/arol/-/archive/master/arol-master.zip)
+- [SAGE/GAGE 2021 Short Course Slides]("https://docs.google.com/presentation/d/e/2PACX-1vRIzOPJ8qSMLAKw6uxw-mbcdz86Axc4nMJDgxr4cproHFeLQF67HDvCZ-o2scG3P-rUInfcnSH5oKeb/embed?start=false&loop=false&delayms=3000")

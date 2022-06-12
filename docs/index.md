@@ -25,6 +25,13 @@ layout: home
 
 ## Overview
 
-**Yasmine (Yet Another Station Metadata INformation Editor)** is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
+**Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 
-{% gist c08ee0f2726fd0e3909d %}
+Yasmine is a set of two independent Python-based applications:
+
+- The [Yasmine StationXML Editor](https://github.com/iris-edu/yasmine-stationxml-cli)a Graphical User Interface (GUI) designed to facilitate the creation and editing of geophysical station metadata in FDSN StationXML format
+- The [Yasmine StationXML CLI](https://github.com/iris-edu/yasmine-stationxml-cli) a Command Line Interface (CLI) designed to facilitate the batch editing of existing StationXML files
+
+It is the product of joint development between the Incorporated Research Institutions for Seismology (IRIS) and the French Seismological and Geodetic Network (Résif-Epos). Going forward, the maintenance and addition of new features will likewise be shared between the two organizations.
+
+As Yasmine is currrently released in *beta*, IRIS and Résif-Epos are interested in hearing about your experiences and issues using these tools. beta release trial to help identify areas needing enhancement so that we can ensure it operates with the utmost reliability. Also, while there is documentation provided, it is still in draft to be more user-friendly. 

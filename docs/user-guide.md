@@ -3,25 +3,22 @@ layout: page
 title: User Guide
 permalink: /user-guide/
 ---
-- [Seismic Instrumentation](#seismic-instrumentation)
-- [Instrument Response](#instrument-response)
+- [Seismic Networks](#seismic-networks)
 - [FDSN StationXML](#fdsn-stationxml)
-  - [Managing Metadata with Yasmine](#managing-metadata-with-yasmine)
+  - [Exercise: Managing StationXML with Yasmine](#exercise-managing-stationxml-with-yasmine)
 - [Levels of Response Detail](#levels-of-response-detail)
-  - [Creating Metadata with Yasmine](#creating-metadata-with-yasmine)
-- [Instrument Response Libraries](#instrument-response-libraries)
+  - [Instrument Response Libraries](#instrument-response-libraries)
+  - [Exercise: Create StationXML With Yasmine](#exercise-create-stationxml-with-yasmine)
 
 Before you begin, follow the [Installation](installation) instructions to get Yasmine up and running.
 
-## Seismic Instrumentation
+## Seismic Networks
 
----
+![Figure: An abstract representation of a modern seismic network](/yasmine-stationxml-editor/assets/images/from-instrument-to-data.drawio.png)
 
-<img src="/yasmine-stationxml-editor/assets/images/from-instrument-to-data.drawio.png"/>
+*Figure: An abstract representation of a modern seismic network*
 
-<em> Figure: An abstreact representation of a seismic network</em>
-
-Modern seismic networks are desinged to support the communication of ground motion data between analog sensors and digital computers. ocmmuniaground motion into digital machine-readable sequences to central archiving facilities for storage.
+Modern seismic networks are designed to support the communication of ground motion data between analog sensors and digital computers. ocmmuniaground motion into digital machine-readable sequences to central archiving facilities for storage.
 
 Each observation made by a senso
 Most seismic data is sent to central datacenters like the DMC for .
@@ -29,17 +26,9 @@ Seismic signals are measured, recorded, and transmitt
 
 Modern seismic networks are local, regional, and global in nature.
 
-## Instrument Response
-
-> "The fundamental problem of communication is that of reproducing at one point either exactly or approximately a messaage selected at another point."
-
-*Claude Shannon (1948)*
-
 Geophysical data are recorded by an instrument that imparts its own signature onto the data.
 
 ## FDSN StationXML
-
----
 
 ```xml
  <?xml version="1.0" encoding="UTF-8"?>
@@ -48,24 +37,19 @@ Geophysical data are recorded by an instrument that imparts its own signature on
     xsi:schemaLocation="http://www.fdsn.org/xml/station/1  http://www.fdsn.org/xml/station/fdsn-station-1.2.xsd" 
     schemaVersion="1.2">
 ```
+*Figure: StationXML v1.2 file declaration ([schema](https://www.fdsn.org/xml/station/fdsn-station-1.2.xsd))*
 
-<em>Figure: StationXML file declaration</em>
+[FDSN StationXML](http://www.fdsn.org/xml/station) is a standard XML format to represent geophysical metadata developed by the International Federation of Digital Seismograph Networks (FDSN) as a successor to [SEED 2.4](http://www.fdsn.org/publications.htm).
 
-[FDSN StationXML](http://www.fdsn.org/xml/station) is a standard XML format to represent geophysical metadata developed by the International Federation of Digital Seismograph Networks (FDSN) as a sucessor to [SEED 2.4](http://www.fdsn.org/publications.htm). The current version of [StationXML v1.2](https://docs.fdsn.org/projects/stationxml/en/latest/) is described here:
+The current version of [StationXML v1.2](https://docs.fdsn.org/projects/stationxml/en/latest/) and is recognized by Yasmine. Some organizations require rules to validate in addition to those defined by the FDSN. For this reason, StationXML sent to IRIS should be verified with the [StationXML Validator](http://github.com/iris-edu/stationxml-validator).
 
-> Namespace: <http://www.fdsn.org/xml/station/1><br/>
-> Schema: <https://www.fdsn.org/xml/station/fdsn-station-1.2.xsd>
+### Exercise: Managing StationXML with Yasmine
 
-### Managing Metadata with Yasmine
-
-The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files. Yasmine uses this version of the schema without applying additional organization-specific rules such as those required by IRIS and used by the [StationXML Validator](http://github.com/iris-edu/stationxml-validator).
-
-
-<img src="/yasmine-stationxml-editor/assets/images/xml-button.png" />
+The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files.
 
 <details>
 
-<summary>Exercise: Import XML</summary>
+<summary>Import XML</summary>
 
 <input type="checkbox" /> Select an existing StationXML file or fetch one from the IRIS [fdsnws-station](http://service.iris.edu/fdsnws/station/1) service:
 
@@ -79,7 +63,7 @@ The quickest way to become familiar with how to work with metadata in Yasmine is
 
 <details>
 
-   <summary>Exercise: Validate XML</summary>
+   <summary>Validate XML</summary>
 
 <input type="checkbox" /> From the `XML` tab, double-click a filename then `File -> Validate`
 
@@ -87,17 +71,15 @@ The quickest way to become familiar with how to work with metadata in Yasmine is
 
 <details>
 
-   <summary>Exercise: Extract XML</summary>
+   <summary>Extract XML</summary>
 
 <input type="checkbox" /> From the `User Library` tab, select `Create a new library` and provide a name
-
-<input type="checkbox" /> From the `XML` tab, double-click a filename and select a Network element then `Export -> Extract a selected network to user library`
 
 </details>
 
 <details>
 
-<summary>Exercise: Export XML</summary>
+<summary>Export XML</summary>
 
 <input type="checkbox" /> From the `XML` tab, highlight the filename then `Export as XML`
 
@@ -105,84 +87,65 @@ The quickest way to become familiar with how to work with metadata in Yasmine is
 
 ## Levels of Response Detail
 
----
+![Levels of StationXML metadata description](/yasmine-stationxml-editor/assets/images/response-level-details.drawio.png)
 
-<img src="/yasmine-stationxml-editor/assets/images/response-level-details.drawio.png"/>
+*Figure: Levels of StationXML metadata*
 
-<em>Figure: Levels of StationXML metadata</em>
+To understand how StationXML is organized, it is helpful to keep in mind the XML data model describes hierarchal relations where top-level elements are most general and the lower ones most specific. StationXML beginning with the FDSN StationXML declaration itself and adding increasingly more specific metadata at subsequent levels
 
-The XML data model is semistructured and describes relations heirarchically where top-level elements releate to lower ones and those at the bottom are most specific.
+### Instrument Response Libraries
 
-### Creating Metadata with Yasmine
+Instrument response libraries provide access metadata descriptions and schema object definition files for well-known Earth-science observation instruments such as sensors and digitizers
 
+[The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
+:  A comprehensive library of recommended nominal responses created by IRIS from documentation from and direct communication with the manufacturer and checked for validity
 
-It is helpful to keep the data model in constructing your own StationXML. Yasmine facilitates a top-down approach to the creation of StationXML, beginning with the FDSN StationXML declaration itself and adding increasingly more specific metadata at subsequent levels
+[The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
+: A new instrument response library under development by Résif containing a smaller albeit easier and faster set of descriptions than the NRL
+
+### Exercise: Create StationXML With Yasmine 
+
+Yasmine encourages a top-down approach when creating StationXML . A wizard is provided to step you though this process.
 
 <details>
-   <summary>Network</summary>
-</details>
 
-<details>
-   <summary>Station</summary>
-</details>
+   <summary>Step 1: Create a StationXML file</summary>
 
-<details>
-
-   <summary>Channel</summary>
-
-- Location code
-- Start date
-- End date
-- Latitude
-- Longitude
-- Elevation
-- Depth
+<input type="checkbox" /> From the `XML` tab, select `Create` then provide the name of the file in Yasmine and [FDSN StationXML](https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#fdsnstationxml-required) information
 
 </details>
 
 <details>
 
-   <summary>Response</summary>
+   <summary>Step 2. Add a Network</summary>
 
-    1. Sensors
-    2. Dataloggers
+<input type="checkbox" />Select `Inventory` and `Add -> Add a network using a wizard`. Provide [Network](https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#network-required) information and select `Next`
 
-To convert the analog signal of a seismometer into into a machine-readable
-digital signal, we use a Dataloggers, otherwise known as Digitizers orAnalog to Digital Converters (ADC).
+</details>
 
-    1. Select an Instrument Response Library
-        a. AROL, NRL or I don't need a response
-    2. Describe the response
-       a. Describe the Datalogger
-           - Manufacturer, Kinemetrics
-           - Model, e.g. Etna
-           - Pre-amplifier gain. e.g. 6db
-           - Sample rate, e.g. 1000 sps
-           - Final filter phase type, e.g. Linear Phase
-      B. Describe the Sensor
-         - Manufacturer, e.g. Streckeisen
-         - Model, e.g. STS-1
-         - Gain or samples per second
-      C. Response
-    3. Channel prefix and orientation
-    4. Channel, dip, azimuth
+<details>
+   <summary>Step 3: Add a Station</summary>
 
-## Instrument Response Libraries
+<input type="checkbox" />Provide [Station](https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#station) information and select `Next`
 
----
+</details>
 
-> Schema: <https://ds.iris.edu/files/xml/station/fdsn-station-response-1.1.xsd>
+<details>
 
-These dictionaries provide access to schema object definition files for well-known components that fall into these classes.
+   <summary>Step 4: Add a Channel</summary>
 
-1. [The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
+<input type="checkbox" /> Provide [Channel](https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#channel) information and select `Next`
 
-- A library of recommended nominal responses created by IRIS from docunentation or  direct communication with the manufacturer's documentation and checked validty
+</details>
 
-1. [The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
-   - Contains metadata descriptions of earth science observation instruments.
-   - A new instrument response library under development by Résif
-   - Easier, faster selection of instrument configurations
-   - Includes a smaller set of instruments
+<details>
+
+   <summary>Step 5: Add a Response</summary>
+
+<input type="checkbox" /> Provide [Response](https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#response) information and select `Next`
+
+<input type="checkbox" /> Provide remaining [Channel](https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#channel) information and select `Next`
+
+<input type="checkbox" /> Save the Network, Station, and Channel information to your User Library and select `Complete Wizard`
 
 </details>

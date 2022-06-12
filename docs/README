@@ -1,20 +1,20 @@
 # README
 
-The GitHub Pages site for Yasmine is located here:
-<https://iris-edu.github.io/yasmine-stationxml-editor/>
-
-
 ## Local Development
 
-Locally serving the GitHub Pages documentation:
-> cd docs && bundle install && 
-> bundle exec jekyll serve --livereload
+*Locally serving the GitHub Pages documentation:*
+> cd docs && bundle install && bundle exec jekyll serve --livereload
 
-Installing plugins:
+*Installing plugins:*
 > sudo gem install jekyll-mermaid
-
 > bundle add kramdown-syntax-coderay
 
-Visit:
+Endpoint: <http://127.0.0.1:4000/yasmine-stationxml-editor/>
 
-> <http://127.0.0.1:4000/yasmine-stationxml-editor/>
+## Resources
+- [GitHub Pages Basics](https://docs.github.com/categories/github-pages-basics/)
+- [Writing on GitHub](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax)
+- [Jekyll](https://jekyllrb.com/)
+- [GitHub Pages Editor](https://github.com/iris-edu/yasmine-stationxml-editor/edit/gh-pages/docs/index.md) 
+
+
