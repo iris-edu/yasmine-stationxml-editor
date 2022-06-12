@@ -16,17 +16,10 @@ Before you begin, follow the [Installation](installation) instructions to get Ya
 
 ![Figure: An abstract representation of a modern seismic network](/yasmine-stationxml-editor/assets/images/from-instrument-to-data.drawio.png)
 
-*Figure: An abstract representation of a modern seismic network*
+*Figure: Abstraction of modern seismic network*
 
-Modern seismic networks are designed to support the communication of ground motion data between analog sensors and digital computers. ocmmuniaground motion into digital machine-readable sequences to central archiving facilities for storage.
 
-Each observation made by a senso
-Most seismic data is sent to central datacenters like the DMC for .
-Seismic signals are measured, recorded, and transmitt
-
-Modern seismic networks are local, regional, and global in nature.
-
-Geophysical data are recorded by an instrument that imparts its own signature onto the data.
+**Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 
 ## FDSN StationXML
 
