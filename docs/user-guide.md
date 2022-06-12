@@ -5,7 +5,8 @@ permalink: /user-guide/
 ---
 - [FDSN StationXML](#fdsn-stationxml)
   - [Exercise: Managing StationXML with Yasmine](#exercise-managing-stationxml-with-yasmine)
-- [Describing Instrument Response](#describing-instrument-response)
+- [The Levels of Response Detail](#the-levels-of-response-detail)
+  - [Instrument Response Libraries](#instrument-response-libraries)
   - [Exercise: Create StationXML With Yasmine](#exercise-create-stationxml-with-yasmine)
 
 **Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
@@ -69,13 +70,15 @@ The quickest way to become familiar with how to work with metadata in Yasmine is
 
 </details>
 
-## Describing Instrument Response
+## The Levels of Response Detail
 
 ![Levels of StationXML metadata description](/yasmine-stationxml-editor/assets/images/response-level-details.drawio.png)
 
 *Figure: Levels of StationXML metadata*
 
 To understand how StationXML is organized, it is helpful to keep in mind the XML data model describes hierarchal relations where top-level elements are most general and the lower ones most specific. StationXML beginning with the FDSN StationXML declaration itself and adding increasingly more specific metadata at subsequent levels
+
+### Instrument Response Libraries
 
 ![Figure: An abstract representation of a modern seismic network](/yasmine-stationxml-editor/assets/images/from-instrument-to-data.drawio.png)
 
