@@ -8,10 +8,5 @@ permalink: /sage-gage-2022/
 
 **Location:** SAGE/GAGE Community Science Workshop, Short Course, June 13, 2022, Pittsburgh, PA
 
-<style>
-.responsive-wrap iframe{ max-width: 100%;}
-</style>
-<div class="responsive-wrap">
- <iframe src="https://docs.google.com/presentation/d/16xd9YAij1mHhpB8fKHG6ak7gRPGLLaHoXWjc5W7a7gA/edit?usp=sharing" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
-</div>
-<iframe src="/yasmine-stationxml-editor/assets/YASMINE_NRL_ShortCourse.pdf" frameborder="0" width="960" height="569" allowfullscreen="true" mozallowfullscreen="true" webkitallowfullscreen="true"></iframe>
+
+<iframe src="https://onedrive.live.com/embed?cid=5D4C77B885887534&amp;resid=5D4C77B885887534%2110296&amp;authkey=AKhHsnJgzYTSwRk&amp;em=2&amp;wdAr=1.7777777777777777" width="476px" height="288px" frameborder="0">This is an embedded <a target="_blank" href="https://office.com">Microsoft Office</a> presentation, powered by <a target="_blank" href="https://office.com/webapps">Office</a>.</iframe>
