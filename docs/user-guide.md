@@ -4,10 +4,9 @@ title: User Guide
 permalink: /user-guide/
 ---
 - [FDSN StationXML](#fdsn-stationxml)
-  - [Exercise: Manage Metadata With Yasmine](#exercise-manage-metadata-with-yasmine)
-  - [Exercise: Create StationXML With Yasmine](#exercise-create-stationxml-with-yasmine)
 - [Instrument Response](#instrument-response)
-  - [Exercise: Plot Instrument Response with Yasmine](#exercise-plot-instrument-response-with-yasmine)
+  - [Exercise: Create StationXML With Yasmine](#exercise-create-stationxml-with-yasmine)
+  - [Exercise: Manage Metadata With Yasmine](#exercise-manage-metadata-with-yasmine)
 
 **Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 
@@ -34,95 +33,33 @@ To understand how StationXML is organized, it is helpful to keep in mind the XML
 ```
 Figure: StationXML v1.2 file declaration ([schema](https://www.fdsn.org/xml/station/fdsn-station-1.2.xsd))
 
-### Exercise: Manage Metadata With Yasmine
+## Instrument Response
 
-The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files.
+Instrument response libraries provide access metadata descriptions and schema object definition files for well-known Earth-science observation instruments such as sensors and digitizers.
 
-<details><summary>Import XML</summary>
+[The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
+: A comprehensive library of recommended nominal 1. responses created by IRIS from documentation from and direct communication with the manufacturer and checked for validity
 
-   <table>
-      <tr>
-         <td>
-            <input type="checkbox" />
-            Choose an existing StationXML file or one from the IRIS <a href="http://service.iris.edu/fdsnws/station/1">fdsnws-station</a> service (e.g. <a href="https://service.iris.edu/fdsnws/station/1/query?net=UW&station=QARB&channel=HNE&location=01&level=channel&nodata=404">here</a>)
-         </td>
-      </tr>
-      <tr>
-         <td>
-            <input type="checkbox" />
-            From the <code>XML</code> tab, select <code>Import XML</code> then your file
-         </td>
-      </tr>
-   </table>
+[The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
+: A new instrument response library under development by Résif containing a smaller albeit easier and faster set of descriptions than the NRL
 
-</details>
+<figure>
+   <img alt="Figure: Communication in a Modern Seismic Network" src="/yasmine-stationxml-editor/assets/images/communication-in-a-modern-seismic-network.drawio.png" />
+   <figcaption>Figure: Communication in a Modern Seismic Network</figcaption>
+</figure>
 
-<details><summary>Validate XML</summary>
+### Exercise: Create StationXML With Yasmine
 
-   <table>
-      <tr>
-         <td>
-            <input type="checkbox" />
-            From the <code>XML</code> tab, double-click your filename then <code>File -> Validate</code>
-         </td>
-      </tr>
-      <tr>
-         <td>
-            <input type="checkbox" />
-            Bonus: Why won't <a href="https://service.iris.edu/fdsnws/station/1/query?net=XB&station=ELYSE&channel=MHU&level=response&nodata=404">this</a> file validate?
-         </td>
-      </tr>
-   </table>
+Yasmine provides a wizard to step you though the process from the top-down of creating StationXML from scratch.  
 
-</details>
 
-<details><summary>Create User Library</summary>
+<details><summary>Create User Library and XML</summary>
 
    <table>
       <td>    
          <input type="checkbox" />
          From the <code>User Library</code> tab, select <code>Create a new library</code> and provide a name
       </td>
-   </table>
-</details>
-
-<details><summary>Extract XML</summary>
-
-   <table>
-      <tr>
-         <td>
-            <input type="checkbox" />
-            From the <code>XML</code> tab, double-click your filename
-         </td>
-      </tr>
-      <tr>
-         <td>
-            <input type="checkbox" />
-            Select a Network and <code>Extract -> Extract a selected Network to user library</code>
-         </td>
-      </tr>
-   </table>
-
-</details>
-
-<details><summary>Export XML</summary>
-
-   <table>
-      <td>
-         <input type="checkbox" />
-         From the <code>XML</code> tab, highlight the filename then <code>Export as XML</code>
-      </td>
-   </table>
-
-</details>
-
-### Exercise: Create StationXML With Yasmine
-
-Yasmine provides a wizard to step you though the process from the top-down of creating StationXML from scratch.  
-
-<details><summary>Create XML</summary>
-
-   <table>
       <tr>
          <td>
             <input type="checkbox" />
@@ -130,7 +67,6 @@ Yasmine provides a wizard to step you though the process from the top-down of cr
          </td>
       </tr>
    </table>
-
 </details>
 
 <details><summary>Add a Network</summary>
@@ -189,12 +125,6 @@ Yasmine provides a wizard to step you though the process from the top-down of cr
             Provide remaining <a href="https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#channel">Channel</a> information and select <code>Next</code>
          </td>
       </tr>
-   </table>
-</details>
-
-<details><summary>Save to User Library</summary>
-
-   <table>
        <tr>
          <td>
           <input type="checkbox" />
@@ -202,58 +132,46 @@ Yasmine provides a wizard to step you though the process from the top-down of cr
          </td>
       </tr>
    </table>
-
-</details>
-
-## Instrument Response
-
-Instrument response libraries provide access metadata descriptions and schema object definition files for well-known Earth-science observation instruments such as sensors and digitizers.
-
-[The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
-: A comprehensive library of recommended nominal 1. responses created by IRIS from documentation from and direct communication with the manufacturer and checked for validity
-
-[The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
-: A new instrument response library under development by Résif containing a smaller albeit easier and faster set of descriptions than the NRL
-
-<figure>
-   <img alt="Figure: Communication in a Modern Seismic Network" src="/yasmine-stationxml-editor/assets/images/communication-in-a-modern-seismic-network.drawio.png" />
-   <figcaption>Figure: Communication in a Modern Seismic Network</figcaption>
-</figure>
-
-### Exercise: Plot Instrument Response with Yasmine
-
-<details><summary>Step 1:</summary>
-
-   <table>
-      <tr>
-         <td>
-            <input type="checkbox" />
-         </td>
-      </tr>
-   </table>
-
-</details>
-
-
-<details><summary>Step 2:</summary>
-
    
+</details>
+
+
+### Exercise: Manage Metadata With Yasmine
+
+The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files.
+
+<details><summary>Import XML</summary>
+
    <table>
       <tr>
          <td>
             <input type="checkbox" />
+            Choose an existing StationXML file or one from the IRIS <a href="http://service.iris.edu/fdsnws/station/1">fdsnws-station</a> service (e.g. <a href="https://service.iris.edu/fdsnws/station/1/query?net=UW&station=QARB&channel=HNE&location=01&level=channel&nodata=404">here</a>)
+         </td>
+      </tr>
+      <tr>
+         <td>
+            <input type="checkbox" />
+            From the <code>XML</code> tab, select <code>Import XML</code> then your file
          </td>
       </tr>
    </table>
 
 </details>
 
-<details><summary>Step 3:</summary>
+<details><summary>Validate XML</summary>
 
    <table>
       <tr>
          <td>
             <input type="checkbox" />
+            From the <code>XML</code> tab, double-click your filename then <code>File -> Validate</code>
+         </td>
+      </tr>
+      <tr>
+         <td>
+            <input type="checkbox" />
+            Bonus: Why won't <a href="https://service.iris.edu/fdsnws/station/1/query?net=XB&station=ELYSE&channel=MHU&level=response&nodata=404">this</a> file validate?
          </td>
       </tr>
    </table>
@@ -261,27 +179,33 @@ Instrument response libraries provide access metadata descriptions and schema ob
 </details>
 
 
-<details><summary>Step 4:</summary>
+<details><summary>Extract XML</summary>
 
-  
    <table>
       <tr>
          <td>
             <input type="checkbox" />
+            From the <code>XML</code> tab, double-click your filename
+         </td>
+      </tr>
+      <tr>
+         <td>
+            <input type="checkbox" />
+            Select a Network and <code>Extract -> Extract a selected Network to user library</code>
          </td>
       </tr>
    </table>
 
 </details>
 
-
-<details><summary>Step 5:</summary>
+<details><summary>Export XML</summary>
 
    <table>
-      <tr>
-         <td>
-            <input type="checkbox" />
-         </td>
+   <tr>
+      <td>
+         <input type="checkbox" />
+         From the <code>XML</code> tab, highlight the filename then <code>Export as XML</code>
+      </td>
       </tr>
    </table>
 
