@@ -106,6 +106,7 @@ DEPENDENCIES
   jekyll-feed (~> 0.12)
   jekyll-gist
   jekyll-sass-converter
+  kramdown-parser-gfm (~> 1.1)
   kramdown-syntax-coderay (~> 1.0)
   minima (~> 2.5)
   tzinfo (~> 1.2)

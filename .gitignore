@@ -14,3 +14,6 @@ vendor
 Gemfile.lock
 **/NOTES/**
 .jekyll-cache/*
+docs/SCRATCH
+SCRATCH
+.bundle/

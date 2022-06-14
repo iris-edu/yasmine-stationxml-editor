@@ -5,12 +5,12 @@ permalink: /user-guide/
 ---
 - [FDSN StationXML](#fdsn-stationxml)
 - [Instrument Response](#instrument-response)
-  - [Exercise: Create StationXML With Yasmine](#exercise-create-stationxml-with-yasmine)
-  - [Exercise: Manage Metadata With Yasmine](#exercise-manage-metadata-with-yasmine)
+- [Exercise: Create Metadata With Yasmine](#exercise-create-metadata-with-yasmine)
+- [Exercise: Manage StationXML With Yasmine](#exercise-manage-stationxml-with-yasmine)
 
-**Yasmine (Yet Another Station Metadata INformation Editor)** v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
+[Yasmine (Yet Another Station Metadata INformation Editor)](https://github.com/iris-edu/yasmine-stationxml-editor) v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 
-Before you begin, follow the [Installation](/yasmine-stationxml-editor/installation) instructions to get Yasmine up and running.
+Before you begin, follow the [Installation](/yasmine-stationxml-editor/installation) instructions to get Yasmine up and running. 
 
 ## FDSN StationXML
 
@@ -35,23 +35,31 @@ Figure: StationXML v1.2 file declaration ([schema](https://www.fdsn.org/xml/stat
 
 ## Instrument Response
 
-Instrument response libraries provide access metadata descriptions and schema object definition files for well-known Earth-science observation instruments such as sensors and digitizers.
-
-[The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
-: A comprehensive library of recommended nominal 1. responses created by IRIS from documentation from and direct communication with the manufacturer and checked for validity
-
-[The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
-: A new instrument response library under development by Résif containing a smaller albeit easier and faster set of descriptions than the NRL
-
 <figure>
    <img alt="Figure: Communication in a Modern Seismic Network" src="/yasmine-stationxml-editor/assets/images/communication-in-a-modern-seismic-network.drawio.png" />
    <figcaption>Figure: Communication in a Modern Seismic Network</figcaption>
 </figure>
 
-### Exercise: Create StationXML With Yasmine
+The physical hardware includes the geophysical equipment and communication medium by which the data is communicated form its source to destination:
+
+- a _sensor_ to measure ground motion as electrical voltage
+- a _digitizer_ (and _clock_) to quantize the continuous signal into discrete sequences of binary digits
+- a _station_ to transform the data into a form appropriate for transmission
+- a _channel_ including the _communication medium_ over which the data reaches the receiver
+
+Geophysicists use the term _instrument response_ to describe the unique signature the instrument imparts on the the observation. 
+
+Yasmine provides access to two libraries with metadata descriptions and schema object definitions for well-known Earth-science observation instruments such as sensors and digitizers:
+
+- [The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
+   : A comprehensive library of recommended nominal 1. responses created by IRIS from documentation from and direct communication with the manufacturer and checked for validity
+
+- [The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
+   : A new instrument response library under development by Résif containing a smaller albeit easier and faster set of descriptions than the NRL
+
+## Exercise: Create Metadata With Yasmine
 
 Yasmine provides a wizard to step you though the process from the top-down of creating StationXML from scratch.  
-
 
 <details><summary>Create User Library and XML</summary>
 
@@ -102,10 +110,12 @@ Yasmine provides a wizard to step you though the process from the top-down of cr
 <details><summary>Add Channels</summary>
 
    <table>
-      <td>
-         <input type="checkbox" />
-         Provide <a href="https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#channel">Channel</a> information and select <code>Next</code>
-      </td>
+      <tr>
+         <td>
+            <input type="checkbox" />
+            Provide <a href="https://docs.fdsn.org/projects/stationxml/en/latest/reference.html#channel">Channel</a> information and select <code>Next</code>
+         </td>
+      </tr>
    </table>
 
 </details>
@@ -136,7 +146,7 @@ Yasmine provides a wizard to step you though the process from the top-down of cr
 </details>
 
 
-### Exercise: Manage Metadata With Yasmine
+##  Exercise: Manage StationXML With Yasmine
 
 The quickest way to become familiar with how to work with metadata in Yasmine is to import existing StationXML files.
 
