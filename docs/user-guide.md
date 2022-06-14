@@ -47,7 +47,7 @@ The physical hardware includes the geophysical equipment and communication mediu
 - a _station_ to transform the data into a form appropriate for transmission
 - a _channel_ including the _communication medium_ over which the data reaches the receiver
 
-Geophysicists use the term _instrument response_ to describe the unique signature the instrument imparts on the the observation. 
+Geophysicists use the term _instrument response_ to describe the unique signature the instrument imparts on the observation.
 
 Yasmine provides access to two libraries with metadata descriptions and schema object definitions for well-known Earth-science observation instruments such as sensors and digitizers:
 
