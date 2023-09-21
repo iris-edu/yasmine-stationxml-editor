@@ -33,12 +33,16 @@
 FROM python:3.6.5-slim
 WORKDIR /opt/yasmine/src
 
-RUN apt-get update && apt-get install -y wget unzip gnupg gcc
+RUN mv /etc/apt/sources.list /etc/apt/sources.list.old
+RUN echo " deb http://deb.debian.org/debian buster main contrib non-free " > /etc/apt/sources.list 
+RUN echo " deb http://deb.debian.org/debian buster-backports main contrib non-free" >> /etc/apt/sources.list
+
+RUN apt-get update && apt-get install -y --allow-unauthenticated wget unzip gnupg gcc
 
 RUN wget -q -O - https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -
 RUN sh -c 'echo "deb http://dl.google.com/linux/chrome/deb/ stable main" >> /etc/apt/sources.list.d/google.list'
 RUN apt-get update
-RUN apt-get -y install google-chrome-stable
+RUN apt-get -y --allow-unauthenticated install google-chrome-stable
 
 RUN cd /tmp && \
     wget https://chromedriver.storage.googleapis.com/2.39/chromedriver_linux64.zip -O chromedriver.zip --progress=bar:force && \
