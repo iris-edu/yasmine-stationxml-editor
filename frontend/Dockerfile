@@ -30,7 +30,7 @@
 #
 # ****************************************************************************/
 
-FROM eclipse-temurin:8u332-b09-jre-focal
+FROM eclipse-temurin:8-jre
 
 RUN apt-get update
 RUN apt-get install -y wget unzip
