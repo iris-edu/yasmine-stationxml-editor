@@ -1,5 +1,25 @@
-Yasmine v2.1.0, 2019/12/06
+2023/10/06 : 4.1.1-beta
+ - Fix obsolete Docker images version
+ - Fix obsolete Python package requirements
+ - Rebuild changelog history
 
+2022/06/03 : 4.1.0-beta
+ - Missing default values in NRL wizard
+ - Remove unnecessary execution bit
+ - Fix installation for Apple M1 CPU
+ - Fix requirements and library versions for frontend
+ - Update and optimize Docker installation
+ - Updated README and documentation
+ - Correct numpy version requirement
+ - Correct link to AROL library
+
+2021/10/25 : 4.0.2
+ - Improvement of installation instructions
+
+2021/10/05 : 4.0.0
+ - First public release
+
+2019/12/06 : 2.1.0
 - 1. Extract specific elements from a stationXML file to populate the user libraries
 - 2. Use of a user-defined instrument atomic library
 - 3. Use of user-defined objects libraries (comments, geology, vault, units ....)
