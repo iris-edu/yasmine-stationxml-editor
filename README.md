@@ -8,8 +8,6 @@ Development and addition of new features is shared and agreed upon between IRIS 
 ## Known issues
 Even if we have performed a lot of tests, Yasmine is currently released in beta version and some bugs and limitations might still be found.
 
-Installation setup currently fails with `numpy-1.22.2`. It is recommended to use `numpy-1.21.5` instead.
-
 The new **AROL** (Atomic Response Objects Library) instrument response library, from Résif, is still in depoyment stage and only includes a limited set of instruments.
 Users are encouraged to use the **NRL** library, also available.
 
@@ -20,21 +18,12 @@ Please read the included .docx manual for instructions on how to get started usi
 
 If there is no internet connection, unzip the bundled NRL (IRIS.zip) in the `data` folder at the root of this repository.
 
-### Installation using Python
-1. Install Python 3.6.5 or greater
-2. Run `python -m venv env`
-3. Run `source env/bin/activate`
-4. Run `pip install --upgrade pip setuptools`
-5. Run `pip install YASMINE-x.x.tar.gz`
-6. Run `sudo yasmineapp.py syncdb upgrade heads`
-7. Run `sudo yasmineapp.py runserver`
-8. Visit <http://localhost:1841>
-
 ### Installation using Docker
 1. Install [Docker Compose](https://docs.docker.com/compose/install/) or [Docker Desktop](https://www.docker.com/products/docker-desktop)
-2. Run `docker-compose up` to start
-3. Visit <http://localhost:1841>
-4. Run `docker-compose down` to stop
+2. Run `docker-compose build` to compile and build the containers
+3. Run `docker-compose up` to start
+4. Visit <http://localhost:1841>
+5. Run `docker-compose down` to stop
 
 If you are running on an Apple M1 machine, uncomment the lines indicating the target platform in the `docker-compose.yml` file.
 
@@ -45,6 +34,6 @@ If you are running on an Apple M1 machine, uncomment the lines indicating the ta
 
 ## More information
 * [Incorporated Research Institutions for Seismology (IRIS) Data Services](https://ds.iris.edu)
-* [réseau sismologique et géodésique français (Résif)](https://www.resif.fr/)
+* [Réseau sismologique et géodésique français (Résif)](https://www.resif.fr/)
 * [FDSN StationXML Manual](https://stationxml-doc.readthedocs.io/en/release-1.1.0/)
 * [Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
