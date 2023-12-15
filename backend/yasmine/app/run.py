@@ -125,7 +125,7 @@ class Application(tornado.web.Application, ProcessMixin):
         self.scheduler.start()
         # start sync nrl job
         trigger = OrTrigger([
-            IntervalTrigger(minutes=10),
+            # IntervalTrigger(minutes=10),
             DateTrigger(run_date=datetime.now() + timedelta(seconds=10)),
             # CronTrigger(**NRL_CRON)
         ])
