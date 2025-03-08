@@ -115,7 +115,7 @@ class NrlHelper(BaseHelper):
     @property
     def nrl(self):
         if self._nrl is None:
-            self._nrl = NRL(self.content_folder)
+            self._nrl = NRL(os.path.join(self.content_folder,'NRL'))
         return self._nrl
 
     @nrl.setter

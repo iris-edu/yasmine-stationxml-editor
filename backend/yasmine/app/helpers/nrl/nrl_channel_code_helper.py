@@ -45,7 +45,7 @@ class NrlChannelCodeHelper:
 
         sample_rate = None
         if datalogger:
-            sample_rate_ptr = re.search('([0-9]*\.?[0-9]+)\s+sps', datalogger)
+            sample_rate_ptr = re.search(r'([0-9]*\.?[0-9]+)\s+Hz', datalogger)
             if sample_rate_ptr and sample_rate_ptr[1]:
                 sample_rate = float(sample_rate_ptr[1])
 
