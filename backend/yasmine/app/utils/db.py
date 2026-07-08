@@ -58,7 +58,7 @@ def get_database():
     from yasmine.app.settings import DB_CONNECTION
     engine = create_engine(DB_CONNECTION, isolation_level="SERIALIZABLE", connect_args={'timeout': 60})
     models.init_db(engine)
-    return scoped_session(sessionmaker(bind=engine, autocommit=True, autoflush=True))
+    return scoped_session(sessionmaker(bind=engine, autoflush=True))
 
 
 def syncdb(argv):

@@ -60,7 +60,11 @@ class AsyncThreadMixin(object):
 
     @run_on_executor
     def async_call(self, func, *args, **kwargs):
-        return func(*args, **kwargs)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if hasattr(self, 'application') and hasattr(self.application, 'db'):
+                self.application.db.remove()
 
     def async_get(self, *args, **kwargs):
         raise Exception("Not implemented")
