@@ -32,6 +32,7 @@
 
 
 import os
+from contextlib import contextmanager
 
 from sqlalchemy import event
 from sqlalchemy.engine import Engine
@@ -52,6 +53,21 @@ def set_sqlite_pragma(dbapi_connection, *_):
     cursor.execute("PRAGMA TEMP_STORE=MEMORY")
     cursor.execute("PRAGMA cache_size=100000")
     cursor.close()
+
+
+@contextmanager
+def db_transaction(session):
+    """Commit unit-of-work compatible with SQLAlchemy 2.x autobegin.
+
+    Session.begin() raises InvalidRequestError when a transaction was already
+    started by earlier queries on the same session. Prefer this helper.
+    """
+    try:
+        yield session
+        session.commit()
+    except Exception:
+        session.rollback()
+        raise
 
 
 def get_database():

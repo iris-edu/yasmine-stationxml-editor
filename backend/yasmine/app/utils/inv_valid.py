@@ -34,8 +34,8 @@ from obspy.core.inventory.util import _is_valid_uri
 from yasmine.app.enums.xml_error import XmlErrorEnum
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.enums.xml_node import XmlNodeEnum, XmlNodeAttrEnum
-from datetime import datetime, date
-from yasmine.app.utils.date import strptime
+from datetime import date, datetime
+from yasmine.app.utils.date import strptime, get_utcnow_naive
 from yasmine.app.settings import DATE_FORMAT_SYSTEM
 
 
@@ -157,7 +157,7 @@ class UTCDateRequired(ValidateBase):
                     value = strptime(value, DATE_FORMAT_SYSTEM)
                 except Exception:
                     return UTCDateRequired.WRONG_FORMAT
-            if value > datetime.utcnow():
+            if value > get_utcnow_naive():
                 return UTCDateRequired.MESSSAGE_MAX % self.attr_name
         return True
 
@@ -431,7 +431,7 @@ class ValidateInventory(HandlerMixin):
 
     def run(self):
         errors = []
-        utc_now = datetime.utcnow()
+        utc_now = get_utcnow_naive()
         for network in self.inv.networks:
             if self.check_levele_is_active(network, utc_now):
                 network_prefix = network.code if network.code else "undefined"

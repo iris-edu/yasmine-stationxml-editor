@@ -38,6 +38,7 @@ import unittest
 from selenium import webdriver
 from selenium.common.exceptions import TimeoutException
 from selenium.webdriver.common.action_chains import ActionChains
+from selenium.webdriver.common.by import By
 from selenium.webdriver.support.abstract_event_listener import AbstractEventListener
 from selenium.webdriver.support.event_firing_webdriver import EventFiringWebDriver
 from selenium.webdriver.support.wait import WebDriverWait
@@ -67,7 +68,7 @@ class SeletiounTestMixin(unittest.TestCase):
 #         options.add_argument('headless')
 #         options.add_argument("--no-sandbox")
 #         options.add_argument("--disable-dev-shm-usage")
-#         self.driver = EventFiringWebDriver(webdriver.Chrome(chrome_options=options), ScreenshotListener())
+#         self.driver = EventFiringWebDriver(webdriver.Chrome(options=options), ScreenshotListener())
 #         self.driver.set_page_load_timeout(10)
 #         self.driver.set_script_timeout(10)
 #         self.driver.maximize_window()
@@ -91,13 +92,13 @@ class SeletiounTestMixin(unittest.TestCase):
         self.wait_js("!Ext.getBody().isMasked()", 'Loading takes too much time.', silent=silent)
 
     def click_by_id(self, dom_id):
-        element = self.driver.find_element_by_id(dom_id)
+        element = self.driver.find_element(By.ID, dom_id)
         builder = ActionChains(self.driver)
         builder.move_to_element(element).click(element).perform()
 
     def click_component(self, query):
         cmp_id = self.driver.execute_script("return %s.id" % query)
-        self.driver.find_element_by_id(cmp_id).click()
+        self.driver.find_element(By.ID, cmp_id).click()
 
     def get_host(self):
         return "http://127.0.0.1:%s" % TORNADO_PORT

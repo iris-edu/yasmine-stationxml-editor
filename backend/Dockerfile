@@ -32,25 +32,19 @@
 
 # Python 3.11: ObsPy and other deps rely on pkg_resources (setuptools). Python 3.12+
 # no longer bundles it by default, causing ModuleNotFoundError at runtime.
+#
+# Chrome/ChromeDriver are intentionally omitted: the app runtime does not need them.
+# GUI selenium tests (yasmine.app.tests.gui) require a separate test image/host with
+# a matching browser if re-enabled.
 FROM python:3.11-slim
 WORKDIR /opt/yasmine/src
 
-RUN apt-get update && apt-get install -y wget unzip gnupg gcc
-
-RUN wget -q -O -  https://dl.google.com/linux/linux_signing_key.pub | gpg --dearmor | tee /usr/share/keyrings/google-chrome.gpg > /dev/null
-RUN echo deb [arch=amd64 signed-by=/usr/share/keyrings/google-chrome.gpg] http://dl.google.com/linux/chrome/deb/ stable main | tee /etc/apt/sources.list.d/google-chrome.list
-RUN apt-get update
-RUN apt-get -y install google-chrome-stable
-
-RUN cd /tmp && \
-    wget https://chromedriver.storage.googleapis.com/2.39/chromedriver_linux64.zip -O chromedriver.zip --progress=bar:force && \
-    mkdir /opt/chromedriver && unzip -q -p chromedriver.zip > /opt/chromedriver/chromedriver && \
-    ln -s /opt/chromedriver/chromedriver /usr/local/bin/chromedriver && \
-    rm chromedriver.zip && \
-    chmod +x /opt/chromedriver/chromedriver
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc && \
+    rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --upgrade pip && \
+RUN pip install --upgrade pip setuptools && \
     pip install -r requirements.txt
 COPY . .
 CMD python yasmineapp.py syncdb upgrade heads ; python yasmineapp.py runserver --debug

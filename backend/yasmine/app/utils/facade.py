@@ -31,7 +31,7 @@
 # ****************************************************************************/
 
 
-from yasmine.app.utils.db import get_database
+from yasmine.app.utils.db import get_database, db_transaction
 from yasmine.app.models import ConfigModel
 from yasmine.app.utils.config import ConfigDict
 from obspy.clients.nrl.client import NRL
@@ -74,7 +74,7 @@ class ProcessMixin(DbMixin, NrlMixin):
         return self.__config__
 
     def update_config(self, group, name, value):
-        with self.db.begin():
+        with db_transaction(self.db):
             var_type = type(value).__name__
             instance = self.db.query(ConfigModel).filter(ConfigModel.group == group, ConfigModel.name == name).first()
             if not instance:

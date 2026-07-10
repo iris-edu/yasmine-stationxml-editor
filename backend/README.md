@@ -2,7 +2,7 @@
 If GUI is required to be used, please see `../frontend/README.md` before using backend
 
 ### Using python virtual environment
-1. Install Python 3.6.5+
+1. Install Python 3.11 (supported: 3.9–3.11; 3.12+ is not recommended yet)
 2. Run `python -m venv env`
 3. Run `source env/bin/activate`
 4. Run `pip install --upgrade pip setuptools`

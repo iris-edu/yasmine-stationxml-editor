@@ -35,19 +35,24 @@ from yasmine.app.models import ConfigModel
 from yasmine.app.models import XmlNodeAttrRelationModel
 from sqlalchemy.orm import joinedload
 
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.inv_valid import VALIDATION_RULES, ValueRequired
 
 
 class ConfigHandler(AsyncThreadMixin, BaseHandler):
-    def async_get(self, db_id, **__):
-        data = {'id': int(db_id)}
+    def async_get(self, db_id=None, **__):
+        try:
+            cfg_id = int(db_id) if db_id not in (None, '') else 0
+        except (TypeError, ValueError):
+            cfg_id = 0
+        data = {'id': cfg_id}
         for item in self.db.query(ConfigModel).all():
             data['%s__%s' % (item.group, item.name)] = item.value_obj
         return data
 
     def async_put(self, *_, **__):
         request_params = self.request_params
-        with self.db.begin():
+        with db_transaction(self.db):
             for key, value in request_params.items():
                 if key not in ['id']:
                     group, name = key.split('__')

@@ -39,6 +39,7 @@ from yasmine.app.enums.xml_node import XmlNodeEnum, XmlNodeAttrEnum
 from yasmine.app.models import XmlModel, XmlNodeInstModel, XmlNodeAttrValModel, UserLibraryModel, XmlNodeAttrModel
 from yasmine.app.services.node_service import NodeService
 from yasmine.app.tests.integration.utils.integration_util import migrate_db, remove_db, get_file_path
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import ProcessMixin
 from yasmine.app.utils.imp_exp import ImportStationXml
 
@@ -76,7 +77,7 @@ class DefaultChannelCreationTest(unittest.TestCase, ProcessMixin, xmlunittest.Xm
 
     def test_creation_channel_default_for_library(self):
         library = UserLibraryModel(name='test_library')
-        with self.db.begin():
+        with db_transaction(self.db):
             self.db.add(library)
         node_service = NodeService(self)
         station_id = node_service.create_default_node_for_library(library.id, XmlNodeEnum.STATION, None)
@@ -99,7 +100,7 @@ class DefaultChannelCreationTest(unittest.TestCase, ProcessMixin, xmlunittest.Xm
         self.assertEqual(station_elevation, channel_elevation)
 
     def _update_attr_value(self, node_id, attr_name, value):
-        with self.db.begin():
+        with db_transaction(self.db):
             attr_value = self.db.query(XmlNodeAttrValModel) \
                 .join(XmlNodeAttrValModel.attr) \
                 .options(joinedload(XmlNodeAttrValModel.attr)) \
@@ -117,7 +118,7 @@ class DefaultChannelCreationTest(unittest.TestCase, ProcessMixin, xmlunittest.Xm
             return ImportStationXml(file_name, f, self).run()
 
     def tearDown(self):
-        with self.db.begin():
+        with db_transaction(self.db):
             self.db.query(XmlModel).delete()
 
     @classmethod

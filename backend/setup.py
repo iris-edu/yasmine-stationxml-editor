@@ -50,11 +50,15 @@ setup(
     description='',
     scripts=['yasmineapp.py'],
     install_requires=requires,
+    python_requires='>=3.9,<3.12',
     classifiers=[
         'Environment :: Web Environment',
         'Operating System :: OS Independent',
         'Programming Language :: Python',
-        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
+        'Programming Language :: Python :: 3.11',
         'Topic :: Internet :: WWW/HTTP',
         'Topic :: Internet :: WWW/HTTP :: Dynamic Content'
     ]

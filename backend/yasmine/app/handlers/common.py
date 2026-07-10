@@ -35,6 +35,7 @@
 import os
 
 from tornado.template import Loader
+from tornado.web import HTTPError
 
 from yasmine.app.handlers.base import AsyncThreadMixin, BaseHandler
 from yasmine.app.settings import TEMPLATES_DIR
@@ -53,5 +54,11 @@ class HelpHandler(AsyncThreadMixin, BaseHandler):
     SUPPORTED_METHODS = ['POST', 'GET']
 
     def async_get(self, key, *_, **__):
-        loader = Loader(os.path.join(TEMPLATES_DIR, 'help'))
-        return {'key': key, 'content': loader.load("%s.html" % key).generate().decode("utf-8")}
+        if not key:
+            raise HTTPError(404, reason='Help key is required')
+        help_dir = os.path.join(TEMPLATES_DIR, 'help')
+        template_name = "%s.html" % key
+        if not os.path.isfile(os.path.join(help_dir, template_name)):
+            raise HTTPError(404, reason="Help page '%s' not found" % key)
+        loader = Loader(help_dir)
+        return {'key': key, 'content': loader.load(template_name).generate().decode("utf-8")}

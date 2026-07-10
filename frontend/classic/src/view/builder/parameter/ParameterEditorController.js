@@ -126,10 +126,20 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditorController', {
     yasmine.utils.HelpUtil.helpMe(`parameter_${nodeTypeId}_${record.get('name')}`, `${nodeTypeString} ${record.get('name')}`);
   },
   onMaximizeClick: function () {
-    if (this.getView().maximized) {
-      this.getView().restore();
+    var win = this.getView();
+    if (win.maximized) {
+      win.restore();
+      if (!win._initialSizeApplied) {
+        win._initialSizeApplied = true;
+      }
+      var viewSize = Ext.getBody().getViewSize();
+      win.setSize(
+        Math.min(1000, Math.floor(viewSize.width * 0.85)),
+        Math.min(700, Math.floor(viewSize.height * 0.8))
+      );
+      win.center();
     } else {
-      this.getView().maximize();
+      win.maximize();
     }
   }
 });

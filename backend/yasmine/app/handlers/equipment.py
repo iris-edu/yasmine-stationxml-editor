@@ -74,10 +74,10 @@ class EquipmentMixin(object):
         if sensor_keys and len(sensor_keys) > 0 and datalogger_keys and len(datalogger_keys) > 0:
             response_attr = response_attr or self.recreate_attr(node_inst, XmlNodeAttrEnum.RESPONSE)
             response_attr.value_obj = helper.get_channel_response_obj(sensor_keys, datalogger_keys)
-            decimation_input_sample_rate = response_attr.value_obj.response_stages[-1].decimation_input_sample_rate
-            decimation_factor = response_attr.value_obj.response_stages[-1].decimation_factor
-            sample_rate_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SAMPLE_RATE)
-            sample_rate_attr.value_obj = decimation_input_sample_rate / decimation_factor
+            sample_rate = self._sample_rate_from_response(response_attr.value_obj)
+            if sample_rate is not None:
+                sample_rate_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SAMPLE_RATE)
+                sample_rate_attr.value_obj = sample_rate
 
         return sensor_attr, datalogger_attr, sample_rate_attr, response_attr
 
@@ -102,10 +102,21 @@ class EquipmentMixin(object):
         response_attr.value_obj = helper.get_channel_response_obj(instconfig, source=source)
 
         sample_rate_attr = None
-        if response_attr.value_obj and response_attr.value_obj.response_stages:
-            last = response_attr.value_obj.response_stages[-1]
-            if last.decimation_factor and last.decimation_factor != 0:
-                sample_rate_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SAMPLE_RATE)
-                sample_rate_attr.value_obj = last.decimation_input_sample_rate / last.decimation_factor
+        sample_rate = self._sample_rate_from_response(response_attr.value_obj)
+        if sample_rate is not None:
+            sample_rate_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SAMPLE_RATE)
+            sample_rate_attr.value_obj = sample_rate
 
         return sensor_attr, datalogger_attr, sample_rate_attr, response_attr
+
+    @staticmethod
+    def _sample_rate_from_response(response):
+        """Derive output sample rate from last stage; None if missing/unsafe."""
+        if not response or not getattr(response, 'response_stages', None):
+            return None
+        last = response.response_stages[-1]
+        factor = getattr(last, 'decimation_factor', None)
+        input_rate = getattr(last, 'decimation_input_sample_rate', None)
+        if factor in (None, 0) or input_rate is None:
+            return None
+        return input_rate / factor

@@ -39,7 +39,7 @@ Run the following commands and visit <http://localhost:1841> when the applicatio
 
 #### With Python
 
-Ensure you have [Python](https://www.python.org/downloads/) 3.6.5 or greater installed:
+Ensure you have [Python](https://www.python.org/downloads/) 3.11 installed (supported: 3.9–3.11; 3.12+ is not recommended yet):
 
 ```bash
  python --version

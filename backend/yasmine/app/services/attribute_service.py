@@ -50,8 +50,8 @@ from yasmine.app.utils.imp_exp import ConvertToInventory
 class AttributeService(HandlerMixin, EquipmentMixin):
     def create_attribute(self, attribute_id, node_id, value, spread_to_channels):
         attr_model = XmlNodeAttrValModel()
-        attr_model.node_inst = self.db.query(XmlNodeInstModel).get(node_id)
-        attr_model.attr = self.db.query(XmlNodeAttrModel).get(attribute_id)
+        attr_model.node_inst = self.db.get(XmlNodeInstModel, node_id)
+        attr_model.attr = self.db.get(XmlNodeAttrModel, attribute_id)
 
         self._update_attribute_value(attr_model, value)
         self._update_node_shortcuts(attr_model, value)
@@ -73,7 +73,7 @@ class AttributeService(HandlerMixin, EquipmentMixin):
         XmlService(self).update_timestamp(attr_model.node_inst.xml_id)
 
     def delete_attribute(self, db_id):
-        attr_model = self.db.query(XmlNodeAttrValModel).get(db_id)
+        attr_model = self.db.get(XmlNodeAttrValModel, db_id)
         xml_id = attr_model.node_inst.xml_id
         self._update_node_shortcuts(attr_model, None)
 

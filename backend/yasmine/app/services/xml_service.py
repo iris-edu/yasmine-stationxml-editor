@@ -36,8 +36,8 @@ import os
 from yasmine.app.models import XmlModel
 from yasmine.app.settings import TMP_ROOT
 from yasmine.app.utils.facade import HandlerMixin
-from datetime import datetime
 from tornado.web import HTTPError
+from yasmine.app.utils.date import get_utcnow_naive
 from yasmine.app.utils.imp_exp import ConvertToInventory
 from slugify import slugify
 
@@ -46,7 +46,7 @@ class XmlService(HandlerMixin):
     def update_timestamp(self, xml_id):
         self.db.query(XmlModel) \
             .filter(XmlModel.id == xml_id) \
-            .update({'updated_at': datetime.utcnow()})
+            .update({'updated_at': get_utcnow_naive()})
 
     def validate(self, xml_id):
         try:
@@ -55,7 +55,7 @@ class XmlService(HandlerMixin):
             raise HTTPError(reason="Unable to build XML: '%s'" % str(e))
 
         errors = []
-        xml = self.db.query(XmlModel).get(xml_id)
+        xml = self.db.get(XmlModel, xml_id)
         file = os.path.join(TMP_ROOT, f"{slugify(xml.name)}_{xml_id}.xml")
         if os.path.exists(file):
             os.remove(file)

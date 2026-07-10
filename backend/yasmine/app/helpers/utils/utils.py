@@ -39,16 +39,26 @@ import numpy as np
 from yasmine.app.utils.response_plot import plot_polynomial_resp, get_polynomial_resp_csv
 
 
+def _sample_rate_from_response(response):
+    """Derive sampling rate from last response stage; None if unavailable."""
+    stages = getattr(response, 'response_stages', None) or []
+    if not stages:
+        return None
+    last = stages[-1]
+    factor = getattr(last, 'decimation_factor', None)
+    input_rate = getattr(last, 'decimation_input_sample_rate', None)
+    if factor in (None, 0) or input_rate is None:
+        return None
+    return input_rate / factor
+
+
 class ChannelUtils:
 
     @staticmethod
     def create_response_csv(response, folder, file_name, min_frequency=0.001, max_frequency=None, fstep=0.1):
         if response.instrument_polynomial is not None:
             return get_polynomial_resp_csv(response, folder, file_name)
-        sampling_rate = None
-        last_stage = response.response_stages[-1]
-        if last_stage.decimation_factor != 0:
-            sampling_rate = last_stage.decimation_input_sample_rate / last_stage.decimation_factor
+        sampling_rate = _sample_rate_from_response(response)
 
         # If no max_frequency given, calc response up to fnyq = sampling_rate/2
         # else: shift sampling_rate so that fNyq = max_frequency
@@ -98,10 +108,7 @@ class ChannelUtils:
         if response.instrument_polynomial is not None:
             # MTH: this label is not propagating to plot:
             return plot_polynomial_resp(response, label='Polynomial Response', axes=None, folder=folder, outfile=file_name)
-        sampling_rate = None
-        last_stage = response.response_stages[-1]
-        if last_stage.decimation_factor != 0:
-            sampling_rate = last_stage.decimation_input_sample_rate / last_stage.decimation_factor
+        sampling_rate = _sample_rate_from_response(response)
 
         if max_frequency:
             sampling_rate = 2 * max_frequency
@@ -142,10 +149,7 @@ class ChannelUtils:
         sanitized_file_name = file_name.replace('/', '_').replace('\\', '_') + '.png'
         file_path = os.path.join(folder, f'{sanitized_file_name}')
 
-        sampling_rate = None
-        last_stage = resp1.response_stages[-1]
-        if last_stage.decimation_factor != 0:
-            sampling_rate = last_stage.decimation_input_sample_rate / last_stage.decimation_factor
+        sampling_rate = _sample_rate_from_response(resp1)
 
         if max_frequency:
             sampling_rate = 2 * max_frequency
