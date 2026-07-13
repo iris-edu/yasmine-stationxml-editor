@@ -48,6 +48,7 @@ from yasmine.app.services.node_service import NodeService
 from yasmine.app.services.xml_service import XmlService
 from yasmine.app.utils.imp_exp import ConvertToInventory
 from yasmine.app.utils.inv_valid import ValidateInventory, VALIDATION_RULES
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.response_plot import polynomial_or_polezero_response
 from yasmine.app.utils.ujson import json_load
 
@@ -219,7 +220,8 @@ class XmlNodeAttrHandler(EquipmentMixin, ExtJsHandler):
             return {'success': False, 'data': err_msg, 'message': err_msg}
 
     def async_delete(self, db_id, **__):
-        AttributeService(self).delete_attribute(db_id)
+        with db_transaction(self.db):
+            AttributeService(self).delete_attribute(db_id)
         return {'success': True}
 
 

@@ -14,7 +14,6 @@ from xmljson import abdera
 
 from yasmine.app.enums.library import LibraryTypeEnum
 from yasmine.app.helpers.library_helper_factory import LibraryHelperFactory
-from yasmine.app.services.attribute_service import AttributeService
 from yasmine.app.utils.imp_exp import ConvertToInventory
 
 
@@ -91,18 +90,42 @@ def _minimal_station_xml(response_xml):
 </FDSNStationXML>'''
 
 
+def merge_response_into_station_xml(response_xml, station_xml):
+    """Replace or insert a Response element in a StationXML document string."""
+    resp_start = station_xml.find('<Response>')
+    if resp_start >= 0:
+        resp_end = station_xml.find('</Response>') + len('</Response>')
+        return station_xml[:resp_start] + response_xml + station_xml[resp_end:]
+    channel_end = station_xml.rfind('</Channel>')
+    if channel_end < 0:
+        raise ValueError('No Channel element in station XML')
+    return station_xml[:channel_end] + response_xml + station_xml[channel_end:]
+
+
+def get_updated_response_obj(response_xml, station_xml):
+    """Parse merged StationXML and return the channel Response object."""
+    station_xml = merge_response_into_station_xml(response_xml, station_xml)
+    station_xml_binary = io.BytesIO(station_xml.encode('utf-8'))
+    inv = read_inventory(station_xml_binary)
+    for network in inv.networks:
+        for station in network.stations:
+            for channel in station.channels:
+                if hasattr(channel, 'response'):
+                    return getattr(channel, 'response')
+
+
 def response_tree_to_obj(response_tree):
     """Parse tree-editor JSON into an ObsPy Response object."""
     response_xml = prepare_response_json_as_xml(response_tree)
     station_xml = _minimal_station_xml(response_xml)
-    return AttributeService.get_updated_response_obj(response_xml, station_xml)
+    return get_updated_response_obj(response_xml, station_xml)
 
 
 def response_json_to_obj(response_json, node_inst_id, handler):
     """Parse tree-editor JSON into an ObsPy Response object using a channel context."""
     response_xml = prepare_response_json_as_xml(response_json)
     station_xml = ConvertToInventory(None, handler).get_station_xml_for_channel(node_inst_id)
-    return AttributeService.get_updated_response_obj(response_xml, station_xml)
+    return get_updated_response_obj(response_xml, station_xml)
 
 
 def load_response_for_node(node_inst_id, handler, response_json=None):

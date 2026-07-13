@@ -34,6 +34,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
   onSelectorTabChange: function (tabPanel, newTab) {
     this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(newTab));
     yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+    yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(this.getViewModel());
   },
 
   onSensorStoreBeforeLoad: function (store, operation) {
@@ -912,18 +913,20 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
 
   fillRecord: function () {
     let vm = this.getViewModel();
+    let record = yasmine.utils.ResponseRecalculateUtil.getRecordFromContext(vm);
+    if (!record) {
+      return;
+    }
     let sensorInstconfig = vm.get('sensorInstconfig');
     let dataloggerInstconfig = vm.get('dataloggerInstconfig');
     if (!sensorInstconfig || !dataloggerInstconfig) return;
 
-    let record = vm.get('record') || this.getView().up().lookupViewModel().get('record');
-    if (record) {
-      let instconfig = sensorInstconfig + ':' + dataloggerInstconfig;
-      let sensorSource = vm.get('sensorSource');
-      let dataloggerSource = vm.get('dataloggerSource');
-      let source = (sensorSource && sensorSource === dataloggerSource) ? sensorSource : (sensorSource || dataloggerSource);
-      record.set('value', { libraryType: 'nrlv2_online', instconfig: instconfig, source: source || undefined });
-    }
+    let instconfig = sensorInstconfig + ':' + dataloggerInstconfig;
+    let sensorSource = vm.get('sensorSource');
+    let dataloggerSource = vm.get('dataloggerSource');
+    let source = (sensorSource && sensorSource === dataloggerSource) ? sensorSource : (sensorSource || dataloggerSource);
+    let value = { libraryType: 'nrlv2_online', instconfig: instconfig, source: source || undefined };
+    record.set('value', yasmine.utils.ResponseRecalculateUtil.withRecalculateFlag(value, vm));
   },
 
   isDataloggerCompleted: function () {
@@ -970,6 +973,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     if (!node || !node.isLeaf()) {
       Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', false);
       yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(vm);
+      yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(vm);
       return;
     }
 
@@ -1030,6 +1034,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
           vm.set('responseTree', null);
           Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', true);
           yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(vm);
+          yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(vm);
         } else {
           vm.set('channelResponseImageUrl', null);
           vm.set('channelResponseCsvUrl', null);

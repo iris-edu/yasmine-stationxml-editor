@@ -52,17 +52,23 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
   onSelectorTabChange: function (tabPanel, newTab) {
     this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(newTab));
     yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+    yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(this.getViewModel());
   },
 
   fillRecord: function () {
-    let sensorKeys = this.getViewModel().get('sensorKeys');
-    let dataloggerKeys = this.getViewModel().get('dataloggerKeys');
+    let vm = this.getViewModel();
+    let record = yasmine.utils.ResponseRecalculateUtil.getRecordFromContext(vm);
+    if (!record) {
+      return;
+    }
+    let sensorKeys = vm.get('sensorKeys');
+    let dataloggerKeys = vm.get('dataloggerKeys');
     if (!sensorKeys || !dataloggerKeys) {
       return;
     }
 
-    let record = this.getViewModel().get('record');
-    record.set('value', {libraryType: 'nrl', sensorKeys, dataloggerKeys});
+    let value = { libraryType: 'nrl', sensorKeys, dataloggerKeys };
+    record.set('value', yasmine.utils.ResponseRecalculateUtil.withRecalculateFlag(value, vm));
   },
   isDataloggerCompleted: function () {
     return !!this.getViewModel().get('dataloggerPreview');
@@ -113,6 +119,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
     if (!node.isLeaf()) {
       Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', false);
       yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+      yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(this.getViewModel());
       return;
     }
     this.setKeys(node, keysProperty);
@@ -176,6 +183,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
           });
         }
         yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(that.getViewModel());
+        yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(that.getViewModel());
       }
     });
   },

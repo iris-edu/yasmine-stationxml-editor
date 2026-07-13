@@ -52,19 +52,25 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
   onSelectorTabChange: function (tabPanel, newTab) {
     this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(newTab));
     yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+    yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(this.getViewModel());
   },
 
   fillRecord: function () {
-    let dataloggerCompleted = this.getViewModel().get('dataloggerCompleted');
-    let sensorCompleted = this.getViewModel().get('sensorCompleted');
+    let vm = this.getViewModel();
+    let record = yasmine.utils.ResponseRecalculateUtil.getRecordFromContext(vm);
+    if (!record) {
+      return;
+    }
+    let dataloggerCompleted = vm.get('dataloggerCompleted');
+    let sensorCompleted = vm.get('sensorCompleted');
     if (!dataloggerCompleted || !sensorCompleted) {
       return;
     }
 
-    let record = this.getViewModel().get('record');
-    let sensorKeys = this.getViewModel().get('sensor').selectedFiles;
-    let dataloggerKeys = this.getViewModel().get('datalogger').selectedFiles;
-    record.set('value', {libraryType: 'arol', sensorKeys, dataloggerKeys});
+    let sensorKeys = vm.get('sensor').selectedFiles;
+    let dataloggerKeys = vm.get('datalogger').selectedFiles;
+    let value = { libraryType: 'arol', sensorKeys, dataloggerKeys };
+    record.set('value', yasmine.utils.ResponseRecalculateUtil.withRecalculateFlag(value, vm));
   },
   onDataloggerFilterOptionChange: function (cmp, newValue, oldValue) {
     let selectedOptions = this.getViewModel().get('datalogger.selectedOptions');
@@ -443,6 +449,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
           });
         }
         yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(that.getViewModel());
+        yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(that.getViewModel());
       }
     });
   },

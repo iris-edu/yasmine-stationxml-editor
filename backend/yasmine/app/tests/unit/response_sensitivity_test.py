@@ -16,7 +16,9 @@ from obspy.core.inventory.response import (
 
 from yasmine.app.utils.response_sensitivity import (
     PolynomialResponseError,
+    get_updated_response_obj,
     load_response_from_preview_params,
+    merge_response_into_station_xml,
     preview_plot_basename,
     recalculate_response_sensitivity,
     response_obj_to_tree_json_standalone,
@@ -142,11 +144,86 @@ class ResponseTreeRoundTripTest(unittest.TestCase):
             places=3,
         )
 
+    def test_get_updated_response_obj_inserts_missing_response(self):
+        from obspy.core.inventory import Channel, Station, Network, Inventory, Site
+        from obspy import UTCDateTime
+        import io
+
+        response = _mock_response([2000.0, 4.0], sensitivity_value=100.0)
+        tree = response_obj_to_tree_json_standalone(response)
+        from yasmine.app.utils.response_sensitivity import prepare_response_json_as_xml
+        xml_frag = prepare_response_json_as_xml(tree)
+
+        start = UTCDateTime(2020, 1, 1)
+        ch = Channel(
+            code='HHZ', location_code='00', latitude=0, longitude=0, elevation=0,
+            depth=0, azimuth=0, dip=0, sample_rate=100, start_date=start,
+        )
+        st = Station(
+            code='YY', latitude=0, longitude=0, elevation=0, start_date=start,
+            site=Site('Mock'), channels=[ch],
+        )
+        net = Network(code='XX', stations=[st], start_date=start)
+        inv = Inventory(networks=[net], source='Y', module='Y', module_uri='', created=start)
+        out = io.BytesIO()
+        inv.write(out, format='STATIONXML')
+        station_xml = out.getvalue().decode('utf-8')
+
+        restored = get_updated_response_obj(xml_frag, station_xml)
+        self.assertAlmostEqual(restored.instrument_sensitivity.value, 100.0, places=3)
+
+    def test_merge_response_into_station_xml_inserts_before_channel_end(self):
+        station_xml = '<Channel><SampleRate>100</SampleRate></Channel>'
+        merged = merge_response_into_station_xml('<Response><Value>1</Value></Response>', station_xml)
+        self.assertIn('<Response>', merged)
+        self.assertTrue(merged.index('<Response>') < merged.index('</Channel>'))
+
     def test_preview_plot_basename_instconfig(self):
         name = preview_plot_basename({
             'instconfig': 'sensor_a:datalogger_b',
         })
         self.assertTrue(name.startswith('wizard_preview_'))
+
+
+class ResponseAttributeRoutingTest(unittest.TestCase):
+
+    def test_string_value_is_not_library_or_tree_payload(self):
+        from unittest.mock import MagicMock
+        from yasmine.app.enums.xml_node import XmlNodeAttrEnum
+        from yasmine.app.services.attribute_service import AttributeService
+
+        obj = MagicMock()
+        obj.attr.name = XmlNodeAttrEnum.RESPONSE
+        text = 'Channel Response\n\tOverall Sensitivity: 2000'
+        self.assertFalse(AttributeService._is_edit_response_attribute(obj, text))
+        self.assertFalse(AttributeService._is_new_response_attribute(obj, text))
+
+    def test_library_payload_routes_to_new_response(self):
+        from unittest.mock import MagicMock
+        from yasmine.app.enums.xml_node import XmlNodeAttrEnum
+        from yasmine.app.services.attribute_service import AttributeService
+
+        obj = MagicMock()
+        obj.attr.name = XmlNodeAttrEnum.RESPONSE
+        payload = {
+            'libraryType': 'nrlv2_online',
+            'instconfig': 'sensor_a:datalogger_b',
+            'recalculateSensitivity': True,
+        }
+        self.assertTrue(AttributeService._is_new_response_attribute(obj, payload))
+        self.assertFalse(AttributeService._is_edit_response_attribute(obj, payload))
+
+
+    def test_recalculate_equipment_response_uses_last_tuple_item(self):
+        from unittest.mock import MagicMock
+        from yasmine.app.services.attribute_service import AttributeService
+
+        response = _mock_response([2000.0, 4.0], sensitivity_value=100.0)
+        response_attr = MagicMock()
+        response_attr.attr = None
+        response_attr.value_obj = response
+        AttributeService._recalculate_equipment_response((MagicMock(), MagicMock(), MagicMock(), response_attr))
+        self.assertAlmostEqual(response_attr.value_obj.instrument_sensitivity.value, 8000.0, places=3)
 
 
 class RecalculateSensitivityIntegrationTest(unittest.TestCase):

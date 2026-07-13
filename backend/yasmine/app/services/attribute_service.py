@@ -45,6 +45,10 @@ from yasmine.app.settings import DATE_FORMAT_SYSTEM
 from yasmine.app.utils.date import strptime
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.utils.imp_exp import ConvertToInventory
+from yasmine.app.utils.response_sensitivity import (
+    get_updated_response_obj,
+    recalculate_response_sensitivity,
+)
 
 
 class AttributeService(HandlerMixin, EquipmentMixin):
@@ -113,7 +117,7 @@ class AttributeService(HandlerMixin, EquipmentMixin):
         self.response_xml_str = ''
         self._prepare_response_json_as_xml(value['response'])
         try:
-            response = self.get_updated_response_obj(self.response_xml_str, station_xml)
+            response = get_updated_response_obj(self.response_xml_str, station_xml)
             if not response.instrument_polynomial:
                 response.get_sacpz()
             obj.value_obj = response
@@ -121,6 +125,7 @@ class AttributeService(HandlerMixin, EquipmentMixin):
             raise ResponseEditException(err)
 
     def _update_new_response(self, obj, value):
+        recalculate = bool(value.get('recalculateSensitivity'))
         library_type = value['libraryType']
         if library_type == 'nrlv2_online':
             instconfig = value.get('instconfig')
@@ -135,6 +140,8 @@ class AttributeService(HandlerMixin, EquipmentMixin):
         for attr in equipment:
             if attr is not None:
                 self.db.add(attr)
+        if recalculate:
+            self._recalculate_equipment_response(equipment)
 
     def _prepare_response_json_as_xml(self, json_obj, parent_node=None):
         for key, value in json_obj.items():
@@ -164,18 +171,14 @@ class AttributeService(HandlerMixin, EquipmentMixin):
                 self.response_xml_str += '</%s>' % key
 
     @staticmethod
-    def get_updated_response_obj(response_xml, station_xml):
-        resp_start = station_xml.find('<Response>')
-        resp_end = station_xml.find('</Response>') + 11
-        old_response = station_xml[resp_start:resp_end]
-        station_xml = station_xml.replace(old_response, response_xml)
-        station_xml_binary = io.BytesIO(station_xml.encode('utf-8'))
-        inv = read_inventory(station_xml_binary)
-        for network in inv.networks:
-            for station in network.stations:
-                for channel in station.channels:
-                    if hasattr(channel, 'response'):
-                        return getattr(channel, 'response')
+    def _recalculate_equipment_response(equipment):
+        if not equipment:
+            return
+        response_attr = equipment[-1]
+        if response_attr is None or response_attr.value_obj is None:
+            return
+        response, _ = recalculate_response_sensitivity(response_attr.value_obj)
+        response_attr.value_obj = response
 
     def _update_datalogger_or_sensor_attribute(self, obj, equipment):
         self._update_equipment_calibration_date([equipment])
@@ -226,8 +229,16 @@ class AttributeService(HandlerMixin, EquipmentMixin):
 
     @staticmethod
     def _is_edit_response_attribute(obj, value):
-        return obj.attr.name in [XmlNodeAttrEnum.RESPONSE] and 'response' in value
+        return (
+            obj.attr.name in [XmlNodeAttrEnum.RESPONSE]
+            and isinstance(value, dict)
+            and 'response' in value
+        )
 
     @staticmethod
     def _is_new_response_attribute(obj, value):
-        return obj.attr.name in [XmlNodeAttrEnum.RESPONSE] and 'response' not in value
+        return (
+            obj.attr.name in [XmlNodeAttrEnum.RESPONSE]
+            and isinstance(value, dict)
+            and 'libraryType' in value
+        )

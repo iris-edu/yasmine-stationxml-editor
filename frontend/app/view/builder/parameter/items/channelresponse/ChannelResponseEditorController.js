@@ -38,6 +38,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
   alias: 'controller.channel-response-editor',
   requires: [
     'Ext.ux.Mediator',
+    'yasmine.utils.ResponseRecalculateUtil',
     'yasmine.view.xml.builder.parameter.items.channelresponse.preview.ResponsePreview',
     'yasmine.view.xml.builder.parameter.items.channelresponse.selectors.SelectorsContainer',
     'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.ChannelResponseTreeEditor',
@@ -75,8 +76,19 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
       return;
     }
     let currentView = this.lookup(currentViewRef);
+    if (!currentView && yasmine.utils.ResponseRecalculateUtil.SELECTOR_XTYPES.indexOf(currentViewRef) >= 0) {
+      currentView = this.getView().items.getAt(0);
+    }
     if (currentView && currentView.getController && currentView.getController().fillRecord) {
       currentView.getController().fillRecord();
+      return;
+    }
+    if (currentViewRef === 'selectors-container') {
+      return;
+    }
+    let child = this.getView().items.getAt(0);
+    if (child && child.getController && child.getController().fillRecord) {
+      child.getController().fillRecord();
     }
   },
   validate: function () {
@@ -108,6 +120,22 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
 
     Ext.ux.Mediator.fireEvent('parameterEditorController-updateActionButtons', actionButtons);
     Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', canSave);
+    this.syncSelectorActionButtons(name);
+  },
+  syncSelectorActionButtons: function (viewName) {
+    let name = viewName || this.getViewModel().get('currentViewReference');
+    if (yasmine.utils.ResponseRecalculateUtil.SELECTOR_XTYPES.indexOf(name) < 0) {
+      return;
+    }
+    let child = this.getView().items.getAt(0);
+    if (!child || !child.getViewModel) {
+      return;
+    }
+    let ctrl = child.getController();
+    if (ctrl && typeof ctrl.syncActiveSelectorTab === 'function') {
+      ctrl.syncActiveSelectorTab();
+    }
+    yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(child.getViewModel());
   },
   createActionButtons: function () {
     return [

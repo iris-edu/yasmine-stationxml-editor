@@ -42,13 +42,13 @@ from yasmine.app.models.inventory import XmlNodeAttrModel, XmlNodeAttrValModel
 class EquipmentMixin(object):
 
     def recreate_attr(self, node_inst, attr_name):
-        attr_id = self.db.query(XmlNodeAttrModel).filter(XmlNodeAttrModel.name == attr_name).first().id
+        attr_model = self.db.query(XmlNodeAttrModel).filter(XmlNodeAttrModel.name == attr_name).first()
         if node_inst.id:
             self.db.query(XmlNodeAttrValModel) \
-                .filter(XmlNodeAttrValModel.attr_id == attr_id) \
+                .filter(XmlNodeAttrValModel.attr_id == attr_model.id) \
                 .filter(XmlNodeAttrValModel.node_inst_id == node_inst.id) \
                 .delete()
-        return XmlNodeAttrValModel(node_inst=node_inst, attr_id=attr_id)
+        return XmlNodeAttrValModel(node_inst=node_inst, attr_id=attr_model.id, attr=attr_model)
 
     def manage_equipment(self, node_inst, sensor_keys, datalogger_keys, library_type, response_attr=None, nrlv2_source=None):
         if library_type == LibraryTypeEnum.NRLV2_ONLINE:
