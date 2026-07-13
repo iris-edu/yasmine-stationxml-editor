@@ -66,8 +66,18 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
   },
   fillRecord: function () {
     let currentViewRef = this.getViewModel().get('currentViewReference');
-    let currentViewController = this.lookup(currentViewRef).getController();
-    currentViewController.fillRecord();
+    let record = this.getViewModel().get('record');
+    if (currentViewRef === 'response-preview') {
+      let value = record.get('value');
+      if (value && value.response) {
+        return;
+      }
+      return;
+    }
+    let currentView = this.lookup(currentViewRef);
+    if (currentView && currentView.getController && currentView.getController().fillRecord) {
+      currentView.getController().fillRecord();
+    }
   },
   validate: function () {
     return true;
@@ -88,7 +98,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
     this.createComponent('nrlv2-response-selector', [], false);
   },
   createXmlResponseEditor: function () {
-    this.createComponent('channel-response-tree-editor', [], true);
+    this.createComponent('channel-response-tree-editor', this.createTreeEditorActionButtons(), true);
   },
   createComponent(name, actionButtons, canSave) {
     this.getViewModel().set('currentViewReference', name);
@@ -112,8 +122,89 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
         text: 'Select a new Response',
         iconCls: 'x-fa fa-pencil',
         handler: () => this.createResponseSelector()
-      })
+      }),
+      this.createRecalculateSensitivityButton()
     ]
+  },
+  createTreeEditorActionButtons: function () {
+    return [this.createRecalculateSensitivityButton()];
+  },
+  createRecalculateSensitivityButton: function () {
+    return Ext.create({
+      xtype: 'button',
+      text: 'Recalculate Sensitivity',
+      iconCls: 'x-fa fa-calculator',
+      handler: () => this.recalculateSensitivity()
+    });
+  },
+  recalculateSensitivity: function () {
+    let that = this;
+    let vm = this.getViewModel();
+    let record = vm.get('record');
+    let nodeInstanceId = record.get('node_inst_id');
+    let currentViewRef = vm.get('currentViewReference');
+    let payload = {
+      nodeInstanceId: nodeInstanceId,
+      min: vm.get('minFrequency'),
+      max: vm.get('maxFrequency')
+    };
+
+    if (currentViewRef === 'channel-response-tree-editor') {
+      let treeView = this.lookup('channel-response-tree-editor');
+      if (treeView) {
+        let treeCtrl = treeView.getController();
+        let store = treeCtrl.lookup('channelresponsetree').getStore();
+        payload.response = treeCtrl.prepareResponse(store.getRoot().data.children);
+      }
+    }
+
+    Ext.Ajax.request({
+      method: 'POST',
+      url: '/api/channel/response/recalculate-sensitivity/',
+      jsonData: payload,
+      success: function (response) {
+        let result = JSON.parse(response.responseText);
+        if (!result.success) {
+          Ext.MessageBox.show({
+            title: 'An error occurred',
+            msg: result.message,
+            buttons: Ext.MessageBox.OK,
+            icon: Ext.MessageBox['ERROR']
+          });
+          return;
+        }
+
+        vm.set('channelResponseText', result.text);
+        vm.set('channelResponseImageUrl', result.plot_url);
+        vm.set('channelResponseCsvUrl', result.csv_url);
+        record.set('value', {
+          nodeId: record.get('nodeId'),
+          response: result.data
+        });
+        Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', true);
+
+        if (currentViewRef === 'channel-response-tree-editor') {
+          let treeView = that.lookup('channel-response-tree-editor');
+          if (treeView) {
+            let selectedKey = 'InstrumentSensitivity';
+            let tree = treeView.getController().lookupReference('channelresponsetree');
+            let selection = tree.getSelection()[0];
+            if (selection && selection.get('key')) {
+              selectedKey = selection.get('key');
+            }
+            treeView.getController().reloadTree(result.data, selectedKey);
+          }
+        }
+      },
+      failure: function () {
+        Ext.MessageBox.show({
+          title: 'An error occurred',
+          msg: 'Cannot recalculate sensitivity.',
+          buttons: Ext.MessageBox.OK,
+          icon: Ext.MessageBox['ERROR']
+        });
+      }
+    });
   },
   downloadChannelResponsePlot: function () {
     let win = window.open('', '_blank');

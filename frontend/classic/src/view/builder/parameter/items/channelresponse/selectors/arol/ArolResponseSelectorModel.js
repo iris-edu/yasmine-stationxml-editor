@@ -41,6 +41,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
     channelResponseImageUrl: null,
     channelResponseCsvUrl: null,
 
+    wizardMode: false,
+    responseTree: null,
+    activeSelectorTab: 0,
+
     dataloggerPreview: '',
     sensorPreview: '',
 
@@ -82,6 +86,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
       return (get('dataloggerCompleted') && get('sensorCompleted'))
         ? ' <i class="fa fa-check arol-status-icon"></i>'
         : ' <i class="fa fa-ban arol-status-icon"></i>';
+    },
+    responsePreviewWizardCls: function (get) {
+      return get('wizardMode') ? 'response-preview-wizard' : '';
     },
     dataloggerResultTitle: function (get) {
       return get('dataloggerCompleted') ? `<b>${get('datalogger').resultTitle}</b>` : '';

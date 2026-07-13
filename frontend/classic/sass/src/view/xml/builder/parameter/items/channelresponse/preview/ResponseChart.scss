@@ -30,3 +30,35 @@
   object-position: center;
   display: block;
 }
+
+.response-preview-wizard.response-preview {
+  max-width: 960px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  align-self: center;
+  align-items: center;
+}
+
+.response-preview-wizard .response-chart {
+  max-width: 960px;
+  width: 100%;
+  margin-left: auto;
+  margin-right: auto;
+  align-self: center;
+}
+
+.response-preview-wizard .response-chart-img {
+  max-width: 960px;
+  width: auto;
+}
+
+.response-preview-wizard .response-chart-img-wrap {
+  justify-content: center;
+}
+
+.response-preview-wizard .response-chart-text-wrap {
+  max-width: 960px;
+  width: 100%;
+  margin: 0 auto;
+}

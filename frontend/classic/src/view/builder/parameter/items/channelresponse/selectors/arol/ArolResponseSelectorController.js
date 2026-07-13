@@ -34,10 +34,26 @@
 Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselector.ArolResponseSelectorController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.arol-response-selector',
+  requires: ['yasmine.utils.ResponseRecalculateUtil'],
   init: function () {
     this.loadDataloggerKeys();
     this.loadSensorKeys();
+    this.syncActiveSelectorTab();
   },
+
+  syncActiveSelectorTab: function () {
+    let tabPanel = this.getView();
+    let activeTab = tabPanel.getActiveTab();
+    if (activeTab) {
+      this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(activeTab));
+    }
+  },
+
+  onSelectorTabChange: function (tabPanel, newTab) {
+    this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(newTab));
+    yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+  },
+
   fillRecord: function () {
     let dataloggerCompleted = this.getViewModel().get('dataloggerCompleted');
     let sensorCompleted = this.getViewModel().get('sensorCompleted');
@@ -400,6 +416,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
     let dataloggerKeys = this.getViewModel().get('datalogger').selectedFiles;
     let that = this;
     that.getViewModel().set('channelResponseText', null);
+    that.getViewModel().set('responseTree', null);
     Ext.Ajax.request({
       method: 'GET',
       params: {sensorKeys, dataloggerKeys, min, max},
@@ -425,6 +442,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
             icon: Ext.MessageBox['ERROR']
           });
         }
+        yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(that.getViewModel());
       }
     });
   },
@@ -452,5 +470,39 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
   },
   getDataloggerJson: function () {
     return this.getViewModel().get('datalogger.keys');
+  },
+
+  recalculateSensitivity: function () {
+    let vm = this.getViewModel();
+    if (!vm.get('sensorCompleted') || !vm.get('dataloggerCompleted')) {
+      return;
+    }
+    let sensorKeys = [...vm.get('sensor').selectedFiles];
+    let dataloggerKeys = [...vm.get('datalogger').selectedFiles];
+    if (!sensorKeys.length || !dataloggerKeys.length) {
+      return;
+    }
+    Ext.Ajax.request({
+      method: 'POST',
+      url: '/api/channel/response/recalculate-sensitivity/',
+      jsonData: {
+        libraryType: 'arol',
+        sensorKeys: sensorKeys,
+        dataloggerKeys: dataloggerKeys,
+        min: vm.get('minFrequency'),
+        max: vm.get('maxFrequency')
+      },
+      success: function (response) {
+        let result = JSON.parse(response.responseText);
+        if (!result.success) {
+          yasmine.utils.ResponseRecalculateUtil.showRecalculateError(result.message);
+          return;
+        }
+        yasmine.utils.ResponseRecalculateUtil.applyRecalculateResult(vm, result);
+      },
+      failure: function () {
+        yasmine.utils.ResponseRecalculateUtil.showRecalculateError();
+      }
+    });
   }
 });

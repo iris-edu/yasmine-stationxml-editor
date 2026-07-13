@@ -40,7 +40,11 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     channelResponseImageUrl: null,
     channelResponseCsvUrl: null,
     channelResponseText: null,
-    channelResponsePlotMessage: null
+    channelResponsePlotMessage: null,
+
+    wizardMode: false,
+    responseTree: null,
+    activeSelectorTab: 0
   },
   stores: {
     sensorStore: {
@@ -102,6 +106,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
       return (get('sensorPreview') && get('dataloggerPreview'))
         ? ' <i class="fa fa-check" style="color: green"></i>'
         : ' <i class="fa fa-ban" style="color: red"></i>';
+    },
+    responsePreviewWizardCls: function (get) {
+      return get('wizardMode') ? 'response-preview-wizard' : '';
     },
     instconfig: function (get) {
       let s = get('sensorInstconfig');

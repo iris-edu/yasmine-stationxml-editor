@@ -30,13 +30,13 @@
 #
 # ****************************************************************************/
 
-# Python 3.11: ObsPy and other deps rely on pkg_resources (setuptools). Python 3.12+
-# no longer bundles it by default, causing ModuleNotFoundError at runtime.
+# Multi-stage build: gcc stays in the builder only (smaller runtime image, fewer CVEs).
+# setuptools is installed explicitly in runtime for dependency compatibility on Python 3.12+.
 #
 # Chrome/ChromeDriver are intentionally omitted: the app runtime does not need them.
 # GUI selenium tests (yasmine.app.tests.gui) require a separate test image/host with
 # a matching browser if re-enabled.
-FROM python:3.11-slim
+FROM python:3.13-slim AS builder
 WORKDIR /opt/yasmine/src
 
 RUN apt-get update && \
@@ -44,7 +44,15 @@ RUN apt-get update && \
     rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
-RUN pip install --upgrade pip setuptools && \
-    pip install -r requirements.txt
+RUN pip install --no-cache-dir --upgrade pip setuptools && \
+    pip install --no-cache-dir -r requirements.txt
+
+FROM python:3.13-slim
+WORKDIR /opt/yasmine/src
+
+RUN pip install --no-cache-dir --upgrade pip setuptools
+
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
 COPY . .
 CMD python yasmineapp.py syncdb upgrade heads ; python yasmineapp.py runserver --debug

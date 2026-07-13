@@ -41,6 +41,7 @@ from yasmine.app.services.xml_service import XmlService
 from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.enums.xml_node import XmlNodeEnum, XmlNodeAttrEnum
+from yasmine.app.utils.response_sensitivity import response_tree_to_obj
 
 
 def _to_datetime(val):
@@ -86,7 +87,8 @@ class WizardService(HandlerMixin, EquipmentMixin):
         return inst.id
 
     def create_channels(self, xml_id, code_list, start_date, end_date, station_id, dip_list, azimuth_list, latitude,
-                        longitude, elevation, location_code, depth, library_type, sensor_keys, datalogger_keys):
+                        longitude, elevation, location_code, depth, library_type, sensor_keys, datalogger_keys,
+                        response_tree=None):
         channel_node = self.db.get(XmlNodeModel, XmlNodeEnum.CHANNEL)
         station = self.db.get(XmlNodeInstModel, station_id)
         channels = []
@@ -114,6 +116,13 @@ class WizardService(HandlerMixin, EquipmentMixin):
                     self._create_attr(inst, XmlNodeAttrEnum.DIP, dip_list[i])
 
                     equipment = self.manage_equipment(inst, sensor_keys, datalogger_keys, library_type)
+                    if response_tree:
+                        response_attr = equipment[3]
+                        if response_attr is not None:
+                            response_obj = response_tree_to_obj(response_tree)
+                            if not response_obj.instrument_polynomial:
+                                response_obj.get_sacpz()
+                            response_attr.value_obj = response_obj
                     for attr in equipment:
                         if attr is not None:
                             inst.attr_vals.append(attr)

@@ -39,6 +39,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arol.ArolRe
   ],
   controller: 'arol-response-selector',
   viewModel: 'arol-response-selector',
+  listeners: {
+    tabchange: 'onSelectorTabChange'
+  },
   "keyMap": {
     "m": {
       handler: function() {

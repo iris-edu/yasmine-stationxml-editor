@@ -48,7 +48,11 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
 
     channelResponseImageUrl: null,
     channelResponseCsvUrl: null,
-    channelResponseText: null
+    channelResponseText: null,
+
+    wizardMode: false,
+    responseTree: null,
+    activeSelectorTab: 0
   },
   stores: {
     sensorStore: {
@@ -95,6 +99,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
       return (get('sensorPreview') && get('dataloggerPreview'))
         ? ' <i class="fa fa-check" style="color: green"></i>'
         : ' <i class="fa fa-ban" style="color: red"></i>';
+    },
+    responsePreviewWizardCls: function (get) {
+      return get('wizardMode') ? 'response-preview-wizard' : '';
     },
   }
 });

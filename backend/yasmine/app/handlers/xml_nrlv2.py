@@ -19,7 +19,7 @@ from yasmine.app.handlers.base import AsyncThreadMixin, BaseHandler
 from yasmine.app.helpers.nrl.nrlv2_online import Nrlv2OnlineHelper, Nrlv2OnlineError
 from yasmine.app.helpers.utils.utils import ChannelUtils
 from yasmine.app.settings import MEDIA_ROOT
-from yasmine.app.utils.response_plot import polynomial_or_polezero_response
+from yasmine.app.utils.response_plot import polynomial_or_polezero_response, detect_plot_output
 
 _RE_STRIP_FILE_LINE = re.compile(r'^.+?\.py:\d+:?\s*')
 
@@ -260,18 +260,22 @@ class Nrlv2ChannelRespHandler(AsyncThreadMixin, BaseHandler):
                 plot_folder,
                 file_name,
                 float(min_fq) if min_fq else None,
-                float(max_fq) if max_fq else None
+                float(max_fq) if max_fq else None,
+                instconfig=instconfig,
             )
             csv_file = ChannelUtils.create_response_csv(
                 response,
                 plot_folder,
                 file_name,
                 float(min_fq) if min_fq else None,
-                float(max_fq) if max_fq else None
+                float(max_fq) if max_fq else None,
+                instconfig=instconfig,
             )
+            plot_output = detect_plot_output(response, instconfig)
             return {
                 'success': True,
                 'text': response_str,
+                'plot_output': plot_output,
                 'plot_url': f'/api/channel/response/plots/plots/{plot_file}?_dc={random()}',
                 'csv_url': f'/api/channel/response/plots/plots/{csv_file}?_dc={random()}'
             }

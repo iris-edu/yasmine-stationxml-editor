@@ -70,6 +70,8 @@ Ext.define('yasmine.model.ChannelCreation', {
     {name: 'sensorKeys'},
     {name: 'dataloggerKeys'},
     {name: 'libraryType'},
+    {name: 'instconfig'},
+    {name: 'responseTree'},
     {
       name: 'summary', type: 'string', persist: false,
       depends: ['location_code', 'latitude', 'longitude', 'elevation', 'depth', 'libraryType', 'dataloggerKeys', 'sensorKeys'],

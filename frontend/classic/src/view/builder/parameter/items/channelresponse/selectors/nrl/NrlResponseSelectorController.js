@@ -34,10 +34,26 @@
 Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector.NrlResponseSelectorController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.nrl-response-selector',
+  requires: ['yasmine.utils.ResponseRecalculateUtil'],
   initViewModel: function () {
     this.getStore('sensorStore').root.expand();
     this.getStore('dataloggerStore').root.expand();
+    this.syncActiveSelectorTab();
   },
+
+  syncActiveSelectorTab: function () {
+    let tabPanel = this.getView();
+    let activeTab = tabPanel.getActiveTab();
+    if (activeTab) {
+      this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(activeTab));
+    }
+  },
+
+  onSelectorTabChange: function (tabPanel, newTab) {
+    this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(newTab));
+    yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+  },
+
   fillRecord: function () {
     let sensorKeys = this.getViewModel().get('sensorKeys');
     let dataloggerKeys = this.getViewModel().get('dataloggerKeys');
@@ -92,9 +108,11 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
     this.getViewModel().set('channelResponseText', null);
     this.getViewModel().set('channelResponseImageUrl', null);
     this.getViewModel().set('channelResponseCsvUrl', null);
+    this.getViewModel().set('responseTree', null);
     this.getViewModel().set(keysProperty, null);
     if (!node.isLeaf()) {
       Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', false);
+      yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
       return;
     }
     this.setKeys(node, keysProperty);
@@ -137,6 +155,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
         Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', true);
         that.getViewModel().set('channelResponseImageUrl', result.plot_url || null);
         that.getViewModel().set('channelResponseCsvUrl', result.csv_url || null);
+        that.getViewModel().set('responseTree', null);
         if (!result.success) {
           that.getViewModel().set('channelResponseImageUrl', null);
           that.getViewModel().set('channelResponseCsvUrl', null);
@@ -156,6 +175,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
             icon: Ext.MessageBox.WARNING
           });
         }
+        yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(that.getViewModel());
       }
     });
   },
@@ -176,5 +196,36 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
       result = result.reverse();
       result = result.shift();
     }
+  },
+
+  recalculateSensitivity: function () {
+    let vm = this.getViewModel();
+    let sensorKeys = vm.get('sensorKeys');
+    let dataloggerKeys = vm.get('dataloggerKeys');
+    if (!sensorKeys || !sensorKeys.length || !dataloggerKeys || !dataloggerKeys.length) {
+      return;
+    }
+    Ext.Ajax.request({
+      method: 'POST',
+      url: '/api/channel/response/recalculate-sensitivity/',
+      jsonData: {
+        libraryType: 'nrl',
+        sensorKeys: sensorKeys,
+        dataloggerKeys: dataloggerKeys,
+        min: vm.get('minFrequency'),
+        max: vm.get('maxFrequency')
+      },
+      success: function (response) {
+        let result = JSON.parse(response.responseText);
+        if (!result.success) {
+          yasmine.utils.ResponseRecalculateUtil.showRecalculateError(result.message);
+          return;
+        }
+        yasmine.utils.ResponseRecalculateUtil.applyRecalculateResult(vm, result);
+      },
+      failure: function () {
+        yasmine.utils.ResponseRecalculateUtil.showRecalculateError();
+      }
+    });
   }
 });
