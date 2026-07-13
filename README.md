@@ -34,7 +34,10 @@ Requires internet access. Disable in Settings when working offline.
 2. Run `docker compose build` to compile and build the containers
 3. Run `docker compose up` to start
 4. Visit <http://localhost:1841>
-5. Run `docker compose down` to stop
+5. Backend API: <http://localhost:8080/api/> (when using docker compose)
+6. Run `docker compose down` to stop
+
+For Python-based installation, see [`backend/README.md`](backend/README.md).
 
 If you are running on an Apple M1 machine, uncomment the lines indicating the target platform in the `docker-compose.yml` file.
 
