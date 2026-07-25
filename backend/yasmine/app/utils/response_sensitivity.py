@@ -27,7 +27,7 @@ def recalculate_response_sensitivity(response):
         raise PolynomialResponseError('Polynomial responses have no InstrumentSensitivity')
     freq = 1.0
     sens = response.instrument_sensitivity
-    if sens and sens.frequency:
+    if sens and sens.frequency is not None:
         freq = float(sens.frequency)
     response.recalculate_overall_sensitivity(frequency=freq)
     return response, freq

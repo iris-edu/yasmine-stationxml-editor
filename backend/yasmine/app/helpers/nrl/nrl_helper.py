@@ -87,7 +87,20 @@ class NrlHelper(BaseHelper):
         combined = self.nrl._combine_sensor_datalogger(
             sensor_resp, datalogger_resp, sensor_resp_type, datalogger_resp_type
         )
-        return _normalize_response_units(combined)
+        # ObsPy's sensitivity calculation has bug when RESP datalogger first stage is not gain-only,
+        # resulting in a 'units mismatch' error. Detect and recompute after normalizing units
+        needs_recalculate = any(
+            not stage.input_units or not stage.output_units
+            for stage in combined.response_stages or []
+        )
+        combined = _normalize_response_units(combined)
+        if needs_recalculate:
+            self._recalculate_sensitivity(combined)
+        return combined
+
+    def _recalculate_sensitivity(self, response):
+        from yasmine.app.utils.response_sensitivity import recalculate_response_sensitivity
+        recalculate_response_sensitivity(response)
 
     def guess_channel_code(self, sensors_keys, datalogger_keys):
         channel_code_helper = NrlChannelCodeHelper(self.nrl.sensors, self.nrl.dataloggers)
