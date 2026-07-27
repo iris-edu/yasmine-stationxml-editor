@@ -48,6 +48,7 @@ from yasmine.app.utils.imp_exp import ConvertToInventory
 from yasmine.app.utils.response_sensitivity import (
     get_updated_response_obj,
     recalculate_response_sensitivity,
+    validate_response_sacpz,
 )
 
 
@@ -119,7 +120,7 @@ class AttributeService(HandlerMixin, EquipmentMixin):
         try:
             response = get_updated_response_obj(self.response_xml_str, station_xml)
             if not response.instrument_polynomial:
-                response.get_sacpz()
+                validate_response_sacpz(response)
             obj.value_obj = response
         except Exception as err:
             raise ResponseEditException(err)

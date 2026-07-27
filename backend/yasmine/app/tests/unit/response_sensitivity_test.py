@@ -10,6 +10,7 @@ from unittest.mock import MagicMock, patch
 from obspy.core.inventory.response import (
     CoefficientsTypeResponseStage,
     InstrumentSensitivity,
+    PolesZerosResponseStage,
     Response,
 )
 
@@ -23,6 +24,7 @@ from yasmine.app.utils.response_sensitivity import (
     recalculate_response_sensitivity,
     response_obj_to_tree_json_standalone,
     response_tree_to_obj,
+    validate_response_sacpz,
 )
 
 
@@ -73,6 +75,38 @@ class RecalculateResponseSensitivityTest(unittest.TestCase):
         response.instrument_sensitivity.frequency = 2.0
         _, freq = recalculate_response_sensitivity(response)
         self.assertEqual(freq, 2.0)
+
+
+class ValidateResponseSacpzTest(unittest.TestCase):
+
+    def test_accepts_missing_pole_and_zero_uncertainties(self):
+        stage = PolesZerosResponseStage(
+            stage_sequence_number=1,
+            stage_gain=1.0,
+            stage_gain_frequency=1.0,
+            input_units='M/S',
+            output_units='V',
+            pz_transfer_function_type='LAPLACE (HERTZ)',
+            normalization_frequency=1.0,
+            normalization_factor=1.0,
+            zeros=[0j],
+            poles=[-1 + 0j],
+        )
+        response = Response(
+            response_stages=[stage],
+            instrument_sensitivity=InstrumentSensitivity(
+                value=2.0,
+                frequency=1.0,
+                input_units='M/S',
+                output_units='V',
+            ),
+        )
+
+        self.assertIsNone(stage.poles[0].upper_uncertainty)
+        sacpz = validate_response_sacpz(response)
+
+        self.assertIn('CONSTANT', sacpz)
+        self.assertIsNone(stage.poles[0].upper_uncertainty)
 
 
 def _mock_response(stage_gains, sensitivity_value=1.0, output_units='V'):

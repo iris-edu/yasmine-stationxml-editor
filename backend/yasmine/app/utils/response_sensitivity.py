@@ -4,12 +4,14 @@
 #
 # ****************************************************************************/
 
+import copy
 import io
 import re
 
 from lxml.etree import fromstring
 from obspy import UTCDateTime, read_inventory
 from obspy.core.inventory import Channel, Inventory, Network, Site, Station
+from obspy.core.inventory.response import paz_to_sacpz_string
 from xmljson import abdera
 
 from yasmine.app.enums.library import LibraryTypeEnum
@@ -31,6 +33,17 @@ def recalculate_response_sensitivity(response):
         freq = float(sens.frequency)
     response.recalculate_overall_sensitivity(frequency=freq)
     return response, freq
+
+
+def validate_response_sacpz(response):
+    """Validate SAC PZ conversion while accepting omitted uncertainties."""
+    paz = copy.deepcopy(response.get_paz())
+    for item in paz.poles + paz.zeros:
+        if item.upper_uncertainty is None:
+            item.upper_uncertainty = 0.0
+        if item.lower_uncertainty is None:
+            item.lower_uncertainty = 0.0
+    return paz_to_sacpz_string(paz, response.instrument_sensitivity)
 
 
 def prepare_response_json_as_xml(json_obj, parent_node=None, xml_str=''):

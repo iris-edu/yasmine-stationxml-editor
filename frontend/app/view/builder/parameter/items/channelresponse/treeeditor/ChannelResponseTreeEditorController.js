@@ -64,6 +64,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   },
   loadChannelResponseForEditing: function () {
     let record = this.getViewModel().get('record');
+    let pendingValue = record.get('value');
+    if (pendingValue && pendingValue.response) {
+      this.applyTreeData(pendingValue.response);
+      return;
+    }
+
     let nodeInstanceId = record.get('node_inst_id');
     let that = this;
 

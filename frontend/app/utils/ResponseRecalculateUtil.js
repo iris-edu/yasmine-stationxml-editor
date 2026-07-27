@@ -71,14 +71,7 @@ Ext.define('yasmine.utils.ResponseRecalculateUtil', {
     if (!vm || !vm.get('wizardMode')) {
       return;
     }
-    if (!this.shouldShowRecalculateButton(vm)) {
-      Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', []);
-      return;
-    }
-    let controller = vm.getView().getController();
-    Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', [
-      this.createRecalculateButton(controller)
-    ]);
+    Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', []);
   },
 
   updateParameterEditorActionButtons: function (vm) {
