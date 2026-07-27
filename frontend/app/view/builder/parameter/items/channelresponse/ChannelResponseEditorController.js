@@ -177,9 +177,14 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
       max: vm.get('maxFrequency')
     };
 
+    let pendingValue = record.get('value');
+    if (pendingValue && pendingValue.response) {
+      payload.response = pendingValue.response;
+    }
+
     if (currentViewRef === 'channel-response-tree-editor') {
-      let treeView = this.lookup('channel-response-tree-editor');
-      if (treeView) {
+      let treeView = this.lookup('channel-response-tree-editor') || this.getView().items.getAt(0);
+      if (treeView && treeView.getController) {
         let treeCtrl = treeView.getController();
         let store = treeCtrl.lookup('channelresponsetree').getStore();
         payload.response = treeCtrl.prepareResponse(store.getRoot().data.children);
@@ -212,8 +217,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
         Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', true);
 
         if (currentViewRef === 'channel-response-tree-editor') {
-          let treeView = that.lookup('channel-response-tree-editor');
-          if (treeView) {
+          let treeView = that.lookup('channel-response-tree-editor') || that.getView().items.getAt(0);
+          if (treeView && treeView.getController) {
             let selectedKey = 'InstrumentSensitivity';
             let tree = treeView.getController().lookupReference('channelresponsetree');
             let selection = tree.getSelection()[0];
@@ -245,8 +250,14 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
     win.focus();
   },
   loadChannelResponsePlot: function () {
-    let that = this;
     let record = this.getViewModel().get('record');
+    let pendingValue = record && record.get('value');
+    if (pendingValue && pendingValue.response) {
+      this.recalculateSensitivity();
+      return;
+    }
+
+    let that = this;
     let nodeInstanceId = record.get('node_inst_id');
     let min = this.getViewModel().get('minFrequency');
     let max = this.getViewModel().get('maxFrequency');

@@ -97,6 +97,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
     return this.getViewModel().get('sensorKeys');
   },
   loadChannelResponsePlot: function () {
+    if (this.getViewModel().get('responseTree')) {
+      this.recalculateSensitivity();
+      return;
+    }
     this.loadChannelResponseIfPossible();
   },
   downloadChannelResponsePlot: function () {
@@ -162,7 +166,6 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
         Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', true);
         that.getViewModel().set('channelResponseImageUrl', result.plot_url || null);
         that.getViewModel().set('channelResponseCsvUrl', result.csv_url || null);
-        that.getViewModel().set('responseTree', null);
         if (!result.success) {
           that.getViewModel().set('channelResponseImageUrl', null);
           that.getViewModel().set('channelResponseCsvUrl', null);

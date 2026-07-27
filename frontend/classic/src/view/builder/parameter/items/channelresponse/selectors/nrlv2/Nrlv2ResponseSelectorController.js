@@ -1031,7 +1031,6 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
           vm.set('channelResponseImageUrl', result.plot_url || null);
           vm.set('channelResponseCsvUrl', result.csv_url || null);
           vm.set('channelResponsePlotMessage', result.message || null);
-          vm.set('responseTree', null);
           Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', true);
           yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(vm);
           yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(vm);
@@ -1051,6 +1050,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
   },
 
   loadChannelResponsePlot: function () {
+    if (this.getViewModel().get('responseTree')) {
+      this.recalculateSensitivity();
+      return;
+    }
     this.loadChannelResponseIfPossible();
   },
 

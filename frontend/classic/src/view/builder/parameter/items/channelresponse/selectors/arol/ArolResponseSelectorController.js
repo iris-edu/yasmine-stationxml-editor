@@ -89,6 +89,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
     this.loadInstrumentPreviewIfPossible('sensor');
   },
   loadChannelResponsePlot: function () {
+    if (this.getViewModel().get('responseTree')) {
+      this.recalculateSensitivity();
+      return;
+    }
     this.loadChannelResponseIfPossible();
   },
   downloadChannelResponsePlot: function () {
