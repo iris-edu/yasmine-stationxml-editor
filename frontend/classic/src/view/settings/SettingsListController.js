@@ -86,7 +86,19 @@ Ext.define('yasmine.view.settings.SettingsListController', {
     let form = this.getView().getForm();
     form.updateRecord();
     let record = this.getView().getRecord();
-    let url = (record && record.get('nrlv2__nrlv2_base_url')) || 'https://service.iris.edu/irisws/nrl/1/';
+    let configuredUrl = record && record.get('nrlv2__nrlv2_base_url');
+    let usedDefault = !configuredUrl;
+    let defaultUrl = 'https://service.iris.edu/irisws/nrl/1/';
+    let url = configuredUrl || defaultUrl;
+    if (usedDefault) {
+      let urlField = this.lookupReference('nrlv2UrlField');
+      if (urlField) {
+        urlField.setValue(defaultUrl);
+      }
+      if (record) {
+        record.set('nrlv2__nrlv2_base_url', defaultUrl);
+      }
+    }
     let btn = this.lookupReference('nrlv2TestBtn');
     if (btn) btn.setDisabled(true);
     Ext.Ajax.request({
@@ -104,11 +116,19 @@ Ext.define('yasmine.view.settings.SettingsListController', {
           result = { success: false, message: 'Invalid server response' };
         }
         if (result.success) {
-          Ext.toast({ html: 'NRL Online connection OK', align: 't' });
+          let msg = 'NRL Online connection OK';
+          if (usedDefault) {
+            msg += '<br>NRL URL is empty — using default: ' + defaultUrl;
+          }
+          Ext.toast({ html: msg, align: 't' });
         } else {
           let msg = result.message || result.errorCode;
           if (!msg && !success && response) {
             msg = 'Request failed (status: ' + (response.status || 'unknown') + ')';
+          }
+          if (usedDefault) {
+            msg = (msg || 'Connection failed') +
+              '<br>NRL URL is empty — tested with default: ' + defaultUrl;
           }
           Ext.MessageBox.alert('NRL Online Test', msg || 'Connection failed');
         }
