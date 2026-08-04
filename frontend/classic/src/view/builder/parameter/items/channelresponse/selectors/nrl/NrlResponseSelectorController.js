@@ -34,19 +34,41 @@
 Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector.NrlResponseSelectorController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.nrl-response-selector',
+  requires: ['yasmine.utils.ResponseRecalculateUtil'],
   initViewModel: function () {
     this.getStore('sensorStore').root.expand();
     this.getStore('dataloggerStore').root.expand();
+    this.syncActiveSelectorTab();
   },
+
+  syncActiveSelectorTab: function () {
+    let tabPanel = this.getView();
+    let activeTab = tabPanel.getActiveTab();
+    if (activeTab) {
+      this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(activeTab));
+    }
+  },
+
+  onSelectorTabChange: function (tabPanel, newTab) {
+    this.getViewModel().set('activeSelectorTab', tabPanel.items.indexOf(newTab));
+    yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+    yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(this.getViewModel());
+  },
+
   fillRecord: function () {
-    let sensorKeys = this.getViewModel().get('sensorKeys');
-    let dataloggerKeys = this.getViewModel().get('dataloggerKeys');
+    let vm = this.getViewModel();
+    let record = yasmine.utils.ResponseRecalculateUtil.getRecordFromContext(vm);
+    if (!record) {
+      return;
+    }
+    let sensorKeys = vm.get('sensorKeys');
+    let dataloggerKeys = vm.get('dataloggerKeys');
     if (!sensorKeys || !dataloggerKeys) {
       return;
     }
 
-    let record = this.getViewModel().get('record');
-    record.set('value', {libraryType: 'nrl', sensorKeys, dataloggerKeys});
+    let value = { libraryType: 'nrl', sensorKeys, dataloggerKeys };
+    record.set('value', yasmine.utils.ResponseRecalculateUtil.withRecalculateFlag(value, vm));
   },
   isDataloggerCompleted: function () {
     return !!this.getViewModel().get('dataloggerPreview');
@@ -75,6 +97,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
     return this.getViewModel().get('sensorKeys');
   },
   loadChannelResponsePlot: function () {
+    if (this.getViewModel().get('responseTree')) {
+      this.recalculateSensitivity();
+      return;
+    }
     this.loadChannelResponseIfPossible();
   },
   downloadChannelResponsePlot: function () {
@@ -92,9 +118,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
     this.getViewModel().set('channelResponseText', null);
     this.getViewModel().set('channelResponseImageUrl', null);
     this.getViewModel().set('channelResponseCsvUrl', null);
+    this.getViewModel().set('responseTree', null);
     this.getViewModel().set(keysProperty, null);
     if (!node.isLeaf()) {
       Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', false);
+      yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(this.getViewModel());
+      yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(this.getViewModel());
       return;
     }
     this.setKeys(node, keysProperty);
@@ -156,6 +185,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
             icon: Ext.MessageBox.WARNING
           });
         }
+        yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(that.getViewModel());
+        yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(that.getViewModel());
       }
     });
   },
@@ -176,5 +207,36 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector
       result = result.reverse();
       result = result.shift();
     }
+  },
+
+  recalculateSensitivity: function () {
+    let vm = this.getViewModel();
+    let sensorKeys = vm.get('sensorKeys');
+    let dataloggerKeys = vm.get('dataloggerKeys');
+    if (!sensorKeys || !sensorKeys.length || !dataloggerKeys || !dataloggerKeys.length) {
+      return;
+    }
+    Ext.Ajax.request({
+      method: 'POST',
+      url: '/api/channel/response/recalculate-sensitivity/',
+      jsonData: {
+        libraryType: 'nrl',
+        sensorKeys: sensorKeys,
+        dataloggerKeys: dataloggerKeys,
+        min: vm.get('minFrequency'),
+        max: vm.get('maxFrequency')
+      },
+      success: function (response) {
+        let result = JSON.parse(response.responseText);
+        if (!result.success) {
+          yasmine.utils.ResponseRecalculateUtil.showRecalculateError(result.message);
+          return;
+        }
+        yasmine.utils.ResponseRecalculateUtil.applyRecalculateResult(vm, result);
+      },
+      failure: function () {
+        yasmine.utils.ResponseRecalculateUtil.showRecalculateError();
+      }
+    });
   }
 });

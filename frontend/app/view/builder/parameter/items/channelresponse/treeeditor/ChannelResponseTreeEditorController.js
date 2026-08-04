@@ -64,6 +64,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   },
   loadChannelResponseForEditing: function () {
     let record = this.getViewModel().get('record');
+    let pendingValue = record.get('value');
+    if (pendingValue && pendingValue.response) {
+      this.applyTreeData(pendingValue.response);
+      return;
+    }
+
     let nodeInstanceId = record.get('node_inst_id');
     let that = this;
 
@@ -81,25 +87,43 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
             icon: Ext.MessageBox['ERROR']
           });
         } else {
-          that.getViewModel().set('channelResponse', result.data);
-          let response = result.data;
-          let responseChildren = response.Response.children;
-          for (let child of responseChildren) {
-            that.convertResponseTreeStore(child);
-          }
-          let responseTreeStore = Ext.create('Ext.data.TreeStore', {
-            root: {
-              iconCls: 'fa-code',
-              expanded: true,
-              text: 'Response',
-              children: responseChildren
-            }
-          });
-          let responseTree = that.lookupReference('channelresponsetree');
-          responseTree.setStore(responseTreeStore);
+          that.applyTreeData(result.data);
         }
       }
     });
+  },
+  reloadTree: function (channelResponseData, reselectKey) {
+    this.applyTreeData(channelResponseData, reselectKey);
+  },
+  applyTreeData: function (channelResponseData, reselectKey) {
+    this.getViewModel().set('channelResponse', channelResponseData);
+    let response = channelResponseData;
+    let responseChildren = response.Response.children;
+    for (let child of responseChildren) {
+      this.convertResponseTreeStore(child);
+    }
+    let responseTree = this.lookupReference('channelresponsetree');
+    let selectedKey = reselectKey;
+    let selection = responseTree.getSelection()[0];
+    if (!selectedKey && selection && selection.get('key')) {
+      selectedKey = selection.get('key');
+    }
+    let responseTreeStore = Ext.create('Ext.data.TreeStore', {
+      root: {
+        iconCls: 'fa-code',
+        expanded: true,
+        text: 'Response',
+        children: responseChildren
+      }
+    });
+    responseTree.setStore(responseTreeStore);
+    if (selectedKey) {
+      let node = responseTree.getStore().findNode('key', selectedKey, responseTree.getRoot(), true, false, true);
+      if (node) {
+        responseTree.setSelection(node);
+        this.onNodeSelected(node);
+      }
+    }
   },
   prepareResponse: function(responseNodes) {
     let children = [];

@@ -43,7 +43,5 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
   ],
   viewModel: 'channel-response-editor',
   controller: 'channel-response-editor',
-  minWidth: 800,
-  minHeight: 600,
   layout: 'fit'
 });

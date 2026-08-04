@@ -74,6 +74,19 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step3View', {
       channelInfo.set('sensorKeys', stepsData.sensorKeys);
       channelInfo.set('dataloggerKeys', stepsData.dataloggerKeys);
       channelInfo.set('instconfig', stepsData.instconfig);
+      if (stepsData.selectedLibrary !== 'none' && this.selector && this.selector.getViewModel) {
+        channelInfo.set('responseTree', cmpController.getViewModel().get('responseTree') || null);
+      } else {
+        channelInfo.set('responseTree', null);
+      }
+    },
+    recalculateSensitivity: function () {
+      if (this.selector && this.selector.getController) {
+        let ctrl = this.selector.getController();
+        if (ctrl && typeof ctrl.recalculateSensitivity === 'function') {
+          ctrl.recalculateSensitivity();
+        }
+      }
     },
     initComponent: function () {
       let container = this.getView();
@@ -102,6 +115,9 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step3View', {
       }
 
       container.add(this.selector);
+      if (this.selector && this.selector.getViewModel && stepsData.selectedLibrary !== 'none') {
+        this.selector.getViewModel().set('wizardMode', true);
+      }
     }
   }
 });

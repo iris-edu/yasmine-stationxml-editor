@@ -50,6 +50,7 @@ from tornado.web import HTTPError
 
 from yasmine.app.enums.xml_node import XmlNodeEnum
 from yasmine.app.models.inventory import XmlModel, XmlNodeInstModel, XmlNodeAttrRelationModel, XmlNodeAttrValModel
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
 
 
@@ -97,7 +98,7 @@ class ImportStationXml(HandlerMixin):
 
                     station_inst_node.children.append(channel_inst_node)
 
-        with self.db.begin():
+        with db_transaction(self.db):
             self.db.add(xml)
 
         return xml
@@ -122,7 +123,7 @@ class ConvertToInventory(HandlerMixin):
 
     def run(self):
 
-        xml = self.db.query(XmlModel).get(self.xml_model_id)
+        xml = self.db.get(XmlModel, self.xml_model_id)
 
         all_attrs = self.db.query(XmlNodeAttrValModel)\
             .join(XmlNodeAttrValModel.node_inst)\
@@ -232,7 +233,7 @@ class ExportStationXml(HandlerMixin):
         except Exception as e:
             raise HTTPError(reason="Unable to build XML: '%s'" % str(e))
 
-        xml = self.db.query(XmlModel).get(self.xml_model_id)
+        xml = self.db.get(XmlModel, self.xml_model_id)
         output = io.BytesIO()
         inv.write(output, format="STATIONXML")
 

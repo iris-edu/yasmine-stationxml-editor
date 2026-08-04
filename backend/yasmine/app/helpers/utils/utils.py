@@ -36,19 +36,38 @@
 import os
 import numpy as np
 
-from yasmine.app.utils.response_plot import plot_polynomial_resp, get_polynomial_resp_csv
+from yasmine.app.utils.response_plot import (
+    plot_polynomial_resp,
+    get_polynomial_resp_csv,
+    detect_plot_output,
+    apply_bode_axis_labels,
+    amplitude_ylabel,
+    save_bode_figure,
+)
+
+
+def _sample_rate_from_response(response):
+    """Derive sampling rate from last response stage; None if unavailable."""
+    stages = getattr(response, 'response_stages', None) or []
+    if not stages:
+        return None
+    last = stages[-1]
+    factor = getattr(last, 'decimation_factor', None)
+    input_rate = getattr(last, 'decimation_input_sample_rate', None)
+    if factor in (None, 0) or input_rate is None:
+        return None
+    return input_rate / factor
 
 
 class ChannelUtils:
 
     @staticmethod
-    def create_response_csv(response, folder, file_name, min_frequency=0.001, max_frequency=None, fstep=0.1):
+    def create_response_csv(response, folder, file_name, min_frequency=0.001, max_frequency=None,
+                            fstep=0.1, instconfig=None):
         if response.instrument_polynomial is not None:
             return get_polynomial_resp_csv(response, folder, file_name)
-        sampling_rate = None
-        last_stage = response.response_stages[-1]
-        if last_stage.decimation_factor != 0:
-            sampling_rate = last_stage.decimation_input_sample_rate / last_stage.decimation_factor
+        sampling_rate = _sample_rate_from_response(response)
+        plot_output = detect_plot_output(response, instconfig)
 
         # If no max_frequency given, calc response up to fnyq = sampling_rate/2
         # else: shift sampling_rate so that fNyq = max_frequency
@@ -66,7 +85,7 @@ class ChannelUtils:
 
         resp = response.get_evalresp_response_for_frequencies(
             freqs,
-            output="VEL",
+            output=plot_output,
             start_stage=1,
             end_stage=None)
 
@@ -81,7 +100,7 @@ class ChannelUtils:
         import csv
         with open(file_path, 'w', newline='') as file:
             writer = csv.writer(file)
-            writer.writerow(["Frequency", "Amplitude", "Phase [deg]"])
+            writer.writerow(["Frequency [Hz]", amplitude_ylabel(plot_output, response), "Phase [deg]"])
             for i, freq in enumerate(freqs):
                 # print(i, freq, camp[i], cang[i])
                 writer.writerow([freq, camp[i], cang[i]])
@@ -89,19 +108,18 @@ class ChannelUtils:
         return sanitized_file_name
 
     @staticmethod
-    def create_response_plot(response, folder, file_name, min_frequency=0.001, max_frequency=None):
+    def create_response_plot(response, folder, file_name, min_frequency=0.001, max_frequency=None,
+                             instconfig=None):
         import matplotlib
         matplotlib.use('Agg')
 
         min_frequency = float(min_frequency) if min_frequency is not None else 0.001
+        plot_output = detect_plot_output(response, instconfig)
 
         if response.instrument_polynomial is not None:
             # MTH: this label is not propagating to plot:
             return plot_polynomial_resp(response, label='Polynomial Response', axes=None, folder=folder, outfile=file_name)
-        sampling_rate = None
-        last_stage = response.response_stages[-1]
-        if last_stage.decimation_factor != 0:
-            sampling_rate = last_stage.decimation_input_sample_rate / last_stage.decimation_factor
+        sampling_rate = _sample_rate_from_response(response)
 
         if max_frequency:
             sampling_rate = 2 * max_frequency
@@ -124,28 +142,28 @@ class ChannelUtils:
         #      in the AROL lib.
         response.plot(
             min_frequency,
-            output="VEL",
+            output=plot_output,
             start_stage=1,
             end_stage=None,
             unwrap_phase=False,
             sampling_rate=sampling_rate,
             axes=[ax1, ax2],
             outfile=None)
-        fig.savefig(file_path, dpi=120)
+        apply_bode_axis_labels(fig, plot_output, response, plot_degrees=False)
+        save_bode_figure(fig, file_path)
         plt.close(fig)
 
         return sanitized_file_name
 
     @staticmethod
-    def create_response_plot_difference(resp1, resp2, folder, file_name, min_frequency=0.001, max_frequency=None):
+    def create_response_plot_difference(resp1, resp2, folder, file_name, min_frequency=0.001,
+                                        max_frequency=None, instconfig=None):
         os.makedirs(folder, exist_ok=True)
         sanitized_file_name = file_name.replace('/', '_').replace('\\', '_') + '.png'
         file_path = os.path.join(folder, f'{sanitized_file_name}')
 
-        sampling_rate = None
-        last_stage = resp1.response_stages[-1]
-        if last_stage.decimation_factor != 0:
-            sampling_rate = last_stage.decimation_input_sample_rate / last_stage.decimation_factor
+        sampling_rate = _sample_rate_from_response(resp1)
+        plot_output = detect_plot_output(resp1, instconfig)
 
         if max_frequency:
             sampling_rate = 2 * max_frequency
@@ -153,15 +171,13 @@ class ChannelUtils:
         if sampling_rate is None or sampling_rate <= 0:
             sampling_rate = 200.0
 
-        # Here should be a code which generates a plot in PNG format and stores it under $file_path
-
         from yasmine.app.utils.response_plot import plot_diff_resp
         import matplotlib
         matplotlib.use('Agg')
 
         plot_diff_resp(resp1, resp2,
                        min_frequency,
-                       output="VEL",
+                       output=plot_output,
                        start_stage=None,
                        end_stage=None,
                        unwrap_phase=False,

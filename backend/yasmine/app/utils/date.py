@@ -31,14 +31,20 @@
 # ****************************************************************************/
 
 
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 
 from tzlocal import get_localzone
 import pytz
 
 
 def get_now_utc():
-    return datetime.utcnow().replace(tzinfo=pytz.utc)
+    """Timezone-aware UTC now (pytz.utc)."""
+    return datetime.now(timezone.utc).replace(tzinfo=pytz.utc)
+
+
+def get_utcnow_naive():
+    """Naive UTC now for SQLAlchemy DateTime columns without timezone."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 def strptime_utc(value, dt_format):

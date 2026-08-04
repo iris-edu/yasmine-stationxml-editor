@@ -38,8 +38,10 @@ from sqlalchemy.orm import joinedload
 from yasmine.app.handlers.equipment import EquipmentMixin
 from yasmine.app.models import XmlNodeInstModel, XmlNodeModel, XmlNodeAttrModel, XmlNodeAttrValModel
 from yasmine.app.services.xml_service import XmlService
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.enums.xml_node import XmlNodeEnum, XmlNodeAttrEnum
+from yasmine.app.utils.response_sensitivity import response_tree_to_obj, validate_response_sacpz
 
 
 def _to_datetime(val):
@@ -53,7 +55,7 @@ def _to_datetime(val):
 class WizardService(HandlerMixin, EquipmentMixin):
     def create_network(self, xml_id, code, start_date, end_date):
         inst = XmlNodeInstModel(
-            node=self.db.query(XmlNodeModel).get(XmlNodeEnum.NETWORK),
+            node=self.db.get(XmlNodeModel, XmlNodeEnum.NETWORK),
             xml_id=xml_id,
             code=code,
             start_date=_to_datetime(start_date),
@@ -67,8 +69,8 @@ class WizardService(HandlerMixin, EquipmentMixin):
 
     def create_station(self, xml_id, code, start_date, end_date, network_id, latitude, longitude, elevation):
         inst = XmlNodeInstModel(
-            parent=self.db.query(XmlNodeInstModel).get(network_id),
-            node=self.db.query(XmlNodeModel).get(XmlNodeEnum.STATION),
+            parent=self.db.get(XmlNodeInstModel, network_id),
+            node=self.db.get(XmlNodeModel, XmlNodeEnum.STATION),
             xml_id=xml_id,
             code=code,
             start_date=_to_datetime(start_date),
@@ -85,36 +87,46 @@ class WizardService(HandlerMixin, EquipmentMixin):
         return inst.id
 
     def create_channels(self, xml_id, code_list, start_date, end_date, station_id, dip_list, azimuth_list, latitude,
-                        longitude, elevation, location_code, depth, library_type, sensor_keys, datalogger_keys):
-        channel_node = self.db.query(XmlNodeModel).get(XmlNodeEnum.CHANNEL)
-        station = self.db.query(XmlNodeInstModel).get(station_id)
+                        longitude, elevation, location_code, depth, library_type, sensor_keys, datalogger_keys,
+                        response_tree=None):
+        channel_node = self.db.get(XmlNodeModel, XmlNodeEnum.CHANNEL)
+        station = self.db.get(XmlNodeInstModel, station_id)
         channels = []
-        for i in range(len(code_list)):
-            if len(code_list[i]) > 0:
-                inst = XmlNodeInstModel(
-                    parent=station,
-                    node=channel_node,
-                    xml_id=xml_id,
-                    code=code_list[i],
-                    start_date=_to_datetime(start_date),
-                    end_date=_to_datetime(end_date)
-                )
-                self._create_attr(inst, XmlNodeAttrEnum.CODE, code_list[i])
-                self._create_attr(inst, XmlNodeAttrEnum.START_DATE, start_date)
-                self._create_attr(inst, XmlNodeAttrEnum.END_DATE, end_date)
-                self._create_attr(inst, XmlNodeAttrEnum.LOCATION_CODE, location_code, False)
-                self._create_attr(inst, XmlNodeAttrEnum.LATITUDE, latitude)
-                self._create_attr(inst, XmlNodeAttrEnum.LONGITUDE, longitude)
-                self._create_attr(inst, XmlNodeAttrEnum.ELEVATION, elevation)
-                self._create_attr(inst, XmlNodeAttrEnum.DEPTH, depth)
-                self._create_attr(inst, XmlNodeAttrEnum.AZIMUTH, azimuth_list[i])
-                self._create_attr(inst, XmlNodeAttrEnum.DIP, dip_list[i])
+        # Avoid autoflush while assembling unsaved channel instances linked to station.
+        with self.db.no_autoflush:
+            for i in range(len(code_list)):
+                if len(code_list[i]) > 0:
+                    inst = XmlNodeInstModel(
+                        parent=station,
+                        node=channel_node,
+                        xml_id=xml_id,
+                        code=code_list[i],
+                        start_date=_to_datetime(start_date),
+                        end_date=_to_datetime(end_date)
+                    )
+                    self._create_attr(inst, XmlNodeAttrEnum.CODE, code_list[i])
+                    self._create_attr(inst, XmlNodeAttrEnum.START_DATE, start_date)
+                    self._create_attr(inst, XmlNodeAttrEnum.END_DATE, end_date)
+                    self._create_attr(inst, XmlNodeAttrEnum.LOCATION_CODE, location_code, False)
+                    self._create_attr(inst, XmlNodeAttrEnum.LATITUDE, latitude)
+                    self._create_attr(inst, XmlNodeAttrEnum.LONGITUDE, longitude)
+                    self._create_attr(inst, XmlNodeAttrEnum.ELEVATION, elevation)
+                    self._create_attr(inst, XmlNodeAttrEnum.DEPTH, depth)
+                    self._create_attr(inst, XmlNodeAttrEnum.AZIMUTH, azimuth_list[i])
+                    self._create_attr(inst, XmlNodeAttrEnum.DIP, dip_list[i])
 
-                equipment = self.manage_equipment(inst, sensor_keys, datalogger_keys, library_type)
-                for attr in equipment:
-                    if attr is not None:
-                        inst.attr_vals.append(attr)
-                channels.append(inst)
+                    equipment = self.manage_equipment(inst, sensor_keys, datalogger_keys, library_type)
+                    if response_tree:
+                        response_attr = equipment[3]
+                        if response_attr is not None:
+                            response_obj = response_tree_to_obj(response_tree)
+                            if not response_obj.instrument_polynomial:
+                                validate_response_sacpz(response_obj)
+                            response_attr.value_obj = response_obj
+                    for attr in equipment:
+                        if attr is not None:
+                            inst.attr_vals.append(attr)
+                    channels.append(inst)
 
         self._save_instances(channels, xml_id)
         return list(map(lambda x: x.id, channels))
@@ -165,7 +177,7 @@ class WizardService(HandlerMixin, EquipmentMixin):
         return data
 
     def _save_instances(self, inst_list, xml_id):
-        with self.db.begin():
+        with db_transaction(self.db):
             for inst in inst_list:
                 self.db.add(inst)
             XmlService(self).update_timestamp(xml_id)

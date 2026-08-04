@@ -37,7 +37,15 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
   viewModel: {
     data: {
       isChartMode: true
+    },
+    formulas: {
+      wizardPreviewCls: function (get) {
+        return get('wizardMode') ? 'response-preview-wizard' : '';
+      }
     }
+  },
+  bind: {
+    userCls: '{wizardPreviewCls}'
   },
   layout: {
     type: 'vbox',
@@ -81,8 +89,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
       layout: 'fit',
       hidden: true,
       padding: '5 0 0 0',
+      cls: 'response-chart-text-wrap',
       bind: {
-        hidden: '{isChartMode}',
+        hidden: '{isChartMode}'
       },
       items: {
         xtype: 'textareafield',
@@ -104,7 +113,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
       margin: '5 0 0 0',
       hidden: false,
       bind: {
-        hidden: '{!isChartMode}',
+        hidden: '{!isChartMode}'
       }
     }
   ]

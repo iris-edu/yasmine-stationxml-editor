@@ -48,6 +48,7 @@ from yasmine.app.services.node_service import NodeService
 from yasmine.app.services.xml_service import XmlService
 from yasmine.app.utils.imp_exp import ConvertToInventory
 from yasmine.app.utils.inv_valid import ValidateInventory, VALIDATION_RULES
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.response_plot import polynomial_or_polezero_response
 from yasmine.app.utils.ujson import json_load
 
@@ -70,7 +71,7 @@ class XmlNodePathHandler(AsyncThreadMixin, BaseHandler):
         inst_id = int(self.get_argument('nodeId'))
         path = []
         if inst_id > 0:
-            node = self.db.query(XmlNodeInstModel).get(inst_id)
+            node = self.db.get(XmlNodeInstModel, inst_id)
             self._get_parent(node, path)
             path.reverse()
         return {'success': True, 'data': {'path': path}}
@@ -88,7 +89,7 @@ class XmlSimilarChannelHandler(AsyncThreadMixin, BaseHandler):
     def async_get(self, *_, **__):
         target_xml_id = int(self.get_argument('xmlId'))
         channel_id = int(self.get_argument('nodeInstanceId'))
-        channel = self.db.query(XmlNodeInstModel).get(channel_id)
+        channel = self.db.get(XmlNodeInstModel, channel_id)
         station_code = channel.parent.code
         channel_code = channel.attr_vals.join(XmlNodeAttrValModel.attr) \
             .filter(XmlNodeAttrModel.name == XmlNodeAttrEnum.CODE) \
@@ -193,7 +194,7 @@ class XmlNodeAttrHandler(EquipmentMixin, ExtJsHandler):
             raise ValueError('attr_id must be a valid integer')
         if attr_id <= 0:
             raise ValueError('attr_id must be a positive integer')
-        attr = self.db.query(XmlNodeAttrModel).get(attr_id)
+        attr = self.db.get(XmlNodeAttrModel, attr_id)
         if attr is None:
             raise ValueError('Attribute with id %s does not exist' % attr_id)
         return AttributeService(self).create_attribute(
@@ -219,7 +220,8 @@ class XmlNodeAttrHandler(EquipmentMixin, ExtJsHandler):
             return {'success': False, 'data': err_msg, 'message': err_msg}
 
     def async_delete(self, db_id, **__):
-        AttributeService(self).delete_attribute(db_id)
+        with db_transaction(self.db):
+            AttributeService(self).delete_attribute(db_id)
         return {'success': True}
 
 
@@ -235,7 +237,7 @@ class XmlNodeAvailableAttrHandler(AsyncThreadMixin, BaseHandler):
     def async_get(self, node_id, *_, **__):
         data = []
 
-        node_inst = self.db.query(XmlNodeInstModel).get(node_id)
+        node_inst = self.db.get(XmlNodeInstModel, node_id)
 
         set_attrs = self.db.query(XmlNodeAttrValModel.attr_id) \
             .filter(XmlNodeAttrValModel.node_inst_id == node_inst.id)

@@ -38,6 +38,7 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
   alias: 'controller.wizard-create-channel-item',
   requires: [
     'Ext.ux.Mediator',
+    'yasmine.utils.ResponseRecalculateUtil',
   ],
   init: function () {
     this.callParent(arguments);
@@ -111,6 +112,7 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
     layout.setActiveItem(nextIndex);
     this.getViewModel().set('activeIndex', nextIndex);
     this.updateNavigationButtonState();
+    this.updateWizardFooterButtons();
   },
   updateNavigationButtonState: function () {
     let viewModel = this.getViewModel();
@@ -141,6 +143,23 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
     if (controller && controller.initComponent) {
       controller.initComponent();
     }
+    this.updateWizardFooterButtons();
+  },
+  updateWizardFooterButtons: function () {
+    let vm = this.getViewModel();
+    let activeIndex = vm.get('activeIndex');
+    let stepsData = vm.get('stepsStoredData') || {};
+    if (activeIndex !== 2 || stepsData.selectedLibrary === 'none') {
+      Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', []);
+      return;
+    }
+    let step3 = this.lookupReference('channel-step-3');
+    let selector = step3 && step3.getController().selector;
+    if (!selector || !selector.getViewModel) {
+      Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', []);
+      return;
+    }
+    yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(selector.getViewModel());
   },
   getActiveItemController: function () {
     let activeIndex = this.getViewModel().get('activeIndex');

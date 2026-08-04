@@ -1,8 +1,20 @@
 # YASMINE Backend
 If GUI is required to be used, please see `../frontend/README.md` before using backend
 
+### Requirements
+
+- **Python:** 3.13 recommended (supported: 3.9–3.13)
+- **Key packages** (see `requirements.txt` for full list):
+  - ObsPy >= 1.5.0
+  - SQLAlchemy >= 2.0.51, < 2.1
+  - Tornado >= 6.5.7
+  - lxml >= 6.1.1
+- **Transitive:** numpy and matplotlib are installed via ObsPy (not pinned directly)
+
+Product releases are versioned as 4.x (see CHANGELOG). The setuptools package name is `YASMINE` with `version='1.0'` in setup.py — this is the internal package version, not the application release.
+
 ### Using python virtual environment
-1. Install Python 3.6.5+
+1. Install Python 3.13 (supported: 3.9–3.13)
 2. Run `python -m venv env`
 3. Run `source env/bin/activate`
 4. Run `pip install --upgrade pip setuptools`
@@ -11,11 +23,16 @@ If GUI is required to be used, please see `../frontend/README.md` before using b
 7. Run `yasmineapp.py runserver`
 
 ### Using Docker
+
+**Standalone backend image** (not Docker Compose):
+
 1. Install Docker <https://www.docker.com/products/docker-desktop>
 2. Build Docker image: `docker build -t yasmine/backend .`
 3. Run Docker image: `docker run --rm -p 80:80 yasmine/backend`
 4. Go to GUI url: <http://localhost>
 5. Go to REST API endpoint: <http://localhost/api/>
+
+For the full development stack (frontend + backend), use `docker compose` from the repository root — see the root README. The UI is at <http://localhost:1841>; the backend API is at <http://localhost:8080/api/>.
 
 ### Tips
 1. To generate a DB migration script: `python yasmineapp.py syncdb revision --autogenerate` 

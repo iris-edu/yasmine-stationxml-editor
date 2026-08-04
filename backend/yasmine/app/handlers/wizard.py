@@ -97,7 +97,8 @@ class CreateChannelHandler(AsyncThreadMixin, EquipmentMixin, BaseHandler):
             depth=params.get(XmlNodeAttrEnum.DEPTH),
             library_type=params.get('libraryType'),
             sensor_keys=params.get('sensorKeys') or params.get('instconfig'),
-            datalogger_keys=params.get('dataloggerKeys')
+            datalogger_keys=params.get('dataloggerKeys'),
+            response_tree=params.get('responseTree'),
         )
         return {'success': True, 'channel_ids': channel_ids}
 

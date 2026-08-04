@@ -35,6 +35,7 @@ import unittest
 import xmlunittest
 
 from yasmine.app.models import XmlModel
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import DbMixin
 from yasmine.app.tests.integration.utils.integration_util import migrate_db, remove_db, get_file_path
 from yasmine.app.utils.imp_exp import ImportStationXml, ExportStationXml
@@ -69,7 +70,7 @@ class ImportExportStationXml(unittest.TestCase, DbMixin, xmlunittest.XmlTestMixi
             self.assertXmlEquivalentOutputs(content, generated_content.getvalue())
 
     def tearDown(self):
-        with self.db.begin():
+        with db_transaction(self.db):
             self.db.query(XmlModel).delete()
 
     @classmethod

@@ -33,12 +33,153 @@
 
 import copy
 import logging
+import re
 import numpy as np
 from math import pi
 
 from obspy.core.inventory.response import paz_to_sacpz_string
 from obspy.core.util.obspy_types import ComplexWithUncertainties, ZeroSamplingRate
 logger = logging.getLogger()
+
+_ACCEL_UNIT_RE = re.compile(
+    r"M/S\*\*2|M/\(S\*\*2\)|M/SEC\*\*2|M/\(SEC\*\*2\)|M/S/S|M/SEC/SEC",
+    re.IGNORECASE,
+)
+_VEL_UNIT_RE = re.compile(
+    r"^M/S$|^M/SEC$|^METERS/SECOND$|^METERS PER SECOND$",
+    re.IGNORECASE,
+)
+_INSTCONFIG_ACCEL_RE = re.compile(r"STgroundAccel\b")
+_INSTCONFIG_VEL_RE = re.compile(r"STgroundVel\b")
+_INSTCONFIG_DISP_RE = re.compile(r"STgroundDisp\b")
+
+
+def _get_unit_string(unit):
+    if unit is None:
+        return None
+    if isinstance(unit, str):
+        s = unit.strip()
+        return s or None
+    return getattr(unit, 'name', None) or getattr(unit, 'value', None) or str(unit)
+
+
+def _units_to_evalresp_output(unit_str):
+    """Map physical unit string to evalresp output code (DISP/VEL/ACC) or None."""
+    if not unit_str:
+        return None
+    # RESP lookup strings: "M/S**2 - Acceleration..."
+    token = unit_str.split(' - ', 1)[0].strip().upper()
+    if _ACCEL_UNIT_RE.search(token):
+        return 'ACC'
+    if _VEL_UNIT_RE.match(token):
+        return 'VEL'
+    if token == 'M' or token == 'METERS':
+        return 'DISP'
+    return None
+
+
+def _output_from_instconfig(instconfig):
+    if not instconfig:
+        return None
+    if _INSTCONFIG_ACCEL_RE.search(instconfig):
+        return 'ACC'
+    if _INSTCONFIG_VEL_RE.search(instconfig):
+        return 'VEL'
+    if _INSTCONFIG_DISP_RE.search(instconfig):
+        return 'DISP'
+    return None
+
+
+def detect_plot_output(response, instconfig=None):
+    """Choose evalresp output (DISP/VEL/ACC/DEF) for Bode plot from instconfig or response units."""
+    from_instconfig = _output_from_instconfig(instconfig)
+    if from_instconfig:
+        return from_instconfig
+
+    if response is None:
+        return 'DEF'
+
+    sens = getattr(response, 'instrument_sensitivity', None)
+    if sens:
+        out = _units_to_evalresp_output(_get_unit_string(sens.input_units))
+        if out:
+            return out
+
+    stages = getattr(response, 'response_stages', None) or []
+    if stages:
+        out = _units_to_evalresp_output(_get_unit_string(stages[0].input_units))
+        if out:
+            return out
+
+    return 'DEF'
+
+
+_AMPLITUDE_YLABEL = {
+    'VEL': 'Amplitude [m/s]',
+    'ACC': 'Amplitude [m/s²]',
+    'DISP': 'Amplitude [m]',
+}
+
+_OUTPUT_TYPE_SUFFIX = {
+    'VEL': 'velocity',
+    'ACC': 'acceleration',
+    'DISP': 'displacement',
+}
+
+BODE_FIGURE_SAVEFIG_KWARGS = {'dpi': 120, 'bbox_inches': 'tight', 'pad_inches': 0.12}
+_BODE_SUBPLOTS_ADJUST = {'hspace': 0.02, 'top': 0.87, 'right': 0.82, 'left': 0.10}
+
+
+def save_bode_figure(fig, file_path):
+    """Save Bode figure with axis labels included in the image bounds."""
+    fig.savefig(file_path, **BODE_FIGURE_SAVEFIG_KWARGS)
+
+
+def _canonical_unit_token(unit_str):
+    """Short unit token for labels, e.g. 'COUNTS - Digital Counts' -> counts."""
+    if not unit_str:
+        return None
+    token = unit_str.split(' - ', 1)[0].strip().lower()
+    return token or None
+
+
+def amplitude_ylabel(plot_output, response=None):
+    """Y-axis label for Bode amplitude subplot."""
+    code = (plot_output or 'DEF').upper()
+    fixed = _AMPLITUDE_YLABEL.get(code)
+    if fixed:
+        return fixed
+    sens = getattr(response, 'instrument_sensitivity', None) if response else None
+    if sens:
+        out_u = _canonical_unit_token(_get_unit_string(sens.output_units))
+        in_u = _canonical_unit_token(_get_unit_string(sens.input_units))
+        if out_u and in_u:
+            return f'Amplitude [{out_u}/{in_u}]'
+    return 'Amplitude'
+
+
+def diff_amplitude_ylabel(plot_output):
+    """Y-axis label for amplitude-difference Bode subplot."""
+    code = (plot_output or 'DEF').upper()
+    label = 'Amplitude difference [dB]'
+    suffix = _OUTPUT_TYPE_SUFFIX.get(code)
+    if suffix:
+        return f'{label} ({suffix})'
+    return label
+
+
+def apply_bode_axis_labels(fig, plot_output, response=None, *, plot_degrees=False):
+    """Set axis labels and layout after ObsPy response.plot with external axes."""
+    import matplotlib.pyplot as plt
+
+    fig.subplots_adjust(**_BODE_SUBPLOTS_ADJUST)
+    ax1, ax2 = fig.axes[:2]
+    plt.setp(ax1.get_xticklabels(), visible=False)
+    ax1.set_ylabel(amplitude_ylabel(plot_output, response))
+    ax1.grid(True)
+    ax2.set_xlabel('Frequency [Hz]')
+    ax2.set_ylabel('Phase [degrees]' if plot_degrees else 'Phase [rad]')
+    ax2.grid(True)
 
 
 def _prepare_paz_for_sacpz(paz):
@@ -80,7 +221,7 @@ def _prepare_sensitivity_for_sacpz(response):
         response.instrument_sensitivity.value = sens_val
 
 
-def plot_diff_resp(response, resp2, min_freq, output="VEL", start_stage=None,
+def plot_diff_resp(response, resp2, min_freq, output=None, start_stage=None,
                    end_stage=None, label=None, axes=None, sampling_rate=None,
                    unwrap_phase=False, plot_degrees=False, show=True, outfile=None):
     """
@@ -180,9 +321,20 @@ def plot_diff_resp(response, resp2, min_freq, output="VEL", start_stage=None,
     n2 = np.log10(max_freq)
     freqs = np.array(np.logspace(n1, n2, nfreqs))
 
+    if output is None:
+        output = detect_plot_output(response)
+    out2 = detect_plot_output(resp2)
+    if out2 and out2 != output and output != 'DEF':
+        logger.warning(
+            'Response diff plot: resp2 output %s differs from resp1 %s; using %s',
+            out2, output, output,
+        )
+
     resp1 = response
-    x1 = resp1.get_evalresp_response_for_frequencies(freqs, output='VEL', start_stage=None, end_stage=None)
-    x2 = resp2.get_evalresp_response_for_frequencies(freqs, output='VEL', start_stage=None, end_stage=None)
+    x1 = resp1.get_evalresp_response_for_frequencies(
+        freqs, output=output, start_stage=None, end_stage=None)
+    x2 = resp2.get_evalresp_response_for_frequencies(
+        freqs, output=output, start_stage=None, end_stage=None)
     x1_mag = np.abs(x1)
     x1_pha = np.angle(x1, deg=plot_degrees)
     x2_mag = np.abs(x2)
@@ -262,10 +414,10 @@ def plot_diff_resp(response, resp2, min_freq, output="VEL", start_stage=None,
     # only do adjustments if we initialized the figure in here
     if not axes:
         _adjust_bode_plot_figure(fig, show=False,
-                                 plot_degrees=plot_degrees)
+                                 plot_degrees=plot_degrees, plot_output=output)
 
     if outfile:
-        fig.savefig(outfile, dpi=120)
+        save_bode_figure(fig, outfile)
     else:
         print("Now show the plot show=%s" % show)
         if show:
@@ -274,13 +426,13 @@ def plot_diff_resp(response, resp2, min_freq, output="VEL", start_stage=None,
     return fig
 
 
-def _adjust_bode_plot_figure(fig, plot_degrees=False, grid=True, show=True):
+def _adjust_bode_plot_figure(fig, plot_degrees=False, grid=True, show=True, plot_output=None):
     """
     Helper function to do final adjustments to Bode plot figure.
     """
     import matplotlib.pyplot as plt
     # make more room in between subplots for the ylabel of right plot
-    fig.subplots_adjust(hspace=0.02, top=0.87, right=0.82)
+    fig.subplots_adjust(**_BODE_SUBPLOTS_ADJUST)
     ax1, ax2 = fig.axes[:2]
     # workaround for older matplotlib versions
     try:
@@ -289,8 +441,7 @@ def _adjust_bode_plot_figure(fig, plot_degrees=False, grid=True, show=True):
         leg_ = ax1.legend(loc="lower center", ncol=3)
         leg_.prop.set_size("small")
     plt.setp(ax1.get_xticklabels(), visible=False)
-    # ax1.set_ylabel('Amplitude')
-    ax1.set_ylabel('Amplitude Diff [dB]')
+    ax1.set_ylabel(diff_amplitude_ylabel(plot_output))
     # I don't know where get_ylim() is getting this from but it's clearly wrong
     minmax1 = ax1.get_ylim()
     # print(minmax1)
@@ -304,7 +455,7 @@ def _adjust_bode_plot_figure(fig, plot_degrees=False, grid=True, show=True):
     ax2.set_xlabel('Frequency [Hz]')
     if plot_degrees:
         # degrees bode plot
-        ax2.set_ylabel('Phase Diff [deg]')
+        ax2.set_ylabel('Phase difference [deg]')
         ax2.set_yticks(np.arange(-180, 180, 30))
         ax2.set_yticklabels(np.arange(-180, 180, 30))
         ax2.set_ylim(-180, 180)
@@ -465,7 +616,7 @@ def plot_polynomial_resp(response, label=None, axes=None, folder=None, outfile=N
 
     show = 1
     if outfile:
-        fig.savefig(outfile, dpi=120)
+        save_bode_figure(fig, outfile)
     else:
         if show:
             plt.show()

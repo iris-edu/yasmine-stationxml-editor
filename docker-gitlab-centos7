@@ -1,3 +1,6 @@
+# Legacy CI/utils image (CentOS 7 + Python 3.6). Workflows using this image are deactivated.
+# When reactivating, rebuild on a current base with Python 3.13 to match backend/Dockerfile
+# and setup.py python_requires (>=3.9,<3.14).
 FROM centos:centos7
 
 RUN yum -y update; yum -y install yum-utils which sudo wget unzip; yum -y groupinstall development;

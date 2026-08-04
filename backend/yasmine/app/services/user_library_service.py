@@ -43,6 +43,7 @@ from yasmine.app.models import XmlNodeAttrValModel, XmlNodeAttrModel
 from yasmine.app.services.file_convertor_service import FileConvertorService
 from yasmine.app.services.file_validator_service import FileValidatorService
 from yasmine.app.settings import RESOURCES_SCHEMA_GATITO
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
 
 
@@ -69,7 +70,7 @@ class UserLibraryService(HandlerMixin):
     def _parse_library(self, folder):
         self._validate_files(folder)
 
-        with self.db.begin():
+        with db_transaction(self.db):
             self.db.query(XmlNodeAttrValModel)\
                 .filter(XmlNodeAttrValModel.node_inst_id.is_(None))\
                 .delete()

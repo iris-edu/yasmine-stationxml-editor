@@ -8,7 +8,7 @@ permalink: /user-guide/
 - [Exercise: Create Metadata With Yasmine](#exercise-create-metadata-with-yasmine)
 - [Exercise: Manage StationXML With Yasmine](#exercise-manage-stationxml-with-yasmine)
 
-[Yasmine (Yet Another Station Metadata INformation Editor)](https://github.com/iris-edu/yasmine-stationxml-editor) v4.1.0-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
+[Yasmine (Yet Another Station Metadata INformation Editor)](https://github.com/iris-edu/yasmine-stationxml-editor) v4.1.2-beta is an editor designed to facilitate the creation of geophysical station metadata in FDSN StationXML format.
 
 Before you begin, follow the [Installation](/yasmine-stationxml-editor/installation) instructions to get Yasmine up and running. 
 

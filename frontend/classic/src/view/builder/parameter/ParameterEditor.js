@@ -47,22 +47,36 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditor', {
   bodyPadding: 4,
   modal: true,
   frame: true,
+  resizable: true,
   minWidth: 800,
+  minHeight: 500,
   closable: false,
   scrollable: true,
   defaultFocus: 'focusItem',
   defaultButton: 'saveButton',
   layout: 'fit',
   listeners: {
-    afterlayout: function () {
-      let viewSize = Ext.getBody().getViewSize();
-      let height = viewSize.height;
-      if (this.getHeight() > height) {
-        this.setHeight(height);
+    show: function () {
+      if (!this._initialSizeApplied) {
+        var viewSize = Ext.getBody().getViewSize();
+        this.setSize(
+          Math.min(1000, Math.floor(viewSize.width * 0.85)),
+          Math.min(700, Math.floor(viewSize.height * 0.8))
+        );
+        this._initialSizeApplied = true;
+        this.center();
       }
-      let width = viewSize.width;
-      if (this.getWidth() > width) {
-        this.setWidth(width);
+    },
+    afterlayout: function () {
+      if (this.maximized) {
+        return;
+      }
+      var viewSize = Ext.getBody().getViewSize();
+      if (this.getHeight() > viewSize.height) {
+        this.setHeight(viewSize.height);
+      }
+      if (this.getWidth() > viewSize.width) {
+        this.setWidth(viewSize.width);
       }
       this.center();
     }

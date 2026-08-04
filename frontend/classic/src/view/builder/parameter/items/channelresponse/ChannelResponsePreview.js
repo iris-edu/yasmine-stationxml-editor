@@ -41,15 +41,34 @@ Ext.define("yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
     let datalogger = '';
     let sensor = '';
     for (const item of items) {
-      if (item.get('attr_name') === 'data_logger' && item.get('value').description) {
-        datalogger = item.get('value').description;
-      } else if (item.get('attr_name') === 'sensor' && item.get('value').description) {
-        sensor = item.get('value').description;
+      let itemValue = item.get('value');
+      if (!itemValue || typeof itemValue !== 'object') {
+        continue;
+      }
+      if (item.get('attr_name') === 'data_logger' && itemValue.description) {
+        datalogger = itemValue.description;
+      } else if (item.get('attr_name') === 'sensor' && itemValue.description) {
+        sensor = itemValue.description;
       }
     }
 
     let result = `${datalogger} ${sensor}`.trim();
+    if (result) {
+      return result;
+    }
 
-    return result ? result : 'Response Preview';
+    if (typeof value === 'string') {
+      let lines = value.split('\n').map(function (line) {
+        return line.replace(/\t/g, ' ').trim();
+      }).filter(function (line) {
+        return line.length > 0;
+      });
+      if (lines.length > 0) {
+        return lines[0];
+      }
+      return value.substring(0, 120);
+    }
+
+    return 'Response Preview';
   }
 });

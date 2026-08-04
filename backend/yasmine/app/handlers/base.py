@@ -50,6 +50,7 @@ import tornado
 
 from yasmine.app.settings import DATE_FORMAT_SYSTEM
 from yasmine.app.utils.date import datetime_to_utc, strptime
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.utils.ujson import json_dump, json_load
 from yasmine.app.exceptions.exceptions import ResponseEditException
@@ -60,7 +61,11 @@ class AsyncThreadMixin(object):
 
     @run_on_executor
     def async_call(self, func, *args, **kwargs):
-        return func(*args, **kwargs)
+        try:
+            return func(*args, **kwargs)
+        finally:
+            if hasattr(self, 'application') and hasattr(self.application, 'db'):
+                self.application.db.remove()
 
     def async_get(self, *args, **kwargs):
         raise Exception("Not implemented")
@@ -335,7 +340,7 @@ class ExtJsHandler(AsyncThreadMixin, BaseHandler):
 
     def get_obj(self, db_id):
         fields = self.determine_fields(self.model)
-        obj = self.db.query(self.model).get(db_id)
+        obj = self.db.get(self.model, db_id)
         return {'success': True,  'data': self.serialize(obj, fields)}
 
     def serialize(self, q_object, fields):
@@ -375,8 +380,8 @@ class ExtJsHandler(AsyncThreadMixin, BaseHandler):
     def async_put(self, db_id, **__):
         fields = self.determine_fields(self.model)
         self.obj = None
-        with self.db.begin():
-            self.obj = self.db.query(self.model).get(db_id)
+        with db_transaction(self.db):
+            self.obj = self.db.get(self.model, db_id)
             # updates object
             try:
                 self.update_obj(self.obj)
@@ -387,14 +392,14 @@ class ExtJsHandler(AsyncThreadMixin, BaseHandler):
     def async_post(self, *_, **__):
         fields = self.determine_fields(self.model)
         self.obj = None
-        with self.db.begin():
+        with db_transaction(self.db):
             # creates object if id is not pointed
             self.obj = self.create_obj()
             self.db.add(self.obj)
         return {'success': True, 'data': self.serialize(self.obj, fields)}
 
     def async_delete(self, db_id, **__):
-        with self.db.begin():
+        with db_transaction(self.db):
             try:
                 getattr(self.model, 'deleted')
                 for obj in self.db.query(self.model).filter(getattr(self.model, self.key_field) == db_id):

@@ -1,3 +1,9 @@
+2026/07/08 : 4.1.2-beta
+ - Upgrade backend to Python 3.13 (Docker, CI)
+ - Upgrade ObsPy (>=1.5.0), SQLAlchemy 2.0.x, and related dependencies
+ - Add Recalculate Sensitivity in channel wizard and parameter editor
+ - Sync installation documentation with actual requirements and ports
+
 2023/10/06 : 4.1.1-beta
  - Fix obsolete Docker images version
  - Fix obsolete Python package requirements

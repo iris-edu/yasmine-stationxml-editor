@@ -75,6 +75,14 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardView', {
     {xtype: 'wizard-final-step'}
   ],
   buttons: [
+    {
+      xtype: 'container',
+      reference: 'wizard-action-buttons-container',
+      defaults: {
+        margin: '0 5 0 0'
+      },
+      items: []
+    },
     '->',
     {
       text: '&laquo; Previous',

@@ -32,7 +32,6 @@
 #
 # ****************************************************************************/
 
-from datetime import datetime
 from _collections import OrderedDict
 from obspy import UTCDateTime
 from obspy.core.inventory import Longitude, Latitude, Site, Distance
@@ -41,15 +40,16 @@ from sqlalchemy.sql.expression import or_
 from yasmine.app.enums.xml_node import XmlNodeAttrEnum, XmlNodeAttrWindetsEnum, XmlNodeEnum
 from yasmine.app.models import XmlNodeInstModel, XmlModel, XmlNodeAttrModel, XmlNodeAttrValModel, UserLibraryModel
 from yasmine.app.settings import DATE_FORMAT_SYSTEM
+from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
-from yasmine.app.utils.date import strptime
+from yasmine.app.utils.date import strptime, get_utcnow_naive
 from sqlalchemy import func
 from itertools import groupby
 
 
 class NodeService(HandlerMixin):
     def delete_node_from_xml(self, xml_id, node_id):
-        with self.db.begin():
+        with db_transaction(self.db):
             self.db.query(XmlNodeInstModel) \
                 .filter(XmlNodeInstModel.xml_id == xml_id,
                         XmlNodeInstModel.id == node_id) \
@@ -57,7 +57,7 @@ class NodeService(HandlerMixin):
             self._update_xml_datetime(xml_id)
 
     def delete_node_from_library(self, library_id, node_type, node_inst_id):
-        with self.db.begin():
+        with db_transaction(self.db):
             self.db.query(XmlNodeInstModel) \
                 .filter(XmlNodeInstModel.user_library_id == library_id,
                         XmlNodeInstModel.id == node_inst_id,
@@ -66,36 +66,36 @@ class NodeService(HandlerMixin):
             self._update_library_datetime(library_id)
 
     def create_default_node_for_xml(self, xml_id, node_type, parent_id):
-        with self.db.begin():
-            parent = self.db.query(XmlNodeInstModel).get(parent_id) if parent_id else None
-            utc_now = datetime.utcnow().replace(microsecond=0)
+        with db_transaction(self.db):
+            parent = self.db.get(XmlNodeInstModel, parent_id) if parent_id else None
+            utc_now = get_utcnow_naive().replace(microsecond=0)
             node = self._create_default_node_for_xml(xml_id, node_type, parent, utc_now)
             self.db.add(node)
             self._update_xml_datetime(xml_id)
         return node.id
 
     def create_default_node_for_library(self, library_id, node_type, parent_id):
-        with self.db.begin():
-            parent = self.db.query(XmlNodeInstModel).get(parent_id) if parent_id else None
+        with db_transaction(self.db):
+            parent = self.db.get(XmlNodeInstModel, parent_id) if parent_id else None
             node = self._create_default_node_for_library(node_type, library_id, parent)
             self.db.add(node)
             self._update_library_datetime(library_id)
         return node.id
 
     def add_node_to_library(self, library_id, node_id):
-        with self.db.begin():
-            node_to_clone = self.db.query(XmlNodeInstModel).get(node_id)
-            utc_now = datetime.utcnow().replace(microsecond=0)
+        with db_transaction(self.db):
+            node_to_clone = self.db.get(XmlNodeInstModel, node_id)
+            utc_now = get_utcnow_naive().replace(microsecond=0)
             new_node = self._clone_node_and_active_children(node_to_clone, utc_now, None, None, library_id)
             self.db.add(new_node)
             self._update_library_datetime(library_id)
         return new_node.id
 
     def add_node_to_xml(self, xml_id, node_id, parent_id):
-        with self.db.begin():
-            node_to_clone = self.db.query(XmlNodeInstModel).get(node_id)
-            parent = self.db.query(XmlNodeInstModel).get(parent_id) if parent_id else None
-            utc_now = datetime.utcnow().replace(microsecond=0)
+        with db_transaction(self.db):
+            node_to_clone = self.db.get(XmlNodeInstModel, node_id)
+            parent = self.db.get(XmlNodeInstModel, parent_id) if parent_id else None
+            utc_now = get_utcnow_naive().replace(microsecond=0)
             new_node = self._clone_node_and_active_children(node_to_clone, utc_now, xml_id, parent, None)
             self.db.add(new_node)
             self._update_xml_datetime(xml_id)
@@ -109,7 +109,7 @@ class NodeService(HandlerMixin):
                 .filter(XmlNodeInstModel.xml_id == xml_id) \
                 .filter(XmlNodeInstModel.parent_id.is_(None))
         else:
-            parent = self.db.query(XmlNodeInstModel).get(int(parent_id))
+            parent = self.db.get(XmlNodeInstModel, int(parent_id))
             parent_name = aliased(XmlNodeInstModel)
             nodes = self.db.query(XmlNodeInstModel) \
                 .join(XmlNodeInstModel.node) \
@@ -254,7 +254,7 @@ class NodeService(HandlerMixin):
         node_inst.node_id = node_type
         node_inst.parent_id = parent.id if parent else None
 
-        utc_now = datetime.utcnow().replace(microsecond=0)
+        utc_now = get_utcnow_naive().replace(microsecond=0)
         self._create_attributes(required_attrs, code, utc_now, node_inst, parent=parent)
         return node_inst
 
@@ -324,9 +324,9 @@ class NodeService(HandlerMixin):
     def _update_xml_datetime(self, xml_id):
         self.db.query(XmlModel) \
             .filter(XmlModel.id == xml_id) \
-            .update({'updated_at': datetime.utcnow()})
+            .update({'updated_at': get_utcnow_naive()})
 
     def _update_library_datetime(self, library_id):
         self.db.query(UserLibraryModel) \
             .filter(UserLibraryModel.id == library_id) \
-            .update({'updated_at': datetime.utcnow()})
+            .update({'updated_at': get_utcnow_naive()})

@@ -45,6 +45,15 @@ from yasmine.app.helpers.utils.utils import ChannelUtils
 from yasmine.app.models import XmlNodeInstModel
 from yasmine.app.settings import MEDIA_ROOT
 from yasmine.app.utils.imp_exp import ConvertToInventory
+from yasmine.app.utils.response_plot import polynomial_or_polezero_response
+from yasmine.app.utils.response_sensitivity import (
+    PolynomialResponseError,
+    load_response_from_preview_params,
+    preview_plot_basename,
+    recalculate_response_sensitivity,
+    response_obj_to_tree_json,
+    response_obj_to_tree_json_standalone,
+)
 
 
 class XmlChannelResponsePlotHandler(AsyncThreadMixin, BaseHandler):
@@ -142,3 +151,74 @@ class XmlChannelResponseXmlHandler(AsyncThreadMixin, BaseHandler):
             return {'success': False, 'message': f'Cannot generate xml channel response.<br> {err}'}
 
         return {'success': True, 'data': channel_response}
+
+
+class XmlChannelResponseRecalculateSensitivityHandler(AsyncThreadMixin, BaseHandler):
+    """POST /api/channel/response/recalculate-sensitivity/ - Recalculate InstrumentSensitivity."""
+
+    def async_post(self, *_, **__):
+        params = self.request_params
+        node_inst_id = params.get('nodeInstanceId')
+        instconfig = params.get('instconfig')
+        library_type = params.get('libraryType')
+        sensor_keys = params.get('sensorKeys')
+        datalogger_keys = params.get('dataloggerKeys')
+        if not node_inst_id and not instconfig and not (
+                library_type and sensor_keys and datalogger_keys):
+            return {
+                'success': False,
+                'message': 'nodeInstanceId, instconfig, or libraryType with sensorKeys and dataloggerKeys required',
+            }
+
+        response_json = params.get('response')
+        min_fq = params.get('min')
+        max_fq = params.get('max')
+
+        stderr_capture = io.StringIO()
+        old_stderr = sys.stderr
+        sys.stderr = stderr_capture
+        try:
+            response = load_response_from_preview_params(params, self)
+            response, frequency = recalculate_response_sensitivity(response)
+            if node_inst_id:
+                tree_data = response_obj_to_tree_json(response, node_inst_id, self)
+            else:
+                tree_data = response_obj_to_tree_json_standalone(response)
+            text = polynomial_or_polezero_response(response)
+            plot_folder = os.path.join(MEDIA_ROOT, 'plots')
+            plot_basename = preview_plot_basename(params)
+            plot_file = ChannelUtils.create_response_plot(
+                response,
+                plot_folder,
+                plot_basename,
+                float(min_fq) if min_fq else None,
+                float(max_fq) if max_fq else None,
+                instconfig=instconfig,
+            )
+            plot_csv = ChannelUtils.create_response_csv(
+                response,
+                plot_folder,
+                plot_basename,
+                float(min_fq) if min_fq else None,
+                float(max_fq) if max_fq else None,
+                instconfig=instconfig,
+            )
+        except PolynomialResponseError as err:
+            sys.stderr = old_stderr
+            return {'success': False, 'message': str(err)}
+        except Exception as err:
+            sys.stderr = old_stderr
+            return {'success': False, 'message': f'Cannot recalculate sensitivity.<br> {err}'}
+        finally:
+            sys.stderr = old_stderr
+
+        sensitivity_value = response.instrument_sensitivity.value
+        return {
+            'success': True,
+            'data': tree_data,
+            'text': text,
+            'plot_url': f'/api/channel/response/plots/plots/{plot_file}?_dc={random()}',
+            'csv_url': f'/api/channel/response/plots/plots/{plot_csv}?_dc={random()}',
+            'sensitivity_value': sensitivity_value,
+            'sensitivity_frequency': frequency,
+        }

@@ -37,6 +37,19 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
   ],
   init: function () {
     this.getView().addListener('show', this.onShow, this);
+    Ext.ux.Mediator.on('wizard-updateActionButtons', this.updateWizardActionButtons, this);
+  },
+  updateWizardActionButtons: function (buttons) {
+    let container = this.lookupReference('wizard-action-buttons-container');
+    if (!container) {
+      return;
+    }
+    Ext.suspendLayouts();
+    container.removeAll(false);
+    (buttons || []).forEach(function (button) {
+      container.add(button);
+    });
+    Ext.resumeLayouts(true);
   },
   onShow: function () {
     this.activateItem(0);
@@ -73,6 +86,7 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
     let layout = this.getView().getLayout();
     layout.setActiveItem(nextIndex);
     this.getViewModel().set('currentIndex', nextIndex);
+    Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', []);
   },
   isActiveItemValid: function () {
     let controller = this.getActiveItemController();

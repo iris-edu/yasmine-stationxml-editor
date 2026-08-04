@@ -39,7 +39,7 @@ from random import random
 from yasmine.app.helpers.etag_helper import EtagHelper
 from yasmine.app.helpers.utils.utils import ChannelUtils
 from yasmine.app.settings import MEDIA_ROOT
-from yasmine.app.utils.response_plot import polynomial_or_polezero_response
+from yasmine.app.utils.response_plot import polynomial_or_polezero_response, _units_to_evalresp_output
 
 
 # IRIS SI unit normalization (stationxml-seed-converter). Case-insensitive
@@ -210,6 +210,11 @@ def _get_unit_str(unit):
     return getattr(unit, 'name', None) or getattr(unit, 'value', None) or str(unit)
 
 
+def _is_ground_motion_unit(unit_str):
+    """True if unit is displacement, velocity, or acceleration (m, m/s, m/s**2)."""
+    return _units_to_evalresp_output(unit_str) is not None
+
+
 def _normalize_response_units(response):
     """Normalize input_units/output_units in response stages and instrument_sensitivity.
     Also fills None units from neighboring stages (ObsPy NRL sets first datalogger
@@ -265,6 +270,14 @@ def _normalize_response_units(response):
         pou = _get_unit_str(poly.output_units)
         if pou:
             poly.output_units = _normalize_unit(pou)
+    # Preserve ground-motion input type on instrument_sensitivity (accel vs vel vs disp).
+    if sens and stages:
+        stage0_iu = _get_unit_str(stages[0].input_units)
+        if _is_ground_motion_unit(stage0_iu):
+            sens.input_units = stages[0].input_units
+            desc = getattr(stages[0], 'input_units_description', None)
+            if desc:
+                sens.input_units_description = desc
     return response
 
 
@@ -306,13 +319,19 @@ class BaseHelper:
         response = self.get_channel_response_obj(sensor_keys, datalogger_keys)
         return polynomial_or_polezero_response(response)
 
-    def generate_channel_response_plot(self, response, sensors_keys, datalogger_keys, min_frequency, max_frequency):
+    def generate_channel_response_plot(self, response, sensors_keys, datalogger_keys, min_frequency,
+                                       max_frequency, instconfig=None):
         file_name = ''.join(sensors_keys) + '_' + ''.join(datalogger_keys)
-        return ChannelUtils.create_response_plot(response, self.plot_folder, file_name, min_frequency, max_frequency)
+        return ChannelUtils.create_response_plot(
+            response, self.plot_folder, file_name, min_frequency, max_frequency,
+            instconfig=instconfig)
 
-    def generate_channel_response_csv(self, response, sensors_keys, datalogger_keys, min_frequency, max_frequency):
+    def generate_channel_response_csv(self, response, sensors_keys, datalogger_keys, min_frequency,
+                                      max_frequency, instconfig=None):
         file_name = ''.join(sensors_keys) + '_' + ''.join(datalogger_keys)
-        return ChannelUtils.create_response_csv(response, self.plot_folder, file_name, min_frequency, max_frequency)
+        return ChannelUtils.create_response_csv(
+            response, self.plot_folder, file_name, min_frequency, max_frequency,
+            instconfig=instconfig)
 
     def get_sensor_response_and_plot(self, sensor_keys, datalogger_keys, min_fq, max_fq):
         try:
