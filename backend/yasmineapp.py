@@ -85,6 +85,10 @@ def run_test_cmd(*_, **__):
     from yasmine.app.tests.unit.nrl_guess_code_test import NrlGuessTest
     from yasmine.app.tests.integration.default_channel_creation_test import DefaultChannelCreationTest
     from yasmine.app.tests.unit.nrlv2_online_test import Nrlv2OnlineHelperTest
+    from yasmine.app.tests.unit.nrl_catalog_sync_test import (
+        NrlCatalogUpdateHelperTest,
+        NrlHelperCatalogSyncTest,
+    )
 
     loader = unittest.TestLoader()
     alltests = unittest.TestSuite([
@@ -101,7 +105,9 @@ def run_test_cmd(*_, **__):
         loader.loadTestsFromTestCase(LibraryHelperNrlTest),
         loader.loadTestsFromTestCase(NrlGuessTest),
         loader.loadTestsFromTestCase(DefaultChannelCreationTest),
-        loader.loadTestsFromTestCase(Nrlv2OnlineHelperTest)
+        loader.loadTestsFromTestCase(Nrlv2OnlineHelperTest),
+        loader.loadTestsFromTestCase(NrlCatalogUpdateHelperTest),
+        loader.loadTestsFromTestCase(NrlHelperCatalogSyncTest),
     ])
     runner = unittest.TextTestRunner(failfast=True)
     result = runner.run(alltests)
