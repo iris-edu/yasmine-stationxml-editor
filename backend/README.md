@@ -38,3 +38,15 @@ For the full development stack (frontend + backend), use `docker compose` from t
 1. To generate a DB migration script: `python yasmineapp.py syncdb revision --autogenerate` 
 2. To apply DB migrations: `python yasmineapp.py syncdb upgrade heads`
 3. To run all unittests `python yasmineapp.py test`
+
+### NRL Offline sync (backend)
+
+When **NRL Offline** is enabled in Settings (`nrl.nrl_enabled`), the backend scheduler syncs the local NRL archive under `data/_media/nrl/`:
+
+- **First install:** full ZIP download if `content/NRL/` is missing (no catalog check).
+- **Subsequent checks:** IRIS NRL catalog with `updatedsince=<last successful download date>`; full ZIP only when configurations changed.
+- **Schedule:** ~10 s after startup, then daily at 23:00 UTC (`NRL_CRON` in `yasmine/app/settings.py`).
+- **State:** `data/_media/nrl/last_successful_download_date.txt` (UTC `YYYY-MM-DD`, updated only after successful install).
+- **Logs:** `data/_logs/nrl.log`
+
+Unit tests for the catalog-based update logic: `python -m unittest yasmine.app.tests.unit.nrl_catalog_sync_test`
