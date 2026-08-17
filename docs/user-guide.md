@@ -49,10 +49,10 @@ The physical hardware includes the geophysical equipment and communication mediu
 
 Geophysicists use the term _instrument response_ to describe the unique signature the instrument imparts on the observation.
 
-Yasmine provides access to instrument response libraries:
+Yasmine provides access to two libraries with metadata descriptions and schema object definitions for well-known Earth-science observation instruments such as sensors and digitizers:
 
 - [The Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/)
-   : A comprehensive library of recommended nominal responses from IRIS. Use **NRL Offline** in Settings to maintain a local copy, or **NRLv2 online** to fetch responses on demand from the IRIS NRL Web Service.
+   : A comprehensive library of recommended nominal responses from IRIS. Use **NRL Offline** in Settings to maintain a local copy (updated via catalog `updatedsince`), or **NRLv2 online** to fetch responses on demand from the IRIS NRL Web Service.
 
 - [The Atomic Response Objects Library (AROL)](https://gitlab.com/resif/arol/)
    : A new instrument response library under development by Résif containing a smaller albeit easier and faster set of descriptions than the NRL

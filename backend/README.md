@@ -40,13 +40,14 @@ For the full development stack (frontend + backend), use `docker compose` from t
 3. To run all unittests `python yasmineapp.py test`
 
 ### NRL Offline sync (backend)
+When **NRL Offline** is enabled in Settings (`nrl_enabled`), the scheduler runs `sync_nrl` shortly after startup and daily at 23:00 UTC (`NRL_CRON` in `yasmine/app/settings.py`).
 
-When **NRL Offline** is enabled in Settings (`nrl.nrl_enabled`), the backend scheduler syncs the local NRL archive under `data/_media/nrl/`:
+- **Initial install** (no `data/_media/nrl/content/NRL/`): downloads the full NRL ZIP without a catalog pre-check.
+- **Subsequent checks**: `GET https://service.iris.edu/irisws/nrl/1/catalog?element=*&format=text&level=configuration&updatedsince=YYYY-MM-DD` where the date comes from `data/_media/nrl/last_successful_download_date.txt`.
+- **No updates**: catalog response is CSV header only → skip download.
+- **Updates available**: one or more data rows after the header → download, validate, and atomically replace the local library.
+- **Logs**: `data/_logs/nrl.log`
 
-- **First install:** full ZIP download if `content/NRL/` is missing (no catalog check).
-- **Subsequent checks:** IRIS NRL catalog with `updatedsince=<last successful download date>`; full ZIP only when configurations changed.
-- **Schedule:** ~10 s after startup, then daily at 23:00 UTC (`NRL_CRON` in `yasmine/app/settings.py`).
-- **State:** `data/_media/nrl/last_successful_download_date.txt` (UTC `YYYY-MM-DD`, updated only after successful install).
-- **Logs:** `data/_logs/nrl.log`
+The legacy ETag check on the full-ZIP URL is no longer used for NRL Offline (ETag remains for AROL sync).
 
-Unit tests for the catalog-based update logic: `python -m unittest yasmine.app.tests.unit.nrl_catalog_sync_test`
+Unit tests: `python -m unittest yasmine.app.tests.unit.nrl_catalog_sync_test`

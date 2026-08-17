@@ -17,23 +17,28 @@ Users are encouraged to use the **NRL** library, also available.
 ### User Manual
 Please read the included .docx manual for instructions on how to get started using Yasmine.
 
+If there is no internet connection, enable **NRL Offline** in Settings (see below) only after placing a local NRL archive under `data/_media/nrl/content/NRL/`, or unzip bundled `IRIS.zip` into the repository `data/` folder as a fallback.
+
 ### NRL Offline
-Yasmine can download and maintain a local copy of the [IRIS Nominal Response Library (NRL)](https://ds.iris.edu/ds/nrl/) for use without repeated full-archive downloads.
+Yasmine can keep a **local copy** of the IRIS Nominal Response Library (full ZIP) for offline use.
 
-1. Go to **Settings** and enable **NRL Offline (download archive)**
-2. On first enable (or when no local archive exists), Yasmine downloads the full NRL ZIP from the IRIS NRL Web Service. This can take several minutes depending on network speed.
-3. After a successful install, Yasmine checks for updates once shortly after startup and then daily at **23:00 UTC**. Updates are detected via the NRL catalog endpoint with `updatedsince=<last successful download date>`; the full ZIP is downloaded only when the catalog response contains configuration changes.
-4. When working fully offline, either keep a previously downloaded archive or manually unzip a bundled NRL (`IRIS.zip`) into `data/_media/nrl/content/` (see installation docs).
+1. Go to **Settings** and enable **NRL Offline (download archive)** (`nrl_enabled`)
+2. On first start with this option enabled, Yasmine downloads the full NRL ZIP from the [IRIS NRL Web Service](https://service.iris.edu/irisws/nrl/1/) (no catalog check on initial install)
+3. After a successful install, Yasmine checks for updates via `GET /catalog?element=*&format=text&level=configuration&updatedsince=YYYY-MM-DD` — the UTC date of the last successful download
+4. If the catalog response contains only the CSV header, the full ZIP is **not** re-downloaded; if one or more configuration rows appear after the header, a new full archive is downloaded and installed atomically
+5. Checks run shortly after backend startup and daily at **23:00 UTC** (`NRL_CRON`)
 
-Operational files (under the data directory):
+**State and logs** (under `data/`):
 
 | Path | Purpose |
 |------|---------|
-| `data/_media/nrl/content/NRL/` | Installed offline NRL library |
-| `data/_media/nrl/last_successful_download_date.txt` | UTC date (`YYYY-MM-DD`) of the last successful install; used for update checks |
-| `data/_logs/nrl.log` | NRL offline sync log |
+| `_media/nrl/content/NRL/` | Installed offline library |
+| `_media/nrl/last_successful_download_date.txt` | UTC date (`YYYY-MM-DD`) of last successful install; used as `updatedsince` |
+| `_logs/nrl.log` | Sync messages (`Checking NRL updates since …`, skip/download/update/failure) |
 
-If the catalog check or download fails, the existing local library is kept unchanged and the error is logged to `nrl.log`.
+Errors during catalog check or download do not remove the existing library. The date file is updated only after a successful install.
+
+Requires internet for download and update checks. For on-demand responses without a local archive, use **NRLv2 Online** instead.
 
 ### NRLv2 Online
 Yasmine supports **NRLv2 online** — using the [IRIS NRL Web Service](https://service.iris.edu/irisws/nrl/1/) to fetch instrument responses on demand, without downloading the full NRL archive.

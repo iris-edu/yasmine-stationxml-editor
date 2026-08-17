@@ -29,9 +29,11 @@ Product releases are versioned as 4.x (see CHANGELOG). The setuptools package na
 Yasmine may be started with Docker Compose or Python. Either way, the same data directory is used, so the choice is interchangable and a matter of preference.
 
 > **Note:**
-> NRL Offline is disabled by default. Enable **NRL Offline (download archive)** in Settings if you want Yasmine to download and maintain a local NRL copy. The first download can take several minutes. After that, Yasmine checks the IRIS NRL catalog daily (23:00 UTC) and re-downloads the full archive only when configurations changed since the last successful install. See the **NRL Offline** section in the repository README for a summary; operational details are below.
-
-When fully offline with no prior download, you can manually unzip a bundled NRL (`IRIS.zip`) into `data/_media/nrl/content/` so that `data/_media/nrl/content/NRL/` exists.
+> **NRL Offline** is disabled by default. Enable it in **Settings** → *NRL Offline (download archive)* if you want Yasmine to download and maintain a local NRL copy under `data/_media/nrl/`.
+>
+> The **first download** of the full NRL ZIP (after enabling the option) may take ten minutes or longer depending on network speed. After a successful install, Yasmine works offline with the local library.
+>
+> **Update checks** use the IRIS NRL catalog endpoint with `updatedsince=<last successful install date>` (UTC calendar date in `data/_media/nrl/last_successful_download_date.txt`). If no configurations changed since that date, the full ZIP is not downloaded again. Checks run after startup and daily at 23:00 UTC. See `data/_logs/nrl.log` for sync status.
 
 #### With Docker
 
@@ -104,7 +106,7 @@ After the first successful install, Yasmine no longer uses HTTP ETag for the ful
 
 `https://service.iris.edu/irisws/nrl/1/catalog?element=*&format=text&level=configuration&updatedsince=<date>`
 
-where `<date>` is the last successful install date. If the response contains only the CSV header, no update is available and the ZIP is not downloaded. If one or more configuration rows appear after the header, the full archive is downloaded and installed.
+where `<date>` is the last successful install date. If the response contains only the CSV header, no update is available and the ZIP is not downloaded. If one or more configuration rows appear after the header, the full archive is downloaded and installed atomically.
 
 Checks run once shortly after startup and daily at **23:00 UTC** (configurable via `NRL_CRON` in `backend/yasmine/app/settings.py`).
 
