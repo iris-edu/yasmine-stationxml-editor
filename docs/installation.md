@@ -81,7 +81,7 @@ Visit <http://localhost> when the backend is available (default port 80).
 For the full GUI in development mode, build or watch the frontend separately — see [`frontend/README.md`](https://github.com/iris-edu/yasmine-stationxml-editor/blob/master/frontend/README.md) (`sencha app watch` serves the UI at <http://localhost:1841>).
 
 | Scenario | URL | Notes |
-|----------|-----|-------|
+| ---------- | ----- | ------- |
 | Docker Compose (recommended) | <http://localhost:1841> | Frontend + backend |
 | Backend only (`runserver`) | <http://localhost> | API and static assets after `sencha app build` |
 | Frontend dev (`sencha app watch`) | <http://localhost:1841> | See frontend README |

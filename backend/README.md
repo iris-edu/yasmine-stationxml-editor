@@ -38,7 +38,7 @@ For the full development stack (frontend + backend), use `docker compose` from t
 
 ## Tips
 
-1. To generate a DB migration script: `python yasmineapp.py syncdb revision --autogenerate` 
+1. To generate a DB migration script: `python yasmineapp.py syncdb revision --autogenerate`
 2. To apply DB migrations: `python yasmineapp.py syncdb upgrade heads`
 3. To run all unittests `python yasmineapp.py test`
 
