@@ -97,7 +97,7 @@ Ext.define('yasmine.view.settings.Settings', {
     {name: 'channel__code', type: 'string'},
     {name: 'channel__required_fields'},
     {name: 'nrlv2__nrlv2_online_enabled', type: 'boolean', defaultValue: false},
-    {name: 'nrlv2__nrlv2_base_url', type: 'string', defaultValue: 'https://service.iris.edu/irisws/nrl/1/'},
+    {name: 'nrlv2__nrlv2_base_url', type: 'string', defaultValue: 'https://service.earthscope.org/irisws/nrl/1/'},
     {name: 'nrl__nrl_enabled', type: 'boolean', defaultValue: false}
   ]
 });

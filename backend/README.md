@@ -1,7 +1,8 @@
 # YASMINE Backend
+
 If GUI is required to be used, please see `../frontend/README.md` before using backend
 
-### Requirements
+## Requirements
 
 - **Python:** 3.13 recommended (supported: 3.9–3.13)
 - **Key packages** (see `requirements.txt` for full list):
@@ -13,7 +14,8 @@ If GUI is required to be used, please see `../frontend/README.md` before using b
 
 Product releases are versioned as 4.x (see CHANGELOG). The setuptools package name is `YASMINE` with `version='1.0'` in setup.py — this is the internal package version, not the application release.
 
-### Using python virtual environment
+## Using python virtual environment
+
 1. Install Python 3.13 (supported: 3.9–3.13)
 2. Run `python -m venv env`
 3. Run `source env/bin/activate`
@@ -22,7 +24,7 @@ Product releases are versioned as 4.x (see CHANGELOG). The setuptools package na
 6. Run `yasmineapp.py syncdb upgrade heads`
 7. Run `yasmineapp.py runserver`
 
-### Using Docker
+## Using Docker
 
 **Standalone backend image** (not Docker Compose):
 
@@ -34,16 +36,18 @@ Product releases are versioned as 4.x (see CHANGELOG). The setuptools package na
 
 For the full development stack (frontend + backend), use `docker compose` from the repository root — see the root README. The UI is at <http://localhost:1841>; the backend API is at <http://localhost:8080/api/>.
 
-### Tips
+## Tips
+
 1. To generate a DB migration script: `python yasmineapp.py syncdb revision --autogenerate` 
 2. To apply DB migrations: `python yasmineapp.py syncdb upgrade heads`
 3. To run all unittests `python yasmineapp.py test`
 
-### NRL Offline sync (backend)
+## NRL Offline sync (backend)
+
 When **NRL Offline** is enabled in Settings (`nrl_enabled`), the scheduler runs `sync_nrl` shortly after startup and daily at 23:00 UTC (`NRL_CRON` in `yasmine/app/settings.py`).
 
 - **Initial install** (no `data/_media/nrl/content/NRL/`): downloads the full NRL ZIP without a catalog pre-check.
-- **Subsequent checks**: `GET https://service.iris.edu/irisws/nrl/1/catalog?element=*&format=text&level=configuration&updatedsince=YYYY-MM-DD` where the date comes from `data/_media/nrl/last_successful_download_date.txt`.
+- **Subsequent checks**: `GET https://service.earthscope.org/irisws/nrl/1/catalog?element=*&format=text&level=configuration&updatedsince=YYYY-MM-DD` where the date comes from `data/_media/nrl/last_successful_download_date.txt`.
 - **No updates**: catalog response is CSV header only → skip download.
 - **Updates available**: one or more data rows after the header → download, validate, and atomically replace the local library.
 - **Logs**: `data/_logs/nrl.log`

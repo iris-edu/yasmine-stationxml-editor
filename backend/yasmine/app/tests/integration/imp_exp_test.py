@@ -52,9 +52,9 @@ class ImportExportStationXml(unittest.TestCase, DbMixin, xmlunittest.XmlTestMixi
         self._test_import('stationxmls/ne_v_1_0.xml')
         self._test_import('stationxmls/xx_v_1_0.xml')
 
-    def test_import_export_v_1_1(self):
-        self._test_import_export('stationxmls/ne_v_1_1.xml')
-        self._test_import_export('stationxmls/xx_v_1_1.xml')
+    def test_import_export_v_1_2(self):
+        self._test_import_export('stationxmls/ne_v_1_2.xml')
+        self._test_import_export('stationxmls/xx_v_1_2.xml')
 
     def _test_import(self, file_name):
         with open(get_file_path(file_name), 'rb') as f:

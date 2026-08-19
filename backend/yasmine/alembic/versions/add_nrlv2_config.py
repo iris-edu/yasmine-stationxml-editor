@@ -40,7 +40,7 @@ def upgrade():
     session.add(ConfigModel(
         group='nrlv2',
         name='nrlv2_base_url',
-        value=pickle.dumps('https://service.iris.edu/irisws/nrl/1/')
+        value=pickle.dumps('https://service.earthscope.org/irisws/nrl/1/')
     ))
     session.commit()
 

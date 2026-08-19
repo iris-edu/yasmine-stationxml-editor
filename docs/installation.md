@@ -12,7 +12,7 @@ To install Yasmine, clone the application's repository:
  git clone https://github.iris.washington.edu/iris-edu/yasmine-stationxml-editor
 ```
 
-### Requirements
+## Requirements
 
 - **Python:** 3.13 recommended (supported: 3.9–3.13)
 - **Key packages** (see [`backend/requirements.txt`](https://github.com/iris-edu/yasmine-stationxml-editor/blob/master/backend/requirements.txt) for the full list):
@@ -96,7 +96,7 @@ Yasmine supports three response sources: **NRL Offline** (local archive), **NRLv
 2. Restart the backend or wait for the startup sync job (~10 seconds after launch).
 3. If no local library exists (`data/_media/nrl/content/NRL/`), Yasmine downloads the full NRL ZIP from:
 
-   `https://service.iris.edu/irisws/nrl/1/combine?instconfig=full_NRL_v2_zip&format=resp.zip&nodata=404`
+   `https://service.earthscope.org/irisws/nrl/1/combine?instconfig=full_NRL_v2_zip&format=resp.zip&nodata=404`
 
 4. After a successful download and install, Yasmine writes the UTC install date to `data/_media/nrl/last_successful_download_date.txt` (`YYYY-MM-DD`).
 
@@ -104,11 +104,13 @@ Yasmine supports three response sources: **NRL Offline** (local archive), **NRLv
 
 After the first successful install, Yasmine no longer uses HTTP ETag for the full ZIP (the archive is generated dynamically and does not provide a reliable ETag). Instead it queries:
 
-`https://service.iris.edu/irisws/nrl/1/catalog?element=*&format=text&level=configuration&updatedsince=<date>`
+`https://service.earthscope.org/irisws/nrl/1/catalog?element=*&format=text&level=configuration&updatedsince=<date>`
 
 where `<date>` is the last successful install date. If the response contains only the CSV header, no update is available and the ZIP is not downloaded. If one or more configuration rows appear after the header, the full archive is downloaded and installed atomically.
 
 Checks run once shortly after startup and daily at **23:00 UTC** (configurable via `NRL_CRON` in `backend/yasmine/app/settings.py`).
+
+From 20 August 2026 the NRL Web Service is at `https://service.earthscope.org/irisws/nrl/1/` (the previous `service.iris.edu` host redirects from 24 August 2026).
 
 #### Logs and troubleshooting
 

@@ -52,7 +52,7 @@ class DefaultChannelCreationTest(unittest.TestCase, ProcessMixin, xmlunittest.Xm
         ProcessMixin.__init__(self, *args, **kwargs)
 
     def test_creation_channel_default_for_xml(self):
-        xml = self._import_xml('stationxmls/xx_v_1_1.xml')
+        xml = self._import_xml('stationxmls/xx_v_1_2.xml')
         station = self.db.query(XmlNodeInstModel).filter(XmlNodeInstModel.node_id == XmlNodeEnum.STATION).first()
 
         station_attrs = self.db.query(XmlNodeAttrValModel).filter(XmlNodeAttrValModel.node_inst_id == station.id).all()

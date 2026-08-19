@@ -49,27 +49,27 @@ class LibraryHelperNrlTest(unittest.TestCase):
         sensors = self._helper.get_sensors_keys()
         guralp = next((x for x in sensors if x['key'] == 'Guralp'), None)
         self.assertIsNotNone(guralp)
-        self.assertEqual(13, len(guralp['children']))
+        self.assertEqual(14, len(guralp['children']))
 
     def test_datalogger_keys(self):
         datalogger = self._helper.get_dataloggers_keys()
         guralp = next((x for x in datalogger if x['key'] == 'Guralp'), None)
         self.assertIsNotNone(guralp)
-        self.assertEqual(6, len(guralp['children']))
+        self.assertEqual(10, len(guralp['children']))
 
     def test_load_sensor_response(self):
-        sensor = self._helper.get_sensor_response_obj(['Streckeisen', 'STS-1', '360 seconds'])
+        sensor = self._helper.get_sensor_response_obj(['Streckeisen', 'STS-1', '360 s'])
         self.assertEqual('M/S', sensor.response_stages[0].input_units)
 
     def test_load_datalogger_response(self):
-        sensor = self._helper.get_datalogger_response_obj(['REF TEK', 'RT 130 & 130-SMA', '1', '40'])
-        self.assertEqual('M/S', sensor.response_stages[0].input_units)
+        sensor = self._helper.get_datalogger_response_obj(['REFTEK', '130-SMA', '1', '40 Hz'])
+        self.assertEqual('V', sensor.response_stages[0].input_units)
 
     def test_load_channel_response(self):
-        sensor_keys = ['Streckeisen', 'STS-2', '1500', '3 - installed 04/97 to present']
-        datalogger_key = ['REF TEK', 'RT 130 & 130-SMA', '1', '100']
+        sensor_keys = ['Streckeisen', 'STS-2', '3', '20000']
+        datalogger_key = ['REFTEK', '130-SMA', '1', '100 Hz']
         response = self._helper.get_channel_response_obj(sensor_keys, datalogger_key)
-        self.assertEqual('M/S', response.response_stages[0].input_units)
+        self.assertEqual('m/s', response.response_stages[0].input_units)
 
 
 if __name__ == "__main__":

@@ -1,3 +1,7 @@
+2026/08/19 : 4.1.2-beta (earthscope-nrl-host)
+ - Point NRL Online / NRL Offline defaults at https://service.earthscope.org/irisws/nrl/1/
+ - Migrate stored nrlv2_base_url when it still uses the former service.iris.edu default
+
 2026/08/18 : 4.1.2-beta (catalog-check-updatedsince)
  - NRL Offline: check for updates via IRIS NRL catalog updatedsince instead of ETag
  - Download full NRL ZIP only when catalog reports configuration changes

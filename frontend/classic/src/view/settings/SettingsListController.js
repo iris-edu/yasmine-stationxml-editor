@@ -88,7 +88,7 @@ Ext.define('yasmine.view.settings.SettingsListController', {
     let record = this.getView().getRecord();
     let configuredUrl = record && record.get('nrlv2__nrlv2_base_url');
     let usedDefault = !configuredUrl;
-    let defaultUrl = 'https://service.iris.edu/irisws/nrl/1/';
+    let defaultUrl = 'https://service.earthscope.org/irisws/nrl/1/';
     let url = configuredUrl || defaultUrl;
     if (usedDefault) {
       let urlField = this.lookupReference('nrlv2UrlField');

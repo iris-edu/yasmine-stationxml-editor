@@ -16,13 +16,13 @@ import re
 import time
 from urllib.parse import urlparse, urljoin
 
-import requests
-from obspy import read_inventory
-from obspy.core.inventory.util import Equipment
+import requests  # type: ignore[reportMissingImports]
+from obspy import read_inventory  # type: ignore[reportMissingImports]
+from obspy.core.inventory.util import Equipment  # type: ignore[reportMissingImports]
 
 from yasmine.app.helpers.base_helper import _normalize_response_units
+from yasmine.app.settings import NRLV2_DEFAULT_URL
 
-NRLV2_DEFAULT_URL = 'https://service.iris.edu/irisws/nrl/1/'
 CONNECT_TIMEOUT = 10
 READ_TIMEOUT = 30
 MAX_RETRIES = 2
@@ -73,7 +73,7 @@ def _parse_instconfig_equipment(instconfig):
 
 
 class Nrlv2OnlineHelper:
-    """Client for IRIS NRL Web Service (NRLv2 online)."""
+    """Client for EarthScope/IRIS NRL Web Service (NRLv2 online)."""
 
     def __init__(self, base_url=None):
         self.base_url = (base_url or NRLV2_DEFAULT_URL).strip().rstrip('/') + '/'
