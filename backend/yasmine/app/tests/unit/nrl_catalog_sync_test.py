@@ -96,6 +96,18 @@ class NrlCatalogUpdateHelperTest(unittest.TestCase):
             helper.get_last_successful_download_date(), '2026-08-17'
         )
 
+    def test_corrupt_date_returns_none(self):
+        helper = NrlCatalogUpdateHelper(self.root)
+        with open(helper.date_file, 'w', encoding='utf-8') as f:
+            f.write('garbage')
+        self.assertIsNone(helper.get_last_successful_download_date())
+
+    def test_impossible_calendar_date_returns_none(self):
+        helper = NrlCatalogUpdateHelper(self.root)
+        with open(helper.date_file, 'w', encoding='utf-8') as f:
+            f.write('2026-13-40')
+        self.assertIsNone(helper.get_last_successful_download_date())
+
     def test_header_only_means_no_updates(self):
         helper = NrlCatalogUpdateHelper(self.root)
         self.assertFalse(helper._catalog_has_data_rows(CATALOG_HEADER))
@@ -413,6 +425,24 @@ class NrlHelperCatalogSyncTest(unittest.TestCase):
         )
         self.assertEqual(len(session.calls), 1)
         self.assertIn('nrl.zip', session.calls[0]['url'])
+
+    def test_corrupt_date_with_existing_archive_forces_download(self):
+        self._seed_existing_library(date='not-a-date')
+        zip_bytes = _make_zip_bytes('recovered')
+        session = FakeSession([
+            lambda url, params: FakeResponse(content=zip_bytes),
+        ])
+        helper = self._helper(session)
+        with self._patch_prepare():
+            helper.sync()
+        self.assertEqual(
+            helper.catalog_helper.get_last_successful_download_date(),
+            '2026-08-17',
+        )
+        self.assertEqual(len(session.calls), 1)
+        self.assertIn('nrl.zip', session.calls[0]['url'])
+        with open(os.path.join(self.root, 'content', 'NRL', 'README')) as f:
+            self.assertIn('nrl-archive-recovered', f.read())
 
 
 if __name__ == '__main__':

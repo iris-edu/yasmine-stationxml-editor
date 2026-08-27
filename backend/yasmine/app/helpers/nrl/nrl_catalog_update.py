@@ -12,6 +12,7 @@ import io
 import logging
 import os
 import tempfile
+from datetime import datetime
 
 import requests
 
@@ -71,17 +72,16 @@ class NrlCatalogUpdateHelper:
             )
         if not value:
             return None
-        if len(value) != 10 or value[4] != '-' or value[7] != '-':
-            raise NrlCatalogUpdateError(
-                'Invalid last successful download date: %r' % value
-            )
         try:
-            year, month, day = value.split('-')
-            int(year), int(month), int(day)
+            datetime.strptime(value, '%Y-%m-%d')
         except ValueError:
-            raise NrlCatalogUpdateError(
-                'Invalid last successful download date: %r' % value
+            # Treat corrupt/unusable dates as unknown so sync can re-download.
+            self.logger.warning(
+                'Invalid last successful download date: %r; '
+                'treating as unknown',
+                value,
             )
+            return None
         return value
 
     def save_last_successful_download_date(self, date_str=None):
