@@ -79,14 +79,29 @@ NRL_ROOT = os.path.join(MEDIA_ROOT, 'nrl')  # @UnusedVariable
 IAL_ROOT = os.path.join(MEDIA_ROOT, 'ial')
 
 NRL_CRON = {'hour': 23, 'minute': 0, 'second': 0}
+# EarthScope cloud host from 2026-08-20; service.iris.edu redirects from 2026-08-24.
+NRLV2_DEFAULT_URL = 'https://service.earthscope.org/irisws/nrl/1/'
 # NRL_URL = 'http://ds.iris.edu/NRL/IRIS.zip'
-NRL_URL = 'http://service.iris.edu/irisws/nrl/1/combine?instconfig=full_NRL_v2_zip&format=resp.zip&nodata=404'
+NRL_URL = (
+    NRLV2_DEFAULT_URL
+    + 'combine?instconfig=full_NRL_v2_zip&format=resp.zip&nodata=404'
+)
+NRL_CATALOG_URL = NRLV2_DEFAULT_URL + 'catalog'
+NRL_HTTP_TIMEOUT = 60
+NRL_LAST_DOWNLOAD_DATE_FILE = 'last_successful_download_date.txt'
 IAL_FOLDER = 'arol-master'
 IAL_URL = f'https://gitlab.com/resif/arol/-/archive/master/arol-master.zip'
 
 LOGIING_CONSOLE_CONFIG = {
     'class': 'logging.StreamHandler',
     'level': logging.ERROR,
+    'formatter': 'default',
+    'stream': 'ext://sys.stdout'
+}
+
+LOGIING_CONSOLE_INFO_CONFIG = {
+    'class': 'logging.StreamHandler',
+    'level': logging.INFO,
     'formatter': 'default',
     'stream': 'ext://sys.stdout'
 }
@@ -126,7 +141,17 @@ LOGGING_CONFIG = dict(
             'backupCount': 20,
             'encoding': 'utf8'
         },
-        'console': LOGIING_CONSOLE_CONFIG
+        'nrl_default': {
+            'class': 'logging.handlers.RotatingFileHandler',
+            'level': logging.INFO,
+            'formatter': 'default',
+            'maxBytes': 10485760,
+            'filename': os.path.join(LOGGING_ROOT, 'nrl.log'),
+            'backupCount': 20,
+            'encoding': 'utf8'
+        },
+        'console': LOGIING_CONSOLE_CONFIG,
+        'console_info': LOGIING_CONSOLE_INFO_CONFIG
     },
     loggers={
         'tornado.access': {
@@ -140,6 +165,16 @@ LOGGING_CONFIG = dict(
         'tornado.general': {
             'handlers': ['general_default', 'console'],
             'level': logging.DEBUG
+        },
+        'yasmine.app.helpers.nrl': {
+            'handlers': ['nrl_default', 'console_info'],
+            'level': logging.INFO,
+            'propagate': False
+        },
+        'yasmine.app.run': {
+            'handlers': ['nrl_default', 'application_default', 'console_info'],
+            'level': logging.INFO,
+            'propagate': False
         }
     }
 )

@@ -51,22 +51,22 @@ class NrlIoTest(unittest.TestCase):
         self.assertTrue(len(os.listdir(NRL_ROOT)) > 0, "NRL is not synchronized")
 
         res = self._helper.get_channel_response_obj(
-            ['Streckeisen', 'STS-1', '360 seconds'],
-            ['REF TEK', 'RT 130 & 130-SMA', '1', '40'])
+            ['Streckeisen', 'STS-1', '360 s'],
+            ['REFTEK', '130-SMA', '1', '40 Hz'])
 
         self.assertIsNot(res, "No response")
 
     def test_2_sync_nrl_and_get_sensor_resp(self):
         self.assertTrue(len(os.listdir(NRL_ROOT)) > 0, "NRL is not synchronized")
 
-        res = self._helper.get_sensor_response_str(['Streckeisen', 'STS-1', '360 seconds'])
+        res = self._helper.get_sensor_response_str(['Streckeisen', 'STS-1', '360 s'])
 
         self.assertIsNotNone(res, "No response")
 
     def test_3_sync_nrl_and_get_datalogger_resp(self):
         self.assertTrue(len(os.listdir(NRL_ROOT)) > 0, "NRL is not synchronized")
 
-        res = self._helper.get_datalogger_response_str(['REF TEK', 'RT 130 & 130-SMA', '1', '40'])
+        res = self._helper.get_datalogger_response_str(['REFTEK', '130-SMA', '1', '40 Hz'])
 
         self.assertIsNotNone(res, "No response")
 
@@ -74,7 +74,15 @@ class NrlIoTest(unittest.TestCase):
         self.assertTrue(len(os.listdir(NRL_ROOT)) > 0, "NRL is not synchronized")
 
         res = self._helper.get_channel_response_obj(
-            ['Kinemetrics', 'Episensor (ES-T, ES-U, ES-U2, DS-DH, SBEPI)', '+/- 2.5V Single-ended', '0.25g'],
-            ['REF TEK', 'RT 130 & 130-SMA', '1', '100'])
+            [
+                'Kinemetrics',
+                'Episensor-ES-T',
+                '0.25g',
+                '2.5Vp',
+                'Single-ended',
+                '200 Hz',
+                '1.0207',
+            ],
+            ['REFTEK', '130-SMA', '1', '100 Hz'])
 
         self.assertIsNotNone(res, "No response")

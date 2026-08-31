@@ -173,7 +173,7 @@ Ext.define('yasmine.view.settings.SettingsList', {
               xtype: 'textfield',
               fieldLabel: 'NRL URL',
               name: 'nrlv2__nrlv2_base_url',
-              emptyText: 'https://service.iris.edu/irisws/nrl/1/',
+              emptyText: 'https://service.earthscope.org/irisws/nrl/1/',
               flex: 1,
               reference: 'nrlv2UrlField'
             },

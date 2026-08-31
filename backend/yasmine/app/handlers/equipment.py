@@ -42,13 +42,20 @@ from yasmine.app.models.inventory import XmlNodeAttrModel, XmlNodeAttrValModel
 class EquipmentMixin(object):
 
     def recreate_attr(self, node_inst, attr_name):
-        attr_model = self.db.query(XmlNodeAttrModel).filter(XmlNodeAttrModel.name == attr_name).first()
-        if node_inst.id:
-            self.db.query(XmlNodeAttrValModel) \
-                .filter(XmlNodeAttrValModel.attr_id == attr_model.id) \
-                .filter(XmlNodeAttrValModel.node_inst_id == node_inst.id) \
-                .delete()
-        return XmlNodeAttrValModel(node_inst=node_inst, attr_id=attr_model.id, attr=attr_model)
+        with self.db.no_autoflush:
+            attr_model = self.db.query(XmlNodeAttrModel).filter(
+                XmlNodeAttrModel.name == attr_name
+            ).first()
+            if node_inst.id:
+                self.db.query(XmlNodeAttrValModel) \
+                    .filter(XmlNodeAttrValModel.attr_id == attr_model.id) \
+                    .filter(XmlNodeAttrValModel.node_inst_id == node_inst.id) \
+                    .delete(synchronize_session=False)
+        return XmlNodeAttrValModel(
+            node_inst_id=node_inst.id,
+            attr_id=attr_model.id,
+            attr=attr_model,
+        )
 
     def manage_equipment(self, node_inst, sensor_keys, datalogger_keys, library_type, response_attr=None, nrlv2_source=None):
         if library_type == LibraryTypeEnum.NRLV2_ONLINE:
@@ -60,24 +67,31 @@ class EquipmentMixin(object):
 
         helper = LibraryHelperFactory().get_helper(library_type)
 
-        sensor_attr = None
-        if sensor_keys and len(sensor_keys) > 0:
-            sensor_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SENSOR)
-            sensor_attr.value_obj = helper.get_sensor_equipment(sensor_keys)
+        with self.db.no_autoflush:
+            sensor_attr = None
+            if sensor_keys and len(sensor_keys) > 0:
+                sensor_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SENSOR)
+                sensor_attr.value_obj = helper.get_sensor_equipment(sensor_keys)
 
-        datalogger_attr = None
-        if datalogger_keys and len(datalogger_keys) > 0:
-            datalogger_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.DATA_LOGGER)
-            datalogger_attr.value_obj = helper.get_datalogger_equipment(datalogger_keys)
+            datalogger_attr = None
+            if datalogger_keys and len(datalogger_keys) > 0:
+                datalogger_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.DATA_LOGGER)
+                datalogger_attr.value_obj = helper.get_datalogger_equipment(datalogger_keys)
 
-        sample_rate_attr = None
-        if sensor_keys and len(sensor_keys) > 0 and datalogger_keys and len(datalogger_keys) > 0:
-            response_attr = response_attr or self.recreate_attr(node_inst, XmlNodeAttrEnum.RESPONSE)
-            response_attr.value_obj = helper.get_channel_response_obj(sensor_keys, datalogger_keys)
-            sample_rate = self._sample_rate_from_response(response_attr.value_obj)
-            if sample_rate is not None:
-                sample_rate_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SAMPLE_RATE)
-                sample_rate_attr.value_obj = sample_rate
+            sample_rate_attr = None
+            if sensor_keys and len(sensor_keys) > 0 and datalogger_keys and len(datalogger_keys) > 0:
+                response_attr = response_attr or self.recreate_attr(
+                    node_inst, XmlNodeAttrEnum.RESPONSE
+                )
+                response_attr.value_obj = helper.get_channel_response_obj(
+                    sensor_keys, datalogger_keys
+                )
+                sample_rate = self._sample_rate_from_response(response_attr.value_obj)
+                if sample_rate is not None:
+                    sample_rate_attr = self.recreate_attr(
+                        node_inst, XmlNodeAttrEnum.SAMPLE_RATE
+                    )
+                    sample_rate_attr.value_obj = sample_rate
 
         return sensor_attr, datalogger_attr, sample_rate_attr, response_attr
 
@@ -88,24 +102,31 @@ class EquipmentMixin(object):
         has_sensor = instconfig.startswith('sensor_')
         has_datalogger = 'datalogger_' in instconfig
 
-        sensor_attr = None
-        if has_sensor:
-            sensor_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SENSOR)
-            sensor_attr.value_obj = helper.get_sensor_equipment(instconfig)
+        with self.db.no_autoflush:
+            sensor_attr = None
+            if has_sensor:
+                sensor_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SENSOR)
+                sensor_attr.value_obj = helper.get_sensor_equipment(instconfig)
 
-        datalogger_attr = None
-        if has_datalogger:
-            datalogger_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.DATA_LOGGER)
-            datalogger_attr.value_obj = helper.get_datalogger_equipment(instconfig)
+            datalogger_attr = None
+            if has_datalogger:
+                datalogger_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.DATA_LOGGER)
+                datalogger_attr.value_obj = helper.get_datalogger_equipment(instconfig)
 
-        response_attr = response_attr or self.recreate_attr(node_inst, XmlNodeAttrEnum.RESPONSE)
-        response_attr.value_obj = helper.get_channel_response_obj(instconfig, source=source)
+            response_attr = response_attr or self.recreate_attr(
+                node_inst, XmlNodeAttrEnum.RESPONSE
+            )
+            response_attr.value_obj = helper.get_channel_response_obj(
+                instconfig, source=source
+            )
 
-        sample_rate_attr = None
-        sample_rate = self._sample_rate_from_response(response_attr.value_obj)
-        if sample_rate is not None:
-            sample_rate_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SAMPLE_RATE)
-            sample_rate_attr.value_obj = sample_rate
+            sample_rate_attr = None
+            sample_rate = self._sample_rate_from_response(response_attr.value_obj)
+            if sample_rate is not None:
+                sample_rate_attr = self.recreate_attr(
+                    node_inst, XmlNodeAttrEnum.SAMPLE_RATE
+                )
+                sample_rate_attr.value_obj = sample_rate
 
         return sensor_attr, datalogger_attr, sample_rate_attr, response_attr
 

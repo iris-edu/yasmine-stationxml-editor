@@ -1,3 +1,14 @@
+2026/08/19 : 4.1.2-beta (earthscope-nrl-host)
+ - Point NRL Online / NRL Offline defaults at https://service.earthscope.org/irisws/nrl/1/
+ - Migrate stored nrlv2_base_url when it still uses the former service.iris.edu default
+
+2026/08/18 : 4.1.2-beta (catalog-check-updatedsince)
+ - NRL Offline: check for updates via IRIS NRL catalog updatedsince instead of ETag
+ - Download full NRL ZIP only when catalog reports configuration changes
+ - Persist last successful install date in data/_media/nrl/last_successful_download_date.txt
+ - Daily NRL sync at 23:00 UTC; operational log in data/_logs/nrl.log
+ - Fix SQLAlchemy SAWarning when recreating channel equipment attributes
+
 2026/07/08 : 4.1.2-beta
  - Upgrade backend to Python 3.13 (Docker, CI)
  - Upgrade ObsPy (>=1.5.0), SQLAlchemy 2.0.x, and related dependencies

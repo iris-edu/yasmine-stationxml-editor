@@ -56,11 +56,11 @@ class ResponsePlotDifferenceTest(unittest.TestCase):
             datalogger2_key = datalogger1_key
         else:
             sensor1_keys = ['Kinemetrics', 'Episensor (ES-T, ES-U, ES-U2, DS-DH, SBEPI)', '+/- 2.5V Single-ended', '0.25g']
-            # sensor1_keys = ['Streckeisen', 'STS-1', '360 seconds']
+            # sensor1_keys = ['Streckeisen', 'STS-1', '360 s']
             datalogger1_key = ['REF TEK', 'RT 130 & 130-SMA', '1', '100']
 
             sensor2_keys = ['Kinemetrics', 'Episensor (ES-T, ES-U, ES-U2, DS-DH, SBEPI)', '+/- 2.5V Single-ended', '0.25g']
-            # sensor2_keys = ['Streckeisen', 'STS-1', '360 seconds']
+            # sensor2_keys = ['Streckeisen', 'STS-1', '360 s']
             datalogger2_key = ['REF TEK', 'RT 130 & 130-SMA', '1', '100']
 
         response1 = self._helper.get_channel_response_obj(sensor1_keys, datalogger1_key)

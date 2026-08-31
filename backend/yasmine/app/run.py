@@ -145,11 +145,10 @@ class Application(tornado.web.Application, ProcessMixin):
 
         self.scheduler = TornadoScheduler()
         self.scheduler.start()
-        # start sync nrl job
+        # start sync nrl job: once shortly after startup, then daily
         trigger = OrTrigger([
-            # IntervalTrigger(minutes=10),
             DateTrigger(run_date=datetime.now() + timedelta(seconds=10)),
-            # CronTrigger(**NRL_CRON)
+            CronTrigger(**NRL_CRON)
         ])
 
         self.nrl_sync_job = self.scheduler.add_job(self.sync_nrl, trigger)
@@ -164,16 +163,20 @@ class Application(tornado.web.Application, ProcessMixin):
         try:
             library_helper = LibraryHelperFactory().get_helper(LibraryTypeEnum.NRL)
             library_helper.sync()
-        except Exception:  # @IgnorePep8
+        except Exception:
             self.sync_nrl_started = False
+            logging.getLogger(__name__).exception(
+                'NRL archive download/update failed'
+            )
 
     def sync_ial(self):
         self.sync_ial_started = True
         try:
             library_helper = LibraryHelperFactory().get_helper(LibraryTypeEnum.AROL)
             library_helper.sync()
-        except Exception:  # @IgnorePep8
+        except Exception:
             self.sync_ial_started = False
+            logging.getLogger(__name__).exception('AROL library sync failed')
 
 
 def runserver(debug, host=TORNADO_HOST, port=TORNADO_PORT):

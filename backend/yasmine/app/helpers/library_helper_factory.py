@@ -37,6 +37,7 @@ from yasmine.app.enums.library import LibraryTypeEnum
 from yasmine.app.helpers.ial.ial_helper import IalHelper
 from yasmine.app.helpers.nrl.nrl_helper import NrlHelper
 from yasmine.app.helpers.nrl.nrlv2_online import Nrlv2OnlineHelper
+from yasmine.app.settings import NRLV2_DEFAULT_URL
 
 
 class LibraryHelperFactory:
@@ -56,7 +57,7 @@ class LibraryHelperFactory:
         return NrlHelper()
 
     def _create_nrlv2_helper(self, application=None):
-        base_url = 'https://service.iris.edu/irisws/nrl/1/'
+        base_url = NRLV2_DEFAULT_URL
         if application and hasattr(application, 'config'):
             cfg = application.config.get('nrlv2') or {}
             base_url = cfg.get('nrlv2_base_url') or base_url
