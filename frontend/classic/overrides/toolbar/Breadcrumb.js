@@ -276,10 +276,12 @@ Ext.define('overrides.toolbar.Breadcrumb', {
   privates: {
     _onMenuBeforeShow: function (menu) {
       var shown = this.callParent(arguments);
+      var store;
       if (shown === false) {
         return false;
       }
-      var store = this.getStore();
+      this._ensureMenuDragScroll(menu);
+      store = this.getStore();
       if (!store || !menu.items) {
         return;
       }
@@ -296,6 +298,110 @@ Ext.define('overrides.toolbar.Breadcrumb', {
           item.setDisabled(true);
         }
       });
+    },
+
+    // Phone: the menu's up/down chevrons are too small to tap. Drag anywhere
+    // on the open list to scroll it. A short tap still selects the item.
+    // beforeshow runs before the floating menu is rendered, so bind on show.
+    _ensureMenuDragScroll: function (menu) {
+      if (!menu || menu._dragScrollBound) {
+        return;
+      }
+      if (menu.el) {
+        this._enableMenuDragScroll(menu);
+        return;
+      }
+      if (menu._dragScrollShowHook) {
+        return;
+      }
+      menu._dragScrollShowHook = true;
+      menu.on('show', function () {
+        this._enableMenuDragScroll(menu);
+      }, this);
+    },
+
+    _enableMenuDragScroll: function (menu) {
+      var startY, lastY, dragging, threshold;
+
+      if (!menu || menu._dragScrollBound || !menu.el) {
+        return;
+      }
+      menu._dragScrollBound = true;
+      threshold = 8;
+      menu.el.setStyle({
+        'touch-action': 'none',
+        '-ms-touch-action': 'none'
+      });
+
+      menu.el.on({
+        pointerdown: function (e) {
+          var dom = menu.el.dom;
+          var pointerId = e.browserEvent && e.browserEvent.pointerId;
+          menu._suppressNextClick = false;
+          startY = e.getY();
+          lastY = startY;
+          dragging = false;
+          if (dom.setPointerCapture && pointerId != null) {
+            try {
+              dom.setPointerCapture(pointerId);
+            } catch (ignore) {
+              // Capture can fail if the pointer is already gone.
+            }
+          }
+        },
+        pointermove: function (e) {
+          var y, layout, overflow, innerCt, maxScroll;
+          if (startY == null) {
+            return;
+          }
+          y = e.getY();
+          layout = menu.getLayout();
+          overflow = layout && layout.overflowHandler;
+          innerCt = layout && layout.innerCt;
+          if (!overflow || !overflow.scrollBy || !overflow.getMaxScrollPosition ||
+              !innerCt || !innerCt.lastBox) {
+            return;
+          }
+          maxScroll = overflow.getMaxScrollPosition();
+          if (!maxScroll) {
+            return;
+          }
+          if (!dragging) {
+            if (Math.abs(y - startY) < threshold) {
+              return;
+            }
+            dragging = true;
+            menu._suppressNextClick = true;
+          }
+          overflow.scrollBy(lastY - y, false);
+          lastY = y;
+          e.preventDefault();
+        },
+        pointerup: function (e) {
+          var wasDragging = dragging;
+          startY = null;
+          lastY = null;
+          dragging = false;
+          if (!wasDragging) {
+            return;
+          }
+          menu._suppressNextClick = true;
+          e.preventDefault();
+        },
+        pointercancel: function () {
+          startY = null;
+          lastY = null;
+          dragging = false;
+        }
+      });
+
+      menu.el.on('click', function (e) {
+        if (!menu._suppressNextClick) {
+          return;
+        }
+        menu._suppressNextClick = false;
+        e.stopEvent();
+      }, null, { capture: true });
     }
   }
 });
