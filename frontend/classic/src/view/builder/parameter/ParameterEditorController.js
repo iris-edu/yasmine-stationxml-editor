@@ -229,6 +229,11 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditorController', {
     }
     let that = this;
     let record = contentView.getViewModel().get('record');
+    if (contentController && contentController.prepareRecordForSave &&
+        contentController.prepareRecordForSave() === false) {
+      that.getView().fireEvent('editingCanceled', record);
+      return;
+    }
     if (record.dirty && record.get('value') != null && record.get('value') !== undefined) {
       record.save({
         failure: function (record, operation) {

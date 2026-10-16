@@ -46,6 +46,8 @@ from yasmine.app.utils.response_plot import (
     apply_bode_axis_labels,
     amplitude_ylabel,
     save_bode_figure,
+    INVALID_STORED_RESPONSE,
+    _is_response_object,
 )
 
 
@@ -311,6 +313,8 @@ class ChannelUtils:
     @staticmethod
     def create_response_csv(response, folder, file_name, min_frequency=0.001, max_frequency=None,
                             fstep=0.1, instconfig=None, start_stage=None, end_stage=None):
+        if not _is_response_object(response):
+            raise ValueError(INVALID_STORED_RESPONSE)
         if response.instrument_polynomial is not None:
             return get_polynomial_resp_csv(response, folder, file_name)
         sampling_rate = plot_sampling_rate(response, max_frequency, min_frequency)
@@ -358,6 +362,8 @@ class ChannelUtils:
     @staticmethod
     def create_response_plot(response, folder, file_name, min_frequency=0.001, max_frequency=None,
                              instconfig=None, start_stage=None, end_stage=None):
+        if not _is_response_object(response):
+            raise ValueError(INVALID_STORED_RESPONSE)
         import matplotlib
         matplotlib.use('Agg')
 

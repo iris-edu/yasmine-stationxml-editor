@@ -342,6 +342,25 @@ class ResponseAttributeSaveTest(unittest.TestCase):
 
         self.assertIn('/Response', str(context.exception))
 
+    def test_display_text_is_not_stored(self):
+        from types import SimpleNamespace
+
+        from yasmine.app.enums.xml_node import XmlNodeAttrEnum
+
+        service = AttributeService.__new__(AttributeService)
+        original = object()
+        obj = SimpleNamespace(
+            attr=SimpleNamespace(name=XmlNodeAttrEnum.RESPONSE),
+            value_obj=original,
+        )
+        text = 'Channel Response\n\tOverall Sensitivity: 904530 defined at 10.000 Hz'
+
+        with self.assertRaises(ResponseEditException) as context:
+            service._update_attribute_value(obj, text)
+
+        self.assertIs(obj.value_obj, original)
+        self.assertIn('was not saved', str(context.exception))
+
 
 if __name__ == '__main__':
     unittest.main()

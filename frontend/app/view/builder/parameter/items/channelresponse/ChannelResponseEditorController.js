@@ -96,6 +96,17 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
       child.getController().fillRecord();
     }
   },
+  prepareRecordForSave: function () {
+    let record = this.getViewModel().get('record');
+    if (!record) {
+      return true;
+    }
+    if (typeof record.get('value') !== 'string') {
+      return true;
+    }
+    record.reject();
+    return false;
+  },
   validate: function () {
     let currentViewRef = this.getViewModel().get('currentViewReference');
     let currentView = this.lookup(currentViewRef) || this.getView().items.getAt(0);

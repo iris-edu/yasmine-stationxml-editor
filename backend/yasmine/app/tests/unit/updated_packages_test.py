@@ -33,7 +33,9 @@ from yasmine.app.settings import DATE_FORMAT_SYSTEM
 from yasmine.app.utils.date import datetime_to_utc, get_now_utc, strptime_utc
 from yasmine.app.utils.db import get_database, set_sqlite_pragma
 from yasmine.app.utils.imp_exp import ExportStationXml
+from yasmine.app.helpers.utils.utils import ChannelUtils
 from yasmine.app.utils.response_plot import (
+    INVALID_STORED_RESPONSE,
     _prepare_paz_for_sacpz,
     polynomial_or_polezero_response,
 )
@@ -165,6 +167,22 @@ class ObsPyResponseHelpersTest(unittest.TestCase):
     def test_polynomial_or_polezero_response_returns_paz_error(self):
         response = SimpleNamespace(instrument_polynomial=None, get_paz=MagicMock(side_effect=ValueError('no paz')))
         self.assertEqual(polynomial_or_polezero_response(response), 'no paz')
+
+    def test_polynomial_or_polezero_response_accepts_display_text(self):
+        text = polynomial_or_polezero_response(
+            'Channel Response\n\tOverall Sensitivity: 904530 defined at 10.000 Hz'
+        )
+        self.assertEqual(text, INVALID_STORED_RESPONSE)
+        self.assertNotIn('instrument_polynomial', text)
+
+    def test_create_response_plot_rejects_display_text(self):
+        with self.assertRaises(ValueError) as context:
+            ChannelUtils.create_response_plot(
+                'Channel Response\n\tOverall Sensitivity: 1',
+                '/tmp',
+                'damaged',
+            )
+        self.assertEqual(str(context.exception), INVALID_STORED_RESPONSE)
 
     def test_wizard_to_datetime_uses_obspy(self):
         self.assertIsNone(_to_datetime(None))

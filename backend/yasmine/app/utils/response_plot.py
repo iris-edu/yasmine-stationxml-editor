@@ -1046,7 +1046,18 @@ def print_polynomial_resp(response):
     return ret
 
 
+INVALID_STORED_RESPONSE = (
+    'Stored channel response is damaged. Select the response again.'
+)
+
+
+def _is_response_object(response):
+    return not isinstance(response, str) and hasattr(response, 'instrument_polynomial')
+
+
 def polynomial_or_polezero_response(response):
+    if not _is_response_object(response):
+        return INVALID_STORED_RESPONSE
     response_str = str(response)
     if response.instrument_polynomial:
         try:

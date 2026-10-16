@@ -146,6 +146,10 @@ class AttributeService(HandlerMixin, EquipmentMixin):
                 value,
                 self._measured_value_class(obj.attr.name),
             )
+        elif obj.attr.name == XmlNodeAttrEnum.RESPONSE and isinstance(value, str):
+            raise ResponseEditException(
+                'The response was sent as text and was not saved. Select the response again.'
+            )
         else:
             obj.value_obj = value.strip() if isinstance(value, str) else value
 

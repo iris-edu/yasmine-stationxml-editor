@@ -16,6 +16,7 @@ from obspy.core.inventory.response import paz_to_sacpz_string
 from yasmine.app.enums.library import LibraryTypeEnum
 from yasmine.app.helpers.library_helper_factory import LibraryHelperFactory
 from yasmine.app.utils.imp_exp import ConvertToInventory
+from yasmine.app.utils.response_plot import INVALID_STORED_RESPONSE, _is_response_object
 from yasmine.app.utils.response_schema import validate_response_tree
 from yasmine.app.utils.response_tree import (
     replace_response_in_station_xml,
@@ -83,6 +84,8 @@ def _first_stage_normalization_frequency(response):
 
 def get_sensitivity_recalculate_options(response):
     """Values shown in the Recalculate Sensitivity frequency dialog."""
+    if not _is_response_object(response):
+        raise ValueError(INVALID_STORED_RESPONSE)
     if response.instrument_polynomial:
         raise PolynomialResponseError('Polynomial responses have no InstrumentSensitivity')
     normalization_frequency = _first_stage_normalization_frequency(response)
@@ -132,6 +135,8 @@ def recalculate_response_sensitivity(
     Callers must pass ``allow_zero_gain_reset=True`` (user confirm or
     automated NRL/equipment paths) before the temporary 0→1 rewrite.
     """
+    if not _is_response_object(response):
+        raise ValueError(INVALID_STORED_RESPONSE)
     if response.instrument_polynomial:
         raise PolynomialResponseError('Polynomial responses have no InstrumentSensitivity')
     sens = response.instrument_sensitivity

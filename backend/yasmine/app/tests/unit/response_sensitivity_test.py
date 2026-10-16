@@ -72,6 +72,13 @@ class RecalculateResponseSensitivityTest(unittest.TestCase):
         with self.assertRaises(PolynomialResponseError):
             recalculate_response_sensitivity(response)
 
+    def test_display_text_is_rejected(self):
+        text = 'Channel Response\n\tOverall Sensitivity: 904530 defined at 10.000 Hz'
+        with self.assertRaises(ValueError) as context:
+            recalculate_response_sensitivity(text)
+        self.assertIn('damaged', str(context.exception))
+        self.assertNotIn('instrument_polynomial', str(context.exception))
+
     def test_uses_instrument_sensitivity_frequency(self):
         response = _mock_response([10.0, 2.0], output_units='V')
         response.instrument_sensitivity.frequency = 2.0
