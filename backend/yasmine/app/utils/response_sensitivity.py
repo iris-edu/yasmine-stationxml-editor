@@ -1,3 +1,4 @@
+# 2026-09-28, version 4.4.0-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # Response sensitivity recalculation helpers.
@@ -8,30 +9,172 @@ import copy
 import io
 import re
 
-from lxml.etree import fromstring
 from obspy import UTCDateTime, read_inventory
 from obspy.core.inventory import Channel, Inventory, Network, Site, Station
 from obspy.core.inventory.response import paz_to_sacpz_string
-from xmljson import abdera
 
 from yasmine.app.enums.library import LibraryTypeEnum
 from yasmine.app.helpers.library_helper_factory import LibraryHelperFactory
 from yasmine.app.utils.imp_exp import ConvertToInventory
+from yasmine.app.utils.response_plot import INVALID_STORED_RESPONSE, _is_response_object
+from yasmine.app.utils.response_schema import validate_response_tree
+from yasmine.app.utils.response_tree import (
+    replace_response_in_station_xml,
+    response_tree_to_xml,
+    station_xml_response_to_tree,
+)
 
 
 class PolynomialResponseError(ValueError):
     """Raised when recalculate is requested for a polynomial response."""
 
 
-def recalculate_response_sensitivity(response):
-    """Recalculate InstrumentSensitivity from all response stages via ObsPy."""
+def _validate_response_tree_or_raise(response_tree):
+    errors = [
+        issue for issue in validate_response_tree(response_tree)
+        if issue['severity'] == 'error'
+    ]
+    if errors:
+        raise ValueError('; '.join(
+            '%s: %s' % (issue['path'], issue['message'])
+            for issue in errors
+        ))
+
+
+def _sensitivity_value_is_zero(value):
+    try:
+        return value is not None and float(value) == 0.0
+    except (TypeError, ValueError):
+        return False
+
+
+def _positive_float_or_none(value):
+    try:
+        if value is None:
+            return None
+        number = float(value)
+    except (TypeError, ValueError):
+        return None
+    if number != number or number <= 0 or number == float('inf'):
+        return None
+    return number
+
+
+def _sample_rate_from_response_stages(response):
+    """Final output sample rate, matching ObsPy recalculate_overall_sensitivity."""
+    stages = getattr(response, 'response_stages', None) or []
+    for stage in reversed(list(stages)):
+        input_rate = _positive_float_or_none(
+            getattr(stage, 'decimation_input_sample_rate', None)
+        )
+        factor = _positive_float_or_none(getattr(stage, 'decimation_factor', None))
+        if input_rate is not None and factor is not None:
+            return input_rate / factor
+    return None
+
+
+def _first_stage_normalization_frequency(response):
+    stages = getattr(response, 'response_stages', None) or []
+    if not stages:
+        return None
+    return _positive_float_or_none(
+        getattr(stages[0], 'normalization_frequency', None)
+    )
+
+
+def get_sensitivity_recalculate_options(response):
+    """Values shown in the Recalculate Sensitivity frequency dialog."""
+    if not _is_response_object(response):
+        raise ValueError(INVALID_STORED_RESPONSE)
     if response.instrument_polynomial:
         raise PolynomialResponseError('Polynomial responses have no InstrumentSensitivity')
-    freq = 1.0
+    normalization_frequency = _first_stage_normalization_frequency(response)
+    sample_rate = _sample_rate_from_response_stages(response)
+    auto_frequency = None
+    if normalization_frequency is not None and sample_rate is not None:
+        auto_frequency = min(normalization_frequency, (sample_rate / 2.0) / 2.0)
+    elif normalization_frequency is not None:
+        auto_frequency = normalization_frequency
     sens = response.instrument_sensitivity
+    reported_value = None
+    reported_frequency = None
+    if sens is not None:
+        if getattr(sens, 'value', None) is not None:
+            try:
+                reported_value = float(sens.value)
+            except (TypeError, ValueError):
+                reported_value = None
+        reported_frequency = _positive_float_or_none(getattr(sens, 'frequency', None))
+    return {
+        'normalization_frequency': normalization_frequency,
+        'sample_rate': sample_rate,
+        'auto_frequency': auto_frequency,
+        'reported_sensitivity_value': reported_value,
+        'reported_sensitivity_frequency': reported_frequency,
+        'zero_sensitivity_value': _sensitivity_value_is_zero(reported_value),
+        'stored_frequency_ignored_by_auto': True,
+    }
+
+
+def _patch_zero_stage0_gain(sens):
+    if sens is not None and _sensitivity_value_is_zero(getattr(sens, 'value', None)):
+        sens.value = 1.0
+
+
+def recalculate_response_sensitivity(
+        response, frequency=None, *, auto=False, allow_zero_gain_reset=False):
+    """Recalculate InstrumentSensitivity from all response stages via ObsPy.
+
+    * ``auto=True`` — ObsPy chooses frequency (first-stage normalization,
+      capped by Nyquist/2); ignores stored InstrumentSensitivity.frequency.
+    * ``frequency`` set — evaluate at that explicit Hz.
+    * neither — legacy: use InstrumentSensitivity.frequency when > 0, else
+      ObsPy auto; non-positive stored frequency becomes 1.0.
+
+    A stored InstrumentSensitivity value of 0 cannot be evaluated by ObsPy.
+    Callers must pass ``allow_zero_gain_reset=True`` (user confirm or
+    automated NRL/equipment paths) before the temporary 0→1 rewrite.
+    """
+    if not _is_response_object(response):
+        raise ValueError(INVALID_STORED_RESPONSE)
+    if response.instrument_polynomial:
+        raise PolynomialResponseError('Polynomial responses have no InstrumentSensitivity')
+    sens = response.instrument_sensitivity
+    if sens is not None and _sensitivity_value_is_zero(getattr(sens, 'value', None)):
+        if not allow_zero_gain_reset:
+            raise ValueError(
+                'InstrumentSensitivity value is 0. Confirm resetting it to 1.0 '
+                'before recalculate (ObsPy cannot evaluate a zero overall sensitivity).'
+            )
+        _patch_zero_stage0_gain(sens)
+
+    if auto:
+        response.recalculate_overall_sensitivity()
+        stored = getattr(response.instrument_sensitivity, 'frequency', None)
+        freq = float(stored) if stored is not None else 1.0
+        return response, freq
+
+    if frequency is not None:
+        freq = float(frequency)
+        if freq <= 0:
+            raise ValueError('frequency must be greater than zero')
+        response.recalculate_overall_sensitivity(frequency=freq)
+        return response, freq
+
+    # Legacy path for internal callers (NRL combine, equipment save).
+    freq = None
     if sens and sens.frequency is not None:
         freq = float(sens.frequency)
-    response.recalculate_overall_sensitivity(frequency=freq)
+    # A non-positive sensitivity frequency is not a place evalresp can normalize.
+    # A missing frequency is left unset so ObsPy uses the stage normalization frequency.
+    if freq is not None and freq <= 0:
+        freq = 1.0
+    if freq is None:
+        response.recalculate_overall_sensitivity()
+        stored = getattr(response.instrument_sensitivity, 'frequency', None)
+        freq = float(stored) if stored is not None else 1.0
+    else:
+        response.recalculate_overall_sensitivity(frequency=freq)
     return response, freq
 
 
@@ -47,37 +190,19 @@ def validate_response_sacpz(response):
 
 
 def prepare_response_json_as_xml(json_obj, parent_node=None, xml_str=''):
-    """Build Response XML fragment from the tree-editor JSON structure."""
-    for key, value in json_obj.items():
-        if key == 'children':
-            for item in value:
-                if isinstance(item, dict):
-                    xml_str = prepare_response_json_as_xml(item, parent_node, xml_str)
-                else:
-                    xml_str += str(item)
-        elif key == 'attributes':
-            attrs = ''
-            for attr_key, attr_value in value.items():
-                if len(str(attr_value)) > 0:
-                    if len(attrs) > 0:
-                        attrs += ' '
-                    attrs += '%s="%s"' % (attr_key, attr_value)
-            start = xml_str.rfind('<%s>' % parent_node)
-            end = start + len(parent_node) + 2
-            xml_str = xml_str[:start] + '<%s %s>' % (parent_node, attrs) + xml_str[end:]
-        else:
-            xml_str += '<%s>' % key
-            if isinstance(value, dict):
-                xml_str = prepare_response_json_as_xml(value, key, xml_str)
-            else:
-                xml_str += str(value)
-            xml_str += '</%s>' % key
-    return xml_str
+    """Serialize legacy response tree JSON using the QName-aware lxml codec.
+
+    ``parent_node`` and ``xml_str`` remain only for source compatibility with
+    older callers. New callers should use ``response_tree_to_xml`` directly.
+    """
+    if parent_node is not None:
+        raise ValueError('Partial response serialization is no longer supported')
+    return xml_str + response_tree_to_xml(json_obj)
 
 
 def _minimal_station_xml(response_xml):
     return f'''<?xml version="1.0" encoding="UTF-8"?>
-<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.1">
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.2">
   <Source>Yasmine</Source>
   <Module>Yasmine</Module>
   <ModuleURI></ModuleURI>
@@ -105,14 +230,7 @@ def _minimal_station_xml(response_xml):
 
 def merge_response_into_station_xml(response_xml, station_xml):
     """Replace or insert a Response element in a StationXML document string."""
-    resp_start = station_xml.find('<Response>')
-    if resp_start >= 0:
-        resp_end = station_xml.find('</Response>') + len('</Response>')
-        return station_xml[:resp_start] + response_xml + station_xml[resp_end:]
-    channel_end = station_xml.rfind('</Channel>')
-    if channel_end < 0:
-        raise ValueError('No Channel element in station XML')
-    return station_xml[:channel_end] + response_xml + station_xml[channel_end:]
+    return replace_response_in_station_xml(response_xml, station_xml)
 
 
 def get_updated_response_obj(response_xml, station_xml):
@@ -129,6 +247,7 @@ def get_updated_response_obj(response_xml, station_xml):
 
 def response_tree_to_obj(response_tree):
     """Parse tree-editor JSON into an ObsPy Response object."""
+    _validate_response_tree_or_raise(response_tree)
     response_xml = prepare_response_json_as_xml(response_tree)
     station_xml = _minimal_station_xml(response_xml)
     return get_updated_response_obj(response_xml, station_xml)
@@ -136,6 +255,7 @@ def response_tree_to_obj(response_tree):
 
 def response_json_to_obj(response_json, node_inst_id, handler):
     """Parse tree-editor JSON into an ObsPy Response object using a channel context."""
+    _validate_response_tree_or_raise(response_json)
     response_xml = prepare_response_json_as_xml(response_json)
     station_xml = ConvertToInventory(None, handler).get_station_xml_for_channel(node_inst_id)
     return get_updated_response_obj(response_xml, station_xml)
@@ -164,6 +284,10 @@ def load_response_from_preview_params(params, handler=None):
     library_type = params.get('libraryType')
     sensor_keys = params.get('sensorKeys')
     datalogger_keys = params.get('dataloggerKeys')
+    nrl_response_type = params.get('nrlResponseType')
+    if library_type == LibraryTypeEnum.NRL and nrl_response_type in ('integrated', 'soh') and sensor_keys:
+        helper = LibraryHelperFactory().get_helper(library_type)
+        return helper.get_element_response_obj(nrl_response_type, sensor_keys)
     if library_type and sensor_keys and datalogger_keys:
         helper = LibraryHelperFactory().get_helper(library_type)
         return helper.get_channel_response_obj(sensor_keys, datalogger_keys)
@@ -199,10 +323,7 @@ def response_obj_to_tree_json(response, node_inst_id, handler):
     inv.write(output, format='STATIONXML')
     station_xml = output.getvalue().decode('utf-8')
     output.close()
-    resp_start = station_xml.find('<Response>')
-    resp_end = station_xml.find('</Response>') + 11
-    response_xml = station_xml[resp_start:resp_end]
-    return abdera.data(fromstring(response_xml))
+    return station_xml_response_to_tree(station_xml)
 
 
 def response_obj_to_tree_json_standalone(response):
@@ -242,7 +363,4 @@ def response_obj_to_tree_json_standalone(response):
     inv.write(output, format='STATIONXML')
     station_xml = output.getvalue().decode('utf-8')
     output.close()
-    resp_start = station_xml.find('<Response>')
-    resp_end = station_xml.find('</Response>') + 11
-    response_xml = station_xml[resp_start:resp_end]
-    return abdera.data(fromstring(response_xml))
+    return station_xml_response_to_tree(station_xml)

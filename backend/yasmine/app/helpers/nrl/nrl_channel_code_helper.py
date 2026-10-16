@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -50,47 +51,21 @@ class NrlChannelCodeHelper:
                 sample_rate = float(sample_rate_ptr[1])
 
         chan_code = self.combine_channel_codes(sensor_code, datalogger_code)
-        band_char = self.band_code(sample_rate, True if sensor_code[0] == 'S' else False)
+        short_period = bool(sensor_code and sensor_code[0] == 'S')
+        band_char = self.band_code(sample_rate, short_period)
         return chan_code, band_char
 
     def band_code(self, sample_rate, short_period=False):
+        """SEED band letter; delegates to seed_channel_prefix.band_code.
+
+        ``short_period`` maps to a short angular period (< 10 s) so the
+        SEED Appendix A short-period column is used above 10 Hz.
         """
-            Lookup 1-char band_code from sample_rate
-            Provides a check on simply grabbing the code from the
-                appropriate NRL RESP file
-        """
+        from yasmine.app.helpers.nrl.seed_channel_prefix import band_code as seed_band
 
-        L = 1
-        V = 0.1
-        U = 0.01
-
-        if sample_rate >= 1000:
-            band_code = 'F' if not short_period else 'G'
-        elif sample_rate >= 250:
-            band_code = 'C' if not short_period else 'D'
-        elif sample_rate >= 80:
-            band_code = 'H' if not short_period else 'E'
-        elif sample_rate >= 10:
-            band_code = 'B' if not short_period else 'S'
-        elif sample_rate > 1:
-            band_code = 'M'
-        elif (0.9 * L) < sample_rate < (1.1 * L):
-            band_code = 'L'
-        elif (0.9 * V) < sample_rate < (1.1 * V):
-            band_code = 'V'
-        elif (0.9 * U) < sample_rate < (1.1 * U):
-            band_code = 'U'
-        elif 0.0001 <= sample_rate < 0.001:
-            band_code = 'R'
-        elif 0.00001 <= sample_rate < 0.0001:
-            band_code = 'T'
-        elif sample_rate < 0.00001:
-            band_code = 'Q'
-        else:
-            band_code = None  # Unknown
-            print("Unknown sample_rate:%s" % sample_rate)
-
-        return band_code
+        angular_period = 1.0 if short_period else None
+        letter = seed_band(sample_rate, angular_period)
+        return letter or None
 
     def is_single_channel(self, sensor_code):
         """
@@ -120,6 +95,9 @@ class NrlChannelCodeHelper:
         """
         chan_code = None
 
+        if not sensor_code or not datalogger_code:
+            return 'ZZZ'
+
         if sensor_code[0] == 'S':  # Short-period sensor
             if datalogger_code[0] == 'H':  # High sample rate rules
                 chan_code = 'E' + sensor_code[1:3]
@@ -148,9 +126,10 @@ class NrlChannelCodeHelper:
         chan = None
         with open(resp_file) as f:
             for line in f:
-                # B052F04     Channel:     CHZ
                 if line[0:7] == "B052F04":
-                    chan = line.split()[2]
+                    parts = line.split()
+                    if len(parts) >= 3:
+                        chan = parts[2]
                     break
 
-        return chan
+        return chan or 'ZZZ'

@@ -78,5 +78,7 @@ class XmlChannelRespHandler(AsyncThreadMixin, LibraryHandler):
             self.get_arguments('sensorKeys'),
             self.get_arguments('dataloggerKeys'),
             self.get_argument('min'),
-            self.get_argument('max')
+            self.get_argument('max'),
+            start_stage=self.get_argument('start_stage', None),
+            end_stage=self.get_argument('end_stage', None),
         )

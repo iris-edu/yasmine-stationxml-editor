@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -34,10 +35,137 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
   alias: 'controller.wizard-create',
   requires: [
     'Ext.ux.Mediator',
+    'yasmine.utils.HelpUtil',
+    'yasmine.utils.StationXmlHelpContext'
   ],
   init: function () {
+    this.lastHelpField = null;
     this.getView().addListener('show', this.onShow, this);
-    Ext.ux.Mediator.on('wizard-updateActionButtons', this.updateWizardActionButtons, this);
+    this.getView().on('afterrender', this.bindHelpFocus, this);
+    this.mon(Ext.ux.Mediator, 'wizard-updateActionButtons', this.updateWizardActionButtons, this);
+  },
+  bindHelpFocus: function () {
+    var view = this.getView();
+    if (view && view.el && view.el.dom) {
+      view.el.dom.addEventListener('focusin', this.onWizardFocusIn.bind(this));
+    }
+  },
+  onWizardFocusIn: function (event) {
+    var field = this.fieldFromEvent(event);
+    if (field) {
+      this.lastHelpField = field;
+    }
+  },
+  fieldFromEvent: function (event) {
+    var target = event && (event.target || event.getTarget && event.getTarget());
+    var component = target && Ext.Component.fromElement(target, this.getView().el);
+    var fallback = null;
+    while (component && component !== this.getView()) {
+      if (component.isXType && component.isXType('radio')) {
+        return component.up('radiogroup') || component;
+      }
+      if (component.isXType && component.isXType('fieldcontainer') && target) {
+        var nested = this.fieldContaining(component, target);
+        if (nested) {
+          return nested;
+        }
+      }
+      if (component.isFormField && !component.isXType('displayfield')) {
+        if (this.helpIdentity(component)) {
+          return component;
+        }
+        fallback = fallback || component;
+      }
+      component = component.up();
+    }
+    return fallback;
+  },
+  fieldContaining: function (container, target) {
+    var fields = container.query ? container.query('[isFormField]') : [];
+    var match = null;
+    Ext.Array.each(fields, function (field) {
+      if (field.el && field.el.contains(target) && !field.isXType('fieldcontainer')) {
+        match = field;
+      }
+    });
+    return match;
+  },
+  helpIdentity: function (field) {
+    var Context = yasmine.utils.StationXmlHelpContext;
+    var itemId = field.itemId || (field.getItemId && field.getItemId());
+    var validationAttr = field.validationAttr ||
+      (field.initialConfig && field.initialConfig.validationAttr);
+    var viewModel = field.getViewModel && field.getViewModel();
+    var record = viewModel && viewModel.get('record');
+    return !!(
+      validationAttr ||
+      (itemId && Context.ITEM_PARAMETERS[itemId]) ||
+      (record && record.get && record.get('name'))
+    );
+  },
+  currentNodeType: function () {
+    var index = this.getViewModel().get('currentIndex');
+    if (index === 0) {
+      return yasmine.NodeTypeEnum.network;
+    }
+    if (index === 1) {
+      return yasmine.NodeTypeEnum.station;
+    }
+    if (index === 2) {
+      return yasmine.NodeTypeEnum.channel;
+    }
+    return null;
+  },
+  helpFieldDescriptor: function (field) {
+    var record = field && field.getViewModel && field.getViewModel() &&
+      field.getViewModel().get('record');
+    var parameterName = record && record.get ? record.get('name') : null;
+    var recordNodeType = record && record.get ? record.get('node_type_id') : null;
+    return {
+      nodeType: this.currentNodeType(),
+      recordNodeType: recordNodeType,
+      parameterName: parameterName,
+      itemId: field && field.getItemId ? field.getItemId() : null,
+      reference: field && (
+        field.reference ||
+        (field.initialConfig && field.initialConfig.reference)
+      ),
+      validationAttr: field && (
+        field.validationAttr ||
+        (field.initialConfig && field.initialConfig.validationAttr)
+      ),
+      fieldLabel: this.fieldLabelForHelp(field),
+      inDataloggerModifier: !!(field && field.up('[reference=dataloggerModifierForm]')),
+      inSensorModifier: !!(field && field.up('[reference=sensorModifierForm]')),
+      inResponseSelector: !!(field && (
+        field.up('nrl-response-selector') ||
+        field.up('nrlv2-response-selector') ||
+        field.up('arol-response-selector')
+      ))
+    };
+  },
+  fieldLabelForHelp: function (field) {
+    var label = field && field.getFieldLabel ? field.getFieldLabel() : '';
+    if (String(label || '').replace(/<[^>]*>/g, '').trim()) {
+      return label;
+    }
+    var container = field && field.up && field.up('fieldcontainer');
+    if (container && container.getFieldLabel) {
+      return container.getFieldLabel();
+    }
+    return label;
+  },
+  onHelpClick: function () {
+    var field = this.lastHelpField;
+    if (field && (field.destroyed || field.isDestroyed || !field.isVisible(true))) {
+      field = null;
+    }
+    var request = yasmine.utils.StationXmlHelpContext.wizardHelpRequest(
+      field ? this.helpFieldDescriptor(field) : {
+        nodeType: this.currentNodeType()
+      }
+    );
+    yasmine.utils.HelpUtil.stationXmlHelpMe(request.context, request.title);
   },
   updateWizardActionButtons: function (buttons) {
     let container = this.lookupReference('wizard-action-buttons-container');
@@ -46,12 +174,22 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
     }
     Ext.suspendLayouts();
     container.removeAll(false);
+    container.hidden = false;
+    if (container.show) {
+      container.show();
+    }
+    if (container.el) {
+      container.el.setDisplayed(true);
+    }
     (buttons || []).forEach(function (button) {
       container.add(button);
     });
     Ext.resumeLayouts(true);
   },
   onShow: function () {
+    if (!this.getView() || this.getView().destroyed || !this.getViewModel()) {
+      return;
+    }
     this.activateItem(0);
     this.initActiveItem();
   },
@@ -72,7 +210,7 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
     } else {
       Ext.Msg.confirm(
         'Warning',
-        'Are you sure you want to go to the previous step? The data for the current step will be deleted',
+        'Go back to the previous step? Answers already entered stay available.',
         (buttonId) => this.onConfirmToGoToPreviousClick(buttonId));
     }
   },
@@ -82,10 +220,17 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
     }
   },
   activateItem: function (delta) {
-    let nextIndex = this.getViewModel().get('currentIndex') + delta;
-    let layout = this.getView().getLayout();
+    let view = this.getView();
+    let viewModel = this.getViewModel();
+    if (!view || view.destroyed || !viewModel) {
+      return;
+    }
+    let nextIndex = viewModel.get('currentIndex') + delta;
+    let layout = view.getLayout();
     layout.setActiveItem(nextIndex);
-    this.getViewModel().set('currentIndex', nextIndex);
+    viewModel.set('currentIndex', nextIndex);
+    viewModel.notify();
+    view.setTitle(viewModel.get('currentTitle'));
     Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', []);
   },
   isActiveItemValid: function () {
@@ -98,8 +243,9 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
   fillStoredDataFromActiveItem: function () {
     let controller = this.getActiveItemController();
     if (controller && controller.fillStoredData) {
-      controller.fillStoredData();
+      return controller.fillStoredData();
     }
+    return true;
   },
   initActiveItem: function () {
     let controller = this.getActiveItemController();
@@ -124,9 +270,18 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
     return controller && controller.hasWizard && controller.isStart();
   },
   onMaximizeClick: function () {
-    this.getView().maximized
-      ? this.getView().restore()
-      : this.getView().maximize();
+    var win = this.getView();
+    if (win.maximized) {
+      win.restore();
+      yasmine.utils.ResponsiveUtil.fitWindow(win, {
+        minWidth: 800,
+        minHeight: 500,
+        width: 1000,
+        height: 700
+      });
+    } else {
+      win.maximize();
+    }
   },
   onCancelClick: function () {
     this.getView().close();
@@ -136,13 +291,24 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
       return;
     }
 
-    this.fillStoredDataFromActiveItem();
+    if (this.fillStoredDataFromActiveItem() === false) {
+      return;
+    }
 
     let networkId = this.createNetwork();
+    if (!networkId) {
+      return;
+    }
     this.getViewModel().set('networkId', networkId);
     let stationId = this.createStation(networkId);
+    if (!stationId) {
+      return;
+    }
     this.getViewModel().set('stationId', stationId);
     let channelIds = this.createChannels(stationId);
+    if (!channelIds) {
+      return;
+    }
     this.getViewModel().set('channelIds', channelIds);
 
     this.addToLibrary();
@@ -170,8 +336,26 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
       url: network.getProxy().getUrl(),
       method: 'POST'
     });
-
-    return JSON.parse(request.responseText).network_id;
+    if (!this.requestOk(request)) {
+      Ext.Msg.alert('Error', 'Unable to create the network');
+      return null;
+    }
+    let payload = this.parseJson(request);
+    if (payload.success === false || !payload.network_id) {
+      Ext.Msg.alert('Error', payload.message || 'Unable to create the network');
+      return null;
+    }
+    return payload.network_id;
+  },
+  requestOk: function (request) {
+    return request && request.status >= 200 && request.status < 300;
+  },
+  parseJson: function (request) {
+    try {
+      return JSON.parse((request && request.responseText) || '{}');
+    } catch (e) {
+      return {};
+    }
   },
   createStation: function (networkId) {
     let stationId = this.getViewModel().get('stationId');
@@ -194,8 +378,16 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
       url: station.getProxy().getUrl(),
       method: 'POST'
     });
-
-    return JSON.parse(request.responseText).station_id;
+    if (!this.requestOk(request)) {
+      Ext.Msg.alert('Error', 'Unable to create the station');
+      return null;
+    }
+    let payload = this.parseJson(request);
+    if (payload.success === false || !payload.station_id) {
+      Ext.Msg.alert('Error', payload.message || 'Unable to create the station');
+      return null;
+    }
+    return payload.station_id;
   },
   createChannels: function (stationId) {
     let channelInfos = this.getViewModel().get('channelStoredData').channelInfos;
@@ -212,7 +404,16 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateController', {
         method: 'POST'
       });
 
-      let result = JSON.parse(request.responseText).channel_ids;
+      if (!this.requestOk(request)) {
+        Ext.Msg.alert('Error', 'Unable to create channels');
+        return null;
+      }
+      let payload = this.parseJson(request);
+      if (payload.success === false) {
+        Ext.Msg.alert('Error', payload.message || 'Unable to create channels');
+        return null;
+      }
+      let result = payload.channel_ids || [];
       for (const channelId of result) {
         channelIds.push(channelId);
       }

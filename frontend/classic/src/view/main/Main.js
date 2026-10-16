@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,6 +37,7 @@ Ext.define('yasmine.view.main.Main', {
   xtype: 'app-main',
   requires: [
     'Ext.plugin.Viewport',
+    'Ext.plugin.Responsive',
     'Ext.window.MessageBox',
     'yasmine.view.main.MainController',
     'yasmine.view.main.MainModel'
@@ -43,6 +45,7 @@ Ext.define('yasmine.view.main.Main', {
   controller: 'main',
   viewModel: 'main',
   ui: 'navigation',
+  cls: 'yasmine-app-shell',
   tabBarHeaderPosition: 1,
   titleRotation: 0,
   tabRotation: 0,
@@ -52,43 +55,36 @@ Ext.define('yasmine.view.main.Main', {
     },
     title: {
       bind: {
-        html: '<div>{name}</div><div style="font-size: 10px;margin-top: -11px;padding-left: 1px;">{releaseVersion}</div>'
+        html: '<div class="yasmine-header-brand"><img class="yasmine-header-logo" src="{logoIconUrl}" alt="Yasmine"><div class="yasmine-header-text"><div>{name}</div><div class="yasmine-header-version">{releaseVersion}</div></div></div>'
       },
       flex: 0
-    },
-    iconCls: 'fa fa-cubes'
+    }
   },
   tabBar: {
     flex: 1,
     layout: {
       align: 'stretch',
-      overflowHandler: 'none'
+      overflowHandler: 'scroller'
     }
   },
   responsiveConfig: {
-    tall: {
+    'width >= 1280': {
+      headerPosition: 'left'
+    },
+    'width < 1280': {
       headerPosition: 'top'
     },
-    wide: {
-      headerPosition: 'left'
+    'height < 500': {
+      headerPosition: 'top'
     }
   },
   defaults: {
-    bodyPadding: 5,
+    bodyPadding: 8,
+    bodyCls: 'yasmine-page-body',
     textAlign: 'left',
     tabConfig: {
-      plugins: 'responsive',
-      responsiveConfig: {
-        wide: {
-          iconAlign: 'left',
-          textAlign: 'left'
-        },
-        tall: {
-          iconAlign: 'left',
-          textAlign: 'left',
-          width: 120
-        }
-      }
+      iconAlign: 'left',
+      textAlign: 'left'
     }
   },
   activeTab: null,
@@ -98,7 +94,7 @@ Ext.define('yasmine.view.main.Main', {
   items: [
     {
       title: 'XMLs',
-      iconCls: 'fa fa-database',
+      iconCls: 'x-fa fa-database',
       layout: 'fit',
       reference: 'xmlContainer',
       tabConfig: {
@@ -109,7 +105,7 @@ Ext.define('yasmine.view.main.Main', {
     },
     {
       title: 'User Library',
-      iconCls: 'fa fa-university',
+      iconCls: 'x-fa fa-university',
       layout: 'fit',
       reference: 'userLibraryContainer',
       tabConfig: {
@@ -120,7 +116,7 @@ Ext.define('yasmine.view.main.Main', {
     },
     {
       title: 'Settings',
-      iconCls: 'fa-cog',
+      iconCls: 'x-fa fa-cog',
       layout: 'fit',
       reference: 'settingsContainer',
       tabConfig: {
@@ -131,7 +127,7 @@ Ext.define('yasmine.view.main.Main', {
     },
     {
       title: 'About',
-      iconCls: 'fa-info-circle',
+      iconCls: 'x-fa fa-info-circle',
       layout: 'fit',
       reference: 'aboutContainer',
       tabConfig: {

@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -37,17 +38,28 @@ Ext.define('yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditor
   requires: [
     'yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditorModel',
     'yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditorController',
-    'Ext.layout.container.Column'
+    'Ext.layout.container.Column',
+    'Ext.plugin.Responsive'
   ],
   viewModel: 'equipments-editor',
   controller: 'equipments-editor',
   layout: 'hbox',
+  plugins: 'responsive',
+  responsiveConfig: {
+    'width < 768 || height < 500': {
+      layout: {type: 'vbox', align: 'stretch'}
+    },
+    'width >= 768 && height >= 500': {
+      layout: {type: 'hbox', align: 'stretch'}
+    }
+  },
   items: [
     {
       xtype: 'grid',
       style: 'border: solid #d0d0d0 1px',
       width: 300,
-      height: '100%',
+      minWidth: 0,
+      flex: 1,
       headerBorders: false,
       bind: {
         store: '{equipmentsStore}',
@@ -55,8 +67,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditor
       },
       tbar: [
         {
-          xtype: 'panel',
-          html: '<b>Equipments</b>'
+          xtype: 'component',
+          html: '<b>Equipment</b>'
         },
         '->',
         {
@@ -144,13 +156,13 @@ Ext.define('yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditor
               xtype: 'datefield',
               fieldLabel: 'Installation Date',
               bind: '{selectedEquipment.installationDate}',
-              format: yasmine.Globals.DatePrintLongFormat
+              yasmineGuiDate: 'long'
             },
             {
               xtype: 'datefield',
               fieldLabel: 'Removal Date',
               bind: '{selectedEquipment.removalDate}',
-              format: yasmine.Globals.DatePrintLongFormat
+              yasmineGuiDate: 'long'
             },
           ],
         },
@@ -188,9 +200,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditor
                   editor: {
                     xtype: 'datefield',
                     allowBlank: false,
-                    format: yasmine.Globals.DatePrintLongFormat
+                    yasmineGuiDate: 'long'
                   },
-                  format: yasmine.Globals.DatePrintLongFormat,
+                  yasmineGuiDate: 'long',
                   dataIndex: 'value'
                 },
                 {
@@ -203,7 +215,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditor
               ],
               tbar: [
                 {
-                  xtype: 'panel',
+                  xtype: 'component',
                   html: 'Calibration Dates'
                 },
                 '->',

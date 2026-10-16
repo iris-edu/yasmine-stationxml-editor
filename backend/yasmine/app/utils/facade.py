@@ -27,9 +27,12 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
+
+from typing import cast
 
 from yasmine.app.utils.db import get_database, db_transaction
 from yasmine.app.models import ConfigModel
@@ -85,6 +88,9 @@ class ProcessMixin(DbMixin, NrlMixin):
                 instance.type = var_type
         self.__config__ = None
 
+    def clear_config_cache(self):
+        self.__config__ = None
+
 
 class HandlerMixin(object):
     def __init__(self, application=None):
@@ -100,6 +106,9 @@ class HandlerMixin(object):
 
     def update_config(self, group, name, value):
         self.application.update_config(group, name, value)
+
+    def clear_config_cache(self):
+        cast(ProcessMixin, self.application).clear_config_cache()
 
     @property
     def nrl(self):

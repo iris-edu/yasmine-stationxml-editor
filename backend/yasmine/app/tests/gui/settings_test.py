@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -34,11 +35,10 @@
 import unittest
 
 from yasmine.app.tests.common.wgui import SeletiounTestMixin
-from yasmine.app.tests.common import check_web_app_is_down
-from _collections import OrderedDict
-from yasmine.app.utils.ujson import json_dump
+from yasmine.app.tests.common import skip_unless_gui, check_web_app_is_down
 
 
+@skip_unless_gui
 @unittest.skipIf(check_web_app_is_down(), "Application is down")
 class SettingsTest(SeletiounTestMixin):
 
@@ -67,23 +67,13 @@ class SettingsTest(SeletiounTestMixin):
         "general__xml_view_mode": 1
     }
 
-#     def test_update_settings(self):
-#         # open page and check the panel
-#         self.open_page("#settings")
-#         self.wait_js("{settings_list}.length>0".format(**self.EXT_QUERIES), 'There is no settings panel!')
-#         self.wait_js("!{is_masked}".format(**self.BASE_EXT_QUERIES), 'Masked!', silent=True)
-#         # get old values and update new
-#         old_values = self.driver.execute_script("return {settings_form}.getValues();".format(**self.EXT_QUERIES))
-#         self.driver.execute_script("{settings_form}.setValues({test_data});".format(test_data=json_dump(self.TEST_DATA), **self.EXT_QUERIES))
-#         self.click_component("{settings_save_btn}".format(**self.EXT_QUERIES))
-#         # refresh page and check values are saved
-#         self.open_page("#settings")
-#         self.wait_js("!{is_masked}".format(**self.BASE_EXT_QUERIES), 'Masked!', silent=True)
-#         new_value = self.driver.execute_script("return {settings_form}.getValues();".format(**self.EXT_QUERIES))
-#         self.assertEqual(OrderedDict(sorted(self.TEST_DATA.items())), OrderedDict(sorted(new_value.items())), 'Values are not equal.')
-#         # reset values to original
-#         self.driver.execute_script("{settings_form}.setValues({test_data});".format(test_data=json_dump(old_values), **self.EXT_QUERIES))
-#         self.click_component("{settings_save_btn}".format(**self.EXT_QUERIES))
+    def test_settings_panel_loads(self):
+        self.open_page("#settings")
+        self.wait_js("{settings_list}.length>0".format(**self.EXT_QUERIES), 'There is no settings panel!')
+        self.wait_js("!{is_masked}".format(**self.BASE_EXT_QUERIES), 'Masked!', silent=True)
+        values = self.driver.execute_script("return {settings_form}.getValues();".format(**self.EXT_QUERIES))
+        self.assertIsInstance(values, dict)
+        self.assertIn('general__source', values)
 
 
 if __name__ == "__main__":

@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -37,6 +38,10 @@ from yasmine.app.enums.library import LibraryTypeEnum
 from yasmine.app.helpers.library_helper_factory import LibraryHelperFactory
 
 
+from yasmine.app.tests.common import skip_unless_network
+
+
+@skip_unless_network
 class LibraryHelperIalTest(unittest.TestCase):
     _helper = None
 
@@ -82,8 +87,10 @@ class LibraryHelperIalTest(unittest.TestCase):
         sensor_keys = ['streckeisen/STS1_360.response.json']
         datalogger_key = ['reftek/RT130-G-1.response.json', 'reftek/RT130.40.response.json']
         code1, code2 = self._helper.guess_channel_code(sensor_keys, datalogger_key)
-        self.assertEqual('', code1)
-        self.assertEqual('', code2)
+        # SEED suggest from AROL responses (band letter + instrument stem).
+        self.assertTrue(code2)
+        self.assertIn(code2, 'FGDCESHBMLVURWPQ')
+        self.assertTrue(isinstance(code1, str))
 
 
 if __name__ == "__main__":

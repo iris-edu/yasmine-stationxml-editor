@@ -33,7 +33,10 @@
 
 Ext.define("yasmine.view.xml.builder.parameter.items.date.DatePreview", {
     xtype: 'yasmine-date-field-preview',
-    getPreview: function(value) {
+    getPreview: function (value) {
+        if (!value || !Ext.isDate(value)) {
+            return '';
+        }
         return Ext.Date.format(value, yasmine.Globals.DatePrintLongFormat);
     }
 });

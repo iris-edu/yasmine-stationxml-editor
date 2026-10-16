@@ -1,3 +1,4 @@
+# 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # Unit tests for response plot output unit detection (DISP/VEL/ACC).
@@ -10,11 +11,13 @@ from unittest.mock import MagicMock
 from obspy.core.inventory.response import InstrumentSensitivity, Response
 
 from yasmine.app.helpers.base_helper import _normalize_response_units
+from yasmine.app.helpers.utils.utils import plot_max_frequency, response_nyquist
 from yasmine.app.utils.response_plot import (
     detect_plot_output,
     amplitude_ylabel,
     diff_amplitude_ylabel,
     apply_bode_axis_labels,
+    _wrap_phase,
 )
 
 
@@ -51,8 +54,15 @@ class DetectPlotOutputTest(unittest.TestCase):
             'DISP',
         )
 
-    def test_instconfig_takes_priority_over_response(self):
+    def test_response_units_win_over_instconfig(self):
         resp = _mock_response('M/S**2')
+        self.assertEqual(
+            detect_plot_output(resp, 'sensor_X_STgroundVel'),
+            'ACC',
+        )
+
+    def test_instconfig_used_when_response_units_are_unknown(self):
+        resp = _mock_response('V')
         self.assertEqual(
             detect_plot_output(resp, 'sensor_X_STgroundVel'),
             'VEL',
@@ -81,18 +91,51 @@ class DetectPlotOutputTest(unittest.TestCase):
 class AmplitudeYlabelTest(unittest.TestCase):
 
     def test_amplitude_ylabel_vel(self):
-        self.assertEqual(amplitude_ylabel('VEL'), 'Amplitude [m/s]')
+        self.assertEqual(amplitude_ylabel('VEL'), 'Amplitude [counts/m/s]')
 
     def test_amplitude_ylabel_accel(self):
-        self.assertEqual(amplitude_ylabel('ACC'), 'Amplitude [m/s²]')
+        self.assertEqual(amplitude_ylabel('ACC'), 'Amplitude [counts/m/s²]')
 
     def test_amplitude_ylabel_disp(self):
-        self.assertEqual(amplitude_ylabel('DISP'), 'Amplitude [m]')
+        self.assertEqual(amplitude_ylabel('DISP'), 'Amplitude [counts/m]')
+
+    def test_amplitude_ylabel_uses_response_output_unit(self):
+        resp = _mock_response('M/S**2')
+        resp.instrument_sensitivity.output_units = 'V'
+        self.assertEqual(amplitude_ylabel('ACC', resp), 'Amplitude [v/m/s²]')
 
     def test_amplitude_ylabel_def_from_sensitivity(self):
         resp = _mock_response('M/S', sens_input='M/S')
         resp.instrument_sensitivity.output_units = 'COUNTS'
         self.assertEqual(amplitude_ylabel('DEF', resp), 'Amplitude [counts/m/s]')
+
+    def test_amplitude_ylabel_prefers_explicit_sensitivity(self):
+        resp = _mock_response('M/S', sens_input='M/S')
+        resp.instrument_sensitivity.output_units = 'COUNTS'
+        stage_sens = InstrumentSensitivity(
+            value=10.0,
+            frequency=0.05,
+            input_units='M/S',
+            output_units='V',
+        )
+        self.assertEqual(
+            amplitude_ylabel('DEF', resp, sensitivity=stage_sens),
+            'Amplitude [v/m/s]',
+        )
+
+    def test_amplitude_ylabel_ground_motion_uses_explicit_output(self):
+        resp = _mock_response('M/S**2')
+        resp.instrument_sensitivity.output_units = 'COUNTS'
+        stage_sens = InstrumentSensitivity(
+            value=1.0,
+            frequency=1.0,
+            input_units='M/S**2',
+            output_units='V',
+        )
+        self.assertEqual(
+            amplitude_ylabel('ACC', resp, sensitivity=stage_sens),
+            'Amplitude [v/m/s²]',
+        )
 
     def test_amplitude_ylabel_def_without_sensitivity(self):
         self.assertEqual(amplitude_ylabel('DEF', None), 'Amplitude')
@@ -110,10 +153,21 @@ class AmplitudeYlabelTest(unittest.TestCase):
         ax1 = fig.add_subplot(211)
         ax2 = fig.add_subplot(212)
         apply_bode_axis_labels(fig, 'VEL', plot_degrees=False)
-        self.assertEqual(ax1.get_ylabel(), 'Amplitude [m/s]')
+        self.assertEqual(ax1.get_ylabel(), 'Amplitude [counts/m/s]')
         self.assertEqual(ax2.get_xlabel(), 'Frequency [Hz]')
         self.assertEqual(ax2.get_ylabel(), 'Phase [rad]')
         plt.close(fig)
+
+
+class WrapPhaseTest(unittest.TestCase):
+
+    def test_wraps_a_branch_cut_jump_into_the_bode_range(self):
+        import numpy as np
+        wrapped = _wrap_phase(np.array([190.0, -190.0, 10.0, np.nan]), True)
+        self.assertAlmostEqual(wrapped[0], -170.0)
+        self.assertAlmostEqual(wrapped[1], 170.0)
+        self.assertAlmostEqual(wrapped[2], 10.0)
+        self.assertTrue(np.isnan(wrapped[3]))
 
 
 class NormalizeResponseUnitsTest(unittest.TestCase):
@@ -203,3 +257,60 @@ class PlotOutputIntegrationTest(unittest.TestCase):
         amp_vel = np.abs(resp_vel.get_evalresp_response_for_frequencies(freqs, output='VEL'))
         amp_acc = np.abs(resp_acc.get_evalresp_response_for_frequencies(freqs, output='ACC'))
         self.assertFalse(np.allclose(amp_vel, amp_acc, rtol=0.01))
+
+
+class PlotMaxFrequencyTest(unittest.TestCase):
+
+    def test_empty_max_uses_nyquist(self):
+        stage = MagicMock()
+        stage.decimation_input_sample_rate = 200
+        stage.decimation_factor = 1
+        response = MagicMock(response_stages=[stage])
+        self.assertEqual(plot_max_frequency(response, None), 100)
+
+    def test_unknown_rate_uses_100_hz(self):
+        response = MagicMock(response_stages=[])
+        self.assertEqual(plot_max_frequency(response, None), 100)
+
+    def test_non_numeric_stage_rate_falls_back(self):
+        response = MagicMock()
+        self.assertIsNone(response_nyquist(response))
+        self.assertEqual(plot_max_frequency(response, None), 100)
+
+    def test_requested_max_is_the_drawn_limit(self):
+        response = MagicMock(response_stages=[])
+        self.assertEqual(plot_max_frequency(response, 25), 25)
+
+    def test_requested_max_above_sample_rate_is_clamped(self):
+        stage = MagicMock()
+        stage.decimation_input_sample_rate = 200
+        stage.decimation_factor = 1
+        response = MagicMock(response_stages=[stage])
+        self.assertEqual(plot_max_frequency(response, 500), 200)
+        self.assertEqual(response_nyquist(response), 100)
+
+    def test_sample_rate_above_20000_caps_at_20000(self):
+        stage = MagicMock()
+        stage.decimation_input_sample_rate = 40000
+        stage.decimation_factor = 1
+        response = MagicMock(response_stages=[stage])
+        self.assertEqual(plot_max_frequency(response, 30000), 20000)
+
+    def test_low_min_reduces_max_to_point_budget(self):
+        stage = MagicMock()
+        stage.decimation_input_sample_rate = 4000
+        stage.decimation_factor = 1
+        response = MagicMock(response_stages=[stage])
+        self.assertEqual(plot_max_frequency(response, 4000, 0.0001), 200)
+
+    def test_empty_max_also_obeys_point_budget(self):
+        stage = MagicMock()
+        stage.decimation_input_sample_rate = 200
+        stage.decimation_factor = 1
+        response = MagicMock(response_stages=[stage])
+        self.assertEqual(plot_max_frequency(response, None, 0.00001), 20)
+
+    def test_unknown_rate_requested_max_caps_at_20000(self):
+        response = MagicMock(response_stages=[])
+        self.assertEqual(plot_max_frequency(response, 25000), 20000)
+        self.assertIsNone(response_nyquist(response))

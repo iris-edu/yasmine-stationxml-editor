@@ -1,0 +1,96 @@
+/* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov */
+.stationxml-help-window {
+  .stationxml-help-detail,
+  .stationxml-help-entry {
+    -moz-user-select: text;
+    -webkit-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+  }
+
+  .stationxml-help-entry {
+    color: $yasmine-text;
+    font-size: 14px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+
+    h2 {
+      margin: 4px 0 12px;
+    }
+
+    h3 {
+      margin: 18px 0 8px;
+    }
+
+    code,
+    pre {
+      font-family: $yasmine-font-mono;
+    }
+
+    pre {
+      background: $yasmine-surface-muted;
+      border: 1px solid $yasmine-border;
+      border-radius: $yasmine-radius-sm;
+      overflow-x: auto;
+      padding: 10px;
+      white-space: pre-wrap;
+    }
+
+    footer {
+      border-top: 1px solid $yasmine-border;
+      margin-top: 22px;
+      padding-top: 10px;
+    }
+  }
+
+  .stationxml-help-kind {
+    color: $yasmine-text-muted;
+    font-size: 11px;
+    text-transform: uppercase;
+  }
+
+  .stationxml-help-path {
+    margin-bottom: 14px;
+  }
+
+  .stationxml-help-facts {
+    display: grid;
+    grid-template-columns: max-content minmax(0, unquote("1fr"));
+    gap: 4px 12px;
+
+    dt {
+      font-weight: 700;
+    }
+
+    dd {
+      margin: 0;
+    }
+  }
+
+  .stationxml-help-warning {
+    background: #fff8e8;
+    border-left: 4px solid $yasmine-warning;
+    border-radius: $yasmine-radius-sm;
+    margin: 8px 0;
+    padding: 10px;
+  }
+
+  .stationxml-help-empty {
+    color: $yasmine-text-muted;
+    font-style: italic;
+  }
+
+  .stationxml-help-error {
+    color: $yasmine-danger;
+    padding: 16px;
+  }
+}
+
+.yasmine-help-window .x-tree-view {
+  background: $yasmine-surface-raised;
+}
+
+.yasmine-help-window .x-grid-item-selected {
+  color: $yasmine-primary-dark;
+  background: $yasmine-primary-soft;
+}

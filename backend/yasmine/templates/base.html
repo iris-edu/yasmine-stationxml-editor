@@ -1,3 +1,21 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    <title>Yasmine</title>
+    <link rel="icon" type="image/svg+xml" href="{{static_url("images/favicon.svg")}}">
+    <link rel="apple-touch-icon" type="image/svg+xml" href="{{static_url("images/favicon.svg")}}">
+    <script src="{{static_url("js/yasmine-svg-icons.js")}}&svg=23"></script>
+    {%block extraheader%} {% end %}
+</head>
+<body>
+{%block body%}
+BASE CONTENT
+{% end %}
+</body>
+</html>
 {#
 
 # ****************************************************************************
@@ -29,24 +47,8 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 #}
-
-<!DOCTYPE HTML>
-<html manifest="">
-<head>
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
-    <title>YASMINE</title>
-    {%block extraheader%} {% end %}
-</head>
-<body>
-{%block body%}
-BASE CONTENT
-{% end %}
-</body>
-</html>

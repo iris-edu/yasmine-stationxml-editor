@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -34,15 +35,74 @@
 from os import path
 import unittest
 
-from obspy.core.inventory.inventory import read_inventory
+from obspy.core.inventory.inventory import Inventory
+from obspy.core.inventory.network import Network
+from obspy.core.inventory.station import Station
+from obspy.core.inventory.util import Site
+from obspy.core.utcdatetime import UTCDateTime
 
 from yasmine.app.utils.inv_valid import ValidateInventory
 
 
 class ValidateInventoryTests(unittest.TestCase):
-    FILES_FOLDER = path.join(path.dirname(path.realpath(__file__)), 'data')
 
-    def test_import_export_1(self):
-        inv = read_inventory(path.join(self.FILES_FOLDER, 'station_from_obspy.xml'))
+    def test_empty_inventory_has_no_critical_errors(self):
+        inv = Inventory(networks=[], source='test')
         errors = ValidateInventory(inv, self, True).run()
         self.assertEqual(len(errors), 0, 'Number of errors is different')
+
+    def test_valid_station_has_no_critical_errors(self):
+        station = Station(
+            code='TST',
+            latitude=0,
+            longitude=0,
+            elevation=0,
+            start_date=UTCDateTime(2020, 1, 1),
+            site=Site('Test site'),
+        )
+        network = Network(code='XX', stations=[station], start_date=UTCDateTime(2020, 1, 1))
+        inv = Inventory(networks=[network], source='test')
+        errors = ValidateInventory(inv, self, True).run()
+        self.assertEqual(len(errors), 0)
+
+    def test_operational_code_length_is_warning_only(self):
+        network = Network(code='LONG_NETWORK_CODE')
+        inv = Inventory(networks=[network], source='test')
+
+        critical = ValidateInventory(inv, self, True).run()
+        recommendations = ValidateInventory(inv, self, False).run()
+
+        self.assertEqual(critical, [])
+        self.assertTrue(any('more than' in item for item in recommendations))
+
+    def test_fdsn_network_code_length_accepted_with_seed_classic_hint(self):
+        # FDSN allows up to 8; SEED classic preferred 1–2.
+        network = Network(code='ABCD')
+        inv = Inventory(networks=[network], source='test')
+        recommendations = ValidateInventory(inv, self, False).run()
+        self.assertTrue(any('SEED classic' in item for item in recommendations))
+        self.assertFalse(any('more than' in item for item in recommendations))
+
+    def test_channel_code_must_be_three_characters(self):
+        from obspy.core.inventory.channel import Channel
+        channel = Channel(
+            code='EH',
+            location_code='00',
+            latitude=0,
+            longitude=0,
+            elevation=0,
+            depth=0,
+        )
+        station = Station(
+            code='TST',
+            latitude=0,
+            longitude=0,
+            elevation=0,
+            start_date=UTCDateTime(2020, 1, 1),
+            site=Site('Test site'),
+            channels=[channel],
+        )
+        network = Network(code='XX', stations=[station], start_date=UTCDateTime(2020, 1, 1))
+        inv = Inventory(networks=[network], source='test')
+        recommendations = ValidateInventory(inv, self, False).run()
+        self.assertTrue(any("less than 3" in item for item in recommendations))

@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -59,15 +60,15 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardCreateModel', {
   formulas: {
     currentTitle: function (get) {
       let steps = {
-        0: `<i class="${yasmine.utils.NodeTypeConverter.toIcon(yasmine.NodeTypeEnum.network)}" style="font-style: normal;"></i> Network`,
-        1: `<i class="${yasmine.utils.NodeTypeConverter.toIcon(yasmine.NodeTypeEnum.station)}" style="font-style: normal;"></i> Station`,
-        2: `<i class="${yasmine.utils.NodeTypeConverter.toIcon(yasmine.NodeTypeEnum.channel)}" style="font-style: normal;"></i> Channel`,
-        3: `<i class="x-fa fa-flag-checkered" style="font-style: normal;"></i> Final Step`,
-      }
+        0: 'Network',
+        1: 'Station',
+        2: 'Channel',
+        3: 'Final Step'
+      };
       let result = [];
       for (let i = get('startIndex'); i <= get('finishIndex'); i++) {
         if (i === get('currentIndex')) {
-          result.push(`<span style="color: #fff902; font-weight: bold">${steps[i]}</span>`);
+          result.push(steps[i].toUpperCase());
         } else {
           result.push(steps[i]);
         }

@@ -31,6 +31,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -62,55 +63,43 @@ def create_sys_folder():
 
 
 def syncdb(values):
-    import alembic.config
+    import alembic.config  # pyright: ignore[reportMissingImports]
     import yasmine
     os.chdir(yasmine.__path__[0])
     alembic.config.main(argv=values.alembic_args)
 
 
-def run_test_cmd(*_, **__):
+def run_test_cmd(values):
     import unittest
 
-    from yasmine.app.tests.unit.inv_valid_test import ValidateInventoryTests
-    from yasmine.app.tests.integration.imp_exp_test import ImportExportStationXml
-    from yasmine.app.tests.gui.home_test import HomeTest
-    from yasmine.app.tests.gui.xml_list_test import XmlListTest
-    from yasmine.app.tests.unit.nrl_io_test import NrlIoTest
-    from yasmine.app.tests.unit.attr_validation_test import AttrValidationTests
-    from yasmine.app.tests.gui.settings_test import SettingsTest
-    from yasmine.app.tests.integration.user_library_test import ParseUserLibraryYamlTest
-    from yasmine.app.tests.integration.yaml_to_json_test import ResifIoTest
-    from yasmine.app.tests.integration.library_helper_ial_test import LibraryHelperIalTest
-    from yasmine.app.tests.integration.library_helper_nrl_test import LibraryHelperNrlTest
-    from yasmine.app.tests.unit.nrl_guess_code_test import NrlGuessTest
-    from yasmine.app.tests.integration.default_channel_creation_test import DefaultChannelCreationTest
-    from yasmine.app.tests.unit.nrlv2_online_test import Nrlv2OnlineHelperTest
-    from yasmine.app.tests.unit.nrl_catalog_sync_test import (
-        NrlCatalogUpdateHelperTest,
-        NrlHelperCatalogSyncTest,
-    )
+    # Env names live here (not imported from tests.common) so --gui/--network
+    # take effect before skipUnless decorators evaluate gui_tests_enabled().
+    gui_env = 'YASMINE_TEST_GUI'
+    network_env = 'YASMINE_TEST_NETWORK'
+    if getattr(values, 'gui', False):
+        os.environ[gui_env] = '1'
+    if getattr(values, 'network', False):
+        os.environ[network_env] = '1'
 
+    backend_dir = os.path.dirname(os.path.abspath(__file__))
+    tests_root = os.path.join(backend_dir, 'yasmine', 'app', 'tests')
     loader = unittest.TestLoader()
-    alltests = unittest.TestSuite([
-        loader.loadTestsFromTestCase(AttrValidationTests),
-        loader.loadTestsFromTestCase(ValidateInventoryTests),
-        loader.loadTestsFromTestCase(ImportExportStationXml),
-        loader.loadTestsFromTestCase(NrlIoTest),
-        loader.loadTestsFromTestCase(HomeTest),
-        loader.loadTestsFromTestCase(XmlListTest),
-        loader.loadTestsFromTestCase(SettingsTest),
-        loader.loadTestsFromTestCase(ResifIoTest),
-        loader.loadTestsFromTestCase(ParseUserLibraryYamlTest),
-        loader.loadTestsFromTestCase(LibraryHelperIalTest),
-        loader.loadTestsFromTestCase(LibraryHelperNrlTest),
-        loader.loadTestsFromTestCase(NrlGuessTest),
-        loader.loadTestsFromTestCase(DefaultChannelCreationTest),
-        loader.loadTestsFromTestCase(Nrlv2OnlineHelperTest),
-        loader.loadTestsFromTestCase(NrlCatalogUpdateHelperTest),
-        loader.loadTestsFromTestCase(NrlHelperCatalogSyncTest),
-    ])
-    runner = unittest.TextTestRunner(failfast=True)
-    result = runner.run(alltests)
+    suites = []
+    for sub in ('unit', 'http', 'integration'):
+        suites.append(loader.discover(
+            os.path.join(tests_root, sub),
+            pattern='*_test.py',
+            top_level_dir=backend_dir,
+        ))
+    if os.environ.get(gui_env, '').lower() in ('1', 'true', 'yes'):
+        suites.append(loader.discover(
+            os.path.join(tests_root, 'gui'),
+            pattern='*_test.py',
+            top_level_dir=backend_dir,
+        ))
+
+    runner = unittest.TextTestRunner(failfast=bool(getattr(values, 'failfast', False)), verbosity=2)
+    result = runner.run(unittest.TestSuite(suites))
     sys.exit(not result.wasSuccessful())
 
 
@@ -125,7 +114,19 @@ if __name__ == "__main__":
     parser_syncdb.set_defaults(func=syncdb)
     parser_syncdb.add_argument('alembic_args', nargs=argparse.REMAINDER)
 
-    parser_test = subparsers.add_parser("test", help="Run tests")
+    parser_test = subparsers.add_parser("test", help="Run offline unit/HTTP/integration tests")
+    parser_test.add_argument(
+        "--gui", action="store_true",
+        help="Include Selenium GUI tests (requires a running app and a browser).",
+    )
+    parser_test.add_argument(
+        "--network", action="store_true",
+        help="Include tests that download NRL/AROL archives.",
+    )
+    parser_test.add_argument(
+        "--failfast", action="store_true",
+        help="Stop on the first failure.",
+    )
     parser_test.set_defaults(func=run_test_cmd)
 
     parser_runserver = subparsers.add_parser("runserver", help="Runserver parser")

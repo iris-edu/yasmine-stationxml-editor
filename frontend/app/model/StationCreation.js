@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,6 +37,10 @@ Ext.define('yasmine.model.StationCreation', {
   proxy: {
     type: 'rest',
     url: '/api/wizard/station/',
+    reader: {
+      type: 'json',
+      rootProperty: 'data'
+    },
     writer: {
       type: 'json',
       writeAllFields: true
@@ -45,8 +50,8 @@ Ext.define('yasmine.model.StationCreation', {
     {name: 'id', type: 'int'},
     {name: 'networkNodeId', type: 'int'},
     {name: 'code', type: 'string'},
-    {name: 'start_date', type: 'date', dateFormat: 'd/m/Y H:i:s'},
-    {name: 'end_date', type: 'date', dateFormat: 'd/m/Y H:i:s'},
+    {name: 'start_date', type: 'date', dateFormat: 'Y-m-d\\TH:i:s'},
+    {name: 'end_date', type: 'date', dateFormat: 'Y-m-d\\TH:i:s'},
     {name: 'latitude', type: 'number'},
     {name: 'longitude', type: 'number'},
     {name: 'elevation', type: 'number'}

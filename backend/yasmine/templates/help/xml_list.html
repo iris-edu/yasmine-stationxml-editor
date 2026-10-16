@@ -29,8 +29,28 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 #}
-<b>XML List</b>
+<p><b>XML list</b></p>
+<p>
+This table is the set of StationXML documents stored in Yasmine.
+Double-click a row, or use the wrench, to open the inventory builder.
+</p>
+
+<p><b>Toolbar</b></p>
+<ul>
+<li><b>+</b> &mdash; create an empty XML container. Source, Module, URI and Sender become the FDSNStationXML root attributes.</li>
+<li><b>&minus;</b> &mdash; delete the selected document from Yasmine. This does not delete files on disk.</li>
+<li><b>Pencil</b> &mdash; rename the container or edit the root Source, Module, URI and Sender values.</li>
+<li><b>Wrench</b> &mdash; open the Network / Station / Channel editor.</li>
+<li><b>Import</b> &mdash; load an existing StationXML file. Foreign-namespace extensions are kept.</li>
+<li><b>Export</b> &mdash; download StationXML 1.2. The download is blocked if XSD validation fails; the error message names the first schema problem.</li>
+</ul>
+
+<p>
+Use column filters to find a document by name, source, module or date.
+For field meanings inside a document, open the builder and use the StationXML <b>?</b> on a parameter.
+</p>

@@ -27,12 +27,14 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 
-from datetime import datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone
 
+from obspy import UTCDateTime
 from tzlocal import get_localzone
 import pytz
 
@@ -55,19 +57,57 @@ def strptime(value, dt_format):
     return datetime.strptime(value, dt_format)
 
 
+def parse_utcdatetime(value):
+    """Parse a value ObsPy UTCDateTime accepts. Empty input is None."""
+    if value is None or value == '':
+        return None
+    if isinstance(value, UTCDateTime):
+        return value
+    if isinstance(value, datetime):
+        return UTCDateTime(value)
+    if isinstance(value, date) and not isinstance(value, datetime):
+        return UTCDateTime(datetime(value.year, value.month, value.day))
+    try:
+        return UTCDateTime(str(value).strip())
+    except (TypeError, ValueError) as err:
+        raise ValueError('Unable to parse date: %r' % value) from err
+
+
+def parse_naive_datetime(value):
+    """Naive UTC datetime for SQLAlchemy DateTime columns."""
+    parsed = parse_utcdatetime(value)
+    if parsed is None:
+        return None
+    result = parsed.datetime
+    if result.tzinfo is not None:
+        result = result.astimezone(timezone.utc).replace(tzinfo=None)
+    return result
+
+
 def parse_duration(duration):
-    '''Returns duration in seconds'''
-    fractions = duration.split(":")
-    fractions_len = len(fractions)
+    '''Returns duration as timedelta from HH:MM[:SS].'''
+    if duration is None or duration == '':
+        return timedelta(0)
+    fractions = str(duration).split(':')
+    if not fractions or len(fractions) > 3:
+        raise ValueError('Unable to parse duration: %r' % duration)
     seconds = 0
-    for i in range(fractions_len):
-        seconds += int(fractions[i]) * 60**(2 - i)
+    for i, part in enumerate(fractions):
+        try:
+            seconds += int(part) * 60 ** (2 - i)
+        except (TypeError, ValueError) as err:
+            raise ValueError('Unable to parse duration: %r' % duration) from err
     return timedelta(seconds=seconds)
 
 
 def datetime_to_utc(datetime_in):
     '''Convert date to UTC time'''
     if datetime_in.tzinfo is None:
-        return get_localzone().localize(datetime_in).astimezone(pytz.UTC)
+        local_zone = get_localzone()
+        if hasattr(local_zone, 'localize'):
+            aware = local_zone.localize(datetime_in)
+        else:
+            aware = datetime_in.replace(tzinfo=local_zone)
+        return aware.astimezone(pytz.UTC)
     else:
         return datetime_in.astimezone(pytz.UTC)

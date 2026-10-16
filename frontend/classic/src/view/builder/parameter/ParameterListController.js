@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.3-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -55,11 +56,65 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     'yasmine.view.xml.builder.parameter.items.identifiers.IdentifiersPreview',
     'yasmine.view.xml.builder.parameter.items.equipments.EquipmentsPreview',
     'yasmine.view.xml.builder.parameter.items.restrictedstatus.RestrictedStatusPreview',
-    'yasmine.NodeTypeEnum'
+    'yasmine.view.xml.builder.parameter.items.dataavailability.DataAvailabilityPreview',
+    'yasmine.view.xml.builder.parameter.items.measurement.MeasurementMetadataWindow',
+    'yasmine.NodeTypeEnum',
+    'yasmine.utils.StationXmlHelpContext'
   ],
+  parameterLabel: function (record) {
+    return yasmine.utils.StationXmlHelpContext.labelForRecord(
+      record,
+      this.getViewModel() && this.getViewModel().get('nodeType')
+    );
+  },
   init: function () {
-    Ext.ux.Mediator.on('node-selected', this.onNodeSelected, this);
-    Ext.ux.Mediator.on('node-editing-canceled', this.reloadStores, this);
+    this.mon(Ext.ux.Mediator, 'node-selected', this.onNodeSelected, this);
+    this.mon(Ext.ux.Mediator, 'node-editing-canceled', this.reloadStores, this);
+    this.mon(Ext.ux.Mediator, 'channel-response-imported', this.onChannelResponseImported, this);
+    this.watchParameterStores();
+  },
+  watchParameterStores: function () {
+    var viewModel = this.getViewModel();
+    var infoStore = viewModel && viewModel.getStore('infoStore');
+    var availableStore = viewModel && viewModel.getStore('availableParamsStore');
+    // Stores are not created yet during the first init on some opens.
+    // mon(null) throws, and that aborts the builder layout flush.
+    if (infoStore && !this._infoStoreWatched) {
+      this._infoStoreWatched = true;
+      this.mon(infoStore, {
+        load: this.syncAvailableParameters,
+        datachanged: this.syncAvailableParameters,
+        scope: this
+      });
+    }
+    if (availableStore && !this._availableStoreWatched) {
+      this._availableStoreWatched = true;
+      this.mon(availableStore, {
+        load: this.syncAvailableParameters,
+        scope: this
+      });
+    }
+  },
+  syncAvailableParameters: function () {
+    var viewModel = this.getViewModel();
+    var infoStore = viewModel.getStore('infoStore');
+    var availableStore = viewModel.getStore('availableParamsStore');
+    if (!infoStore || !availableStore) {
+      return;
+    }
+    var present = {};
+    infoStore.each(function (record) {
+      var name = record.get('name');
+      if (name) {
+        present[name] = true;
+      }
+    });
+    availableStore.getFilters().replaceAll([{
+      id: 'stationxml-single-occurrence',
+      filterFn: function (record) {
+        return !present[record.get('name')];
+      }
+    }]);
   },
   onNodeSelected: function (node) {
     if (!node || node.root) {
@@ -69,6 +124,7 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     }
   },
   onXmlNodeSelected: function (node) {
+    this.watchParameterStores();
     this.getViewModel().set('nodeInstance', node);
     this.getViewModel().set('nodeType', node.nodeType);
     this.getViewModel().set('nodeId', node.id);
@@ -84,6 +140,10 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     this.getViewModel().set('theRow', null);
     this.getViewModel().notify();
     this.clearStores();
+  },
+  onChannelResponseImported: function () {
+    this.reloadStores();
+    this.getView().getView().refresh();
   },
   onRecordSaved: function () {
     this.closeForm();
@@ -102,6 +162,19 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
       this.onEditClick();
     }
   },
+  onHelpClick: function () {
+    var record = this.getSelectedRecord();
+    var context = '/FDSNStationXML';
+    var title = 'StationXML schema';
+    if (record) {
+      context = {
+        nodeType: this.getViewModel().get('nodeType'),
+        parameterName: record.get('name')
+      };
+      title = this.parameterLabel(record);
+    }
+    yasmine.utils.HelpUtil.stationXmlHelpMe(context, title);
+  },
   onEditClick: function () {
     if (!this.getSelectedRecord()) {
       return;
@@ -116,6 +189,34 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
       }
     });
   },
+  onMeasurementMetadataClick: function (view, rowIndex, colIndex, item, event, record) {
+    if (this.metadataWindow && !this.metadataWindow.destroyed) {
+      this.metadataWindow.close();
+    }
+    this.metadataWindow = Ext.create({
+      xtype: 'measurement-metadata-window',
+      listeners: {
+        metadataSaved: {
+          fn: this.onMeasurementMetadataSaved,
+          scope: this
+        }
+      }
+    });
+    this.metadataWindow.getController().initData(
+      record,
+      this.getViewModel().get('nodeType')
+    );
+    this.metadataWindow.show();
+  },
+  onMeasurementMetadataSaved: function (record, persisted) {
+    this.getView().getView().refresh();
+    if (persisted) {
+      Ext.ux.Mediator.fireEvent(
+        'node-updated',
+        this.getViewModel().get('nodeInstance')
+      );
+    }
+  },
   onCellEdit: function (editor, context) {
     if (!context.record.dirty) {
       return;
@@ -123,7 +224,11 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     context.record.save({
       scope: this,
       success: function () {
+        this.syncAvailableParameters();
         Ext.ux.Mediator.fireEvent('node-updated', this.getViewModel().get('nodeInstance'));
+      },
+      failure: function () {
+        this.syncAvailableParameters();
       }
     });
   },
@@ -145,7 +250,7 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
       return false
     }
   },
-  onAddClick: function (grid, record) {
+  onAddClick: function (combo, record) {
     if (!record) {
       return
     }
@@ -156,8 +261,16 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     }
 
     var view = this.getView();
+    var infoStore = view.getStore('infoStore');
+    if (infoStore.findExact('name', record.get('name')) !== -1) {
+      this.getViewModel().set('selectedAvailableParameter', null);
+      if (combo && combo.clearValue) {
+        combo.clearValue();
+      }
+      return;
+    }
+
     var parameter = new yasmine.model.Parameter({
-      id: null,
       'class': record.get('class'),
       attr_class: record.get('class'),
       name: record.get('name'),
@@ -167,8 +280,12 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
       node_type_id: this.getViewModel().get('nodeType') // TODO: This has to be refactored.
     });
 
-    var infoStore = view.getStore('infoStore')
-    infoStore.insert(0, parameter)
+    infoStore.insert(0, parameter);
+    this.getViewModel().set('selectedAvailableParameter', null);
+    if (combo && combo.clearValue) {
+      combo.clearValue();
+    }
+    this.syncAvailableParameters();
     view.setSelection(parameter)
     var curPossition = view.getSelectionModel().getCurrentPosition()
     var context = new Ext.grid.CellContext(view.getView()).setPosition(curPossition.rowIdx, view.getColumnManager().getColumns()[1]);
@@ -177,10 +294,10 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
   onDeleteClick: function () {
     let record = this.getSelectedRecord();
     if (record.get('required')) {
-      Ext.MessageBox.alert('Error', `The "${record.get('name')}" field cannot be removed. It's a mandatory field.`);
+      Ext.MessageBox.alert('Error', `The "${this.parameterLabel(record)}" field cannot be removed. It's a mandatory field.`);
       return;
     }
-    Ext.MessageBox.confirm('Confirm', `Are you sure you want to delete '${record.get('name')}' parameter?`, function (btn) {
+    Ext.MessageBox.confirm('Confirm', `Are you sure you want to delete '${this.parameterLabel(record)}' parameter?`, function (btn) {
       if (btn === 'yes') {
         this.getSelectedRecord().erase({
           scope: this,
@@ -220,8 +337,18 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     }
   },
   showForm(record) {
+    if (this.editorWindow && !this.editorWindow.destroyed) {
+      this.editorWindow.close();
+    }
+    let isResponse = record.get('class') === 'yasmine-channel-response-field' ||
+        record.get('attr_class') === 'yasmine-channel-response-field';
     this.editorWindow = Ext.create({
       xtype: 'parameter-editor',
+      scrollable: !isResponse,
+      layout: isResponse ? 'fit' : {
+        type: 'vbox',
+        align: 'stretch'
+      },
       listeners: {
         recordSaved: {
           fn: this.onRecordSaved,
@@ -247,6 +374,9 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     }
   },
   showFormExt(record) {
+    if (this.editorWindow && !this.editorWindow.destroyed) {
+      this.editorWindow.close();
+    }
     this.editorWindow = Ext.create({
       xtype: 'parameter-editor-ext',
       listeners: {
@@ -287,10 +417,10 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
   },
   nameRenderer: function (value, column, record) {
     let requiredSymbol = '';
-    let name = value;
+    let name = Ext.htmlEncode(value || this.parameterLabel(record));
     if (record.get('required')) {
       requiredSymbol = '<span style="color: red">*</span>';
-      name = `<b>${value}</b>`;
+      name = `<b>${name}</b>`;
     }
     return `${requiredSymbol} ${name}`;
   },
@@ -312,7 +442,12 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterListController', {
     }
 
     if (preview.isComplexType && preview.isComplexType()) {
-      result = `<i class="fa fa-info-circle" aria-hidden="true" title="Double click to see more details"></i>  ${result}`;
+      var touch = !!(Ext.supports && Ext.supports.Touch) ||
+        !!(Ext.os && Ext.os.deviceType && Ext.os.deviceType !== 'Desktop');
+      var hint = touch
+        ? 'Open to see more details'
+        : 'Double-click to see more details';
+      result = `<i class="fa fa-info-circle" aria-hidden="true" title="${hint}"></i>  ${result}`;
     }
 
     return result;

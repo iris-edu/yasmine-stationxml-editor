@@ -27,8 +27,11 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
+from tornado.web import HTTPError
+
 from yasmine.app.enums.xml_node import XmlNodeEnum
 from yasmine.app.handlers.base import AsyncThreadMixin, BaseHandler
 from yasmine.app.models import ConfigModel
@@ -55,14 +58,16 @@ class ConfigHandler(AsyncThreadMixin, BaseHandler):
         with db_transaction(self.db):
             for key, value in request_params.items():
                 if key not in ['id']:
-                    group, name = key.split('__')
+                    if '__' not in key:
+                        raise HTTPError(400, reason='Invalid config key: %s' % key)
+                    group, name = key.split('__', 1)
                     record = self.db.query(ConfigModel).filter(ConfigModel.group == group, ConfigModel.name == name).first()
                     if record is None:
                         record = ConfigModel(group=group, name=name)
                         self.db.add(record)
                     record.value_obj = value
         # to reset configuration
-        self.application.__config__ = None
+        self.clear_config_cache()
         return {'success': True}
 
 

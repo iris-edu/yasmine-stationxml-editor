@@ -1,3 +1,4 @@
+# 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # This file is part of the yasmine editing tool.
@@ -32,6 +33,7 @@
 
 
 import copy
+import html
 import logging
 import re
 import numpy as np
@@ -90,34 +92,288 @@ def _output_from_instconfig(instconfig):
     return None
 
 
+def _is_zero_number(value):
+    try:
+        return value is not None and float(value) == 0.0
+    except (TypeError, ValueError):
+        return False
+
+
+def _unit_token(unit):
+    text = _get_unit_string(unit)
+    if not text:
+        return None
+    return text.split(' - ', 1)[0].strip().split()[0].lower()
+
+
+_FILTER_STAGE_TYPES = (
+    'PolesZerosResponseStage',
+    'CoefficientsTypeResponseStage',
+    'FIRResponseStage',
+    'ResponseListResponseStage',
+)
+
+_NORM_RESP_FALLBACK = (
+    'evalresp rejected this response while normalizing stage gains (norm_resp).'
+    '<br>That code means one of these:'
+    '<br>• InstrumentSensitivity (stage 0) is 0. Set it to any non-zero number, then recalculate. '
+    'evalresp reads that value as a stage gain and stops while it is 0, before a new sensitivity can be computed.'
+    '<br>• A StageGain value is 0, so the whole response is zero. Set that stage to its real gain.'
+    '<br>• A stage has no StageGain, and there is no non-zero InstrumentSensitivity to copy onto it.'
+    '<br>The computed sensitivity is the product of the stage gains at the sensitivity frequency.'
+)
+
+_CHECK_CHANNEL_FALLBACK = (
+    'evalresp rejected the stage chain (check_channel).'
+    '<br>That code means one of these:'
+    '<br>• A stage input unit does not match the previous stage output unit.'
+    '<br>• A Coefficients, FIR, or digital poles-and-zeros stage has no Decimation '
+    '(input sample rate, factor, and offset).'
+    '<br>• A stage has a Decimation but no filter, or a filter but no StageGain.'
+    '<br>Make the units, filters, and decimation line up, then try again.'
+)
+
+
+def _esc(value):
+    return html.escape(str(value), quote=False)
+
+
+def _has_numeric(value):
+    if isinstance(value, bool) or value is None:
+        return False
+    if isinstance(value, (int, float)):
+        return True
+    try:
+        float(value)
+    except (TypeError, ValueError):
+        return False
+    return True
+
+
+def _format_hz(freq):
+    if not _has_numeric(freq):
+        return ''
+    return ' at %s Hz' % freq
+
+
+def _stage_label(stage, fallback='A stage'):
+    number = getattr(stage, 'stage_sequence_number', None)
+    if number is None:
+        return fallback
+    return 'Stage %s' % number
+
+
+def _stage_ref(stage):
+    number = getattr(stage, 'stage_sequence_number', None)
+    if number is None:
+        return 'a stage'
+    return 'stage %s' % number
+
+
+def _gain_defined(stage):
+    return (
+        getattr(stage, 'stage_gain', None) is not None
+        and getattr(stage, 'stage_gain_frequency', None) is not None
+    )
+
+
+def _has_decimation(stage):
+    return (
+        _has_numeric(getattr(stage, 'decimation_input_sample_rate', None))
+        and _has_numeric(getattr(stage, 'decimation_factor', None))
+    )
+
+
+def _stage_type_name(stage):
+    return type(stage).__name__
+
+
+def _is_filter_stage(stage):
+    return _stage_type_name(stage) in _FILTER_STAGE_TYPES
+
+
+def _needs_decimation(stage):
+    name = _stage_type_name(stage)
+    if name in ('CoefficientsTypeResponseStage', 'FIRResponseStage'):
+        return True
+    if name == 'PolesZerosResponseStage':
+        transfer = str(getattr(stage, 'pz_transfer_function_type', '') or '')
+        return 'DIGITAL' in transfer.upper()
+    return False
+
+
+def _evalresp_function(error_text):
+    text = (error_text or '').lower()
+    if 'norm_resp' in text:
+        return 'norm_resp'
+    if 'check_channel' in text:
+        return 'check_channel'
+    return None
+
+
+def _lines(*parts):
+    return '<br>'.join(part for part in parts if part)
+
+
+def _diagnose_norm_resp(response):
+    """Match evalresp norm_resp: missing gain, then the first zero gain."""
+    stages = list(getattr(response, 'response_stages', None) or [])
+    sens = getattr(response, 'instrument_sensitivity', None)
+    sens_value = getattr(sens, 'value', None) if sens is not None else None
+    sens_is_zero = sens is not None and _is_zero_number(sens_value)
+    sens_missing_or_zero = sens is None or sens_is_zero
+
+    if stages and not _gain_defined(stages[0]) and (
+            (len(stages) == 1 and sens_missing_or_zero)
+            or (len(stages) == 2 and sens is None)):
+        label = _stage_label(stages[0])
+        return _lines(
+            '%s has no StageGain (norm_resp: no stage gain defined, zero sensitivity).' % label,
+            'evalresp needs a StageGain value and the frequency where that gain applies.',
+            'It cannot invent one when InstrumentSensitivity is missing or 0.',
+        )
+
+    for stage in stages:
+        if _is_zero_number(getattr(stage, 'stage_gain', None)):
+            label = _stage_label(stage)
+            return _lines(
+                '%s gain is 0 (norm_resp: zero stage gain).' % label,
+                'A zero stage gain makes the whole response zero, so evalresp will not normalize it.',
+                'Set this StageGain to the stage\'s real gain. '
+                'Overall sensitivity is the product of every stage gain.',
+            )
+
+    if sens_is_zero:
+        where = _format_hz(getattr(sens, 'frequency', None))
+        return _lines(
+            'Stage 0 sensitivity is 0%s (norm_resp: zero stage gain).' % where,
+            'Set InstrumentSensitivity to any non-zero number, then recalculate.',
+            'evalresp reads that value as stage 0 and stops while it is 0, '
+            'before a new sensitivity can be computed.',
+            'The computed sensitivity is the product of the stage gains at the sensitivity frequency.',
+        )
+    return None
+
+
+def _diagnose_check_channel(response):
+    """Match evalresp check_channel: gain, units, then required decimation."""
+    previous = None
+    for stage in getattr(response, 'response_stages', None) or []:
+        name = _stage_type_name(stage)
+        if name == 'ResponseStage':
+            if _has_decimation(stage):
+                return _lines(
+                    '%s has a Decimation but no filter '
+                    '(check_channel: decimation blockette with no associated filter).' % _stage_label(stage),
+                    'Decimation belongs on a PolesZeros, Coefficients, or FIR stage.',
+                )
+            continue
+
+        if _is_filter_stage(stage) and not _gain_defined(stage):
+            return _lines(
+                '%s has a filter but no StageGain (check_channel: gain blockette is missing).' % _stage_label(stage),
+                'Add StageGain Value and Frequency. evalresp requires a gain after every filter.',
+            )
+
+        incoming = _unit_token(getattr(stage, 'input_units', None))
+        outgoing = _unit_token(getattr(stage, 'output_units', None))
+        if previous and incoming and previous != incoming:
+            return _lines(
+                'Units mismatch at %s: %s followed by %s (check_channel).' % (
+                    _stage_ref(stage), _esc(previous), _esc(incoming),
+                ),
+                'This stage\'s input units must be the same as the previous stage\'s output units.',
+                'evalresp evaluates only a response whose units form one chain from the sensor to the output.',
+            )
+        if _is_filter_stage(stage) and _needs_decimation(stage) and not _has_decimation(stage):
+            return _lines(
+                '%s has no Decimation '
+                '(check_channel: required decimation blockette for IIR or FIR filter missing).' % _stage_label(stage),
+                'A Coefficients, FIR, or digital poles-and-zeros stage needs a Decimation '
+                'with input sample rate, factor, and offset.',
+                'evalresp cannot evaluate a digital filter without a sample rate.',
+            )
+        if outgoing:
+            previous = outgoing
+    return None
+
+
+def diagnose_evalresp_response(response, error_text=''):
+    """Explain an evalresp 'Illegal RESP format' from the response itself.
+
+    ObsPy maps every evalresp status -5 to that one string. The C library's
+    own reason (zero stage gain, units mismatch, missing decimation) is only
+    printed to stderr. ``error_text`` selects norm_resp or check_channel,
+    because those functions run in that order and fail for different reasons.
+    """
+    if response is None:
+        return None
+    function = _evalresp_function(error_text)
+    if function != 'check_channel':
+        reason = _diagnose_norm_resp(response)
+        if reason or function == 'norm_resp':
+            return reason
+    return _diagnose_check_channel(response)
+
+
+def explain_illegal_resp_format(error_text, response=None):
+    """Detailed user-facing text for ObsPy's Illegal RESP format error."""
+    reason = diagnose_evalresp_response(response, error_text)
+    if reason:
+        return reason
+    function = _evalresp_function(error_text)
+    if function == 'check_channel':
+        return _CHECK_CHANNEL_FALLBACK
+    if function == 'norm_resp':
+        return _NORM_RESP_FALLBACK
+    return _NORM_RESP_FALLBACK + '<br><br>' + _CHECK_CHANNEL_FALLBACK
+
+
+def format_response_failure(error, response=None, action='generate plot'):
+    """User-facing response error. Prefer the evalresp reason over the generic code."""
+    text = str(error).strip() or 'Unknown error'
+    if 'illegal resp format' in text.lower():
+        return 'Cannot %s.<br>%s' % (action, explain_illegal_resp_format(text, response))
+    return 'Cannot %s.<br>%s' % (action, text)
+
+
+def format_plot_failure(error, response=None):
+    """User-facing plot error. Prefer the evalresp reason over the generic code."""
+    return format_response_failure(error, response, 'generate plot')
+
+
+def format_sensitivity_failure(error, response=None):
+    """User-facing Recalculate Sensitivity error."""
+    return format_response_failure(error, response, 'recalculate sensitivity')
+
+
 def detect_plot_output(response, instconfig=None):
-    """Choose evalresp output (DISP/VEL/ACC/DEF) for Bode plot from instconfig or response units."""
+    """Choose evalresp output (DISP/VEL/ACC/DEF). Response units win over the NRL name."""
+    if response is not None:
+        sens = getattr(response, 'instrument_sensitivity', None)
+        if sens:
+            out = _units_to_evalresp_output(_get_unit_string(sens.input_units))
+            if out:
+                return out
+        stages = getattr(response, 'response_stages', None) or []
+        if stages:
+            out = _units_to_evalresp_output(_get_unit_string(stages[0].input_units))
+            if out:
+                return out
+
     from_instconfig = _output_from_instconfig(instconfig)
     if from_instconfig:
         return from_instconfig
-
-    if response is None:
-        return 'DEF'
-
-    sens = getattr(response, 'instrument_sensitivity', None)
-    if sens:
-        out = _units_to_evalresp_output(_get_unit_string(sens.input_units))
-        if out:
-            return out
-
-    stages = getattr(response, 'response_stages', None) or []
-    if stages:
-        out = _units_to_evalresp_output(_get_unit_string(stages[0].input_units))
-        if out:
-            return out
-
     return 'DEF'
 
 
-_AMPLITUDE_YLABEL = {
-    'VEL': 'Amplitude [m/s]',
-    'ACC': 'Amplitude [m/s²]',
-    'DISP': 'Amplitude [m]',
+# evalresp DISP/VEL/ACC is the ground-motion unit the transfer function is
+# relative to. The plotted magnitude is output/input (counts per m/s), not
+# the ground motion itself.
+_GROUND_MOTION_UNIT = {
+    'VEL': 'm/s',
+    'ACC': 'm/s²',
+    'DISP': 'm',
 }
 
 _OUTPUT_TYPE_SUFFIX = {
@@ -143,13 +399,34 @@ def _canonical_unit_token(unit_str):
     return token or None
 
 
-def amplitude_ylabel(plot_output, response=None):
-    """Y-axis label for Bode amplitude subplot."""
+def _response_output_token(response, sensitivity=None):
+    sens = sensitivity
+    if sens is None and response is not None:
+        sens = getattr(response, 'instrument_sensitivity', None)
+    if sens:
+        token = _canonical_unit_token(_get_unit_string(sens.output_units))
+        if token:
+            return token
+    stages = getattr(response, 'response_stages', None) or []
+    if stages:
+        return _canonical_unit_token(_get_unit_string(getattr(stages[-1], 'output_units', None)))
+    return None
+
+
+def amplitude_ylabel(plot_output, response=None, sensitivity=None):
+    """Y-axis label for Bode amplitude subplot.
+
+    When ``sensitivity`` is given (e.g. stage-range marker sensitivity), its
+    units win over ``response.instrument_sensitivity``.
+    """
     code = (plot_output or 'DEF').upper()
-    fixed = _AMPLITUDE_YLABEL.get(code)
-    if fixed:
-        return fixed
-    sens = getattr(response, 'instrument_sensitivity', None) if response else None
+    ground = _GROUND_MOTION_UNIT.get(code)
+    if ground:
+        output = _response_output_token(response, sensitivity) or 'counts'
+        return f'Amplitude [{output}/{ground}]'
+    sens = sensitivity
+    if sens is None and response is not None:
+        sens = getattr(response, 'instrument_sensitivity', None)
     if sens:
         out_u = _canonical_unit_token(_get_unit_string(sens.output_units))
         in_u = _canonical_unit_token(_get_unit_string(sens.input_units))
@@ -168,14 +445,15 @@ def diff_amplitude_ylabel(plot_output):
     return label
 
 
-def apply_bode_axis_labels(fig, plot_output, response=None, *, plot_degrees=False):
+def apply_bode_axis_labels(fig, plot_output, response=None, *, plot_degrees=False,
+                           sensitivity=None):
     """Set axis labels and layout after ObsPy response.plot with external axes."""
     import matplotlib.pyplot as plt
 
     fig.subplots_adjust(**_BODE_SUBPLOTS_ADJUST)
     ax1, ax2 = fig.axes[:2]
     plt.setp(ax1.get_xticklabels(), visible=False)
-    ax1.set_ylabel(amplitude_ylabel(plot_output, response))
+    ax1.set_ylabel(amplitude_ylabel(plot_output, response, sensitivity=sensitivity))
     ax1.grid(True)
     ax2.set_xlabel('Frequency [Hz]')
     ax2.set_ylabel('Phase [degrees]' if plot_degrees else 'Phase [rad]')
@@ -215,15 +493,17 @@ def _prepare_sensitivity_for_sacpz(response):
     sens_val = getattr(v, 'value', v) if v is not None else None
     if sens_val is None:
         sens_val = 1.0
-        for s in response.response_stages[:2]:
-            if s.stage_gain is not None:
-                sens_val *= s.stage_gain
+        for stage in response.response_stages or []:
+            gain = getattr(stage, 'stage_gain', None)
+            if gain:
+                sens_val *= float(gain)
         response.instrument_sensitivity.value = sens_val
 
 
 def plot_diff_resp(response, resp2, min_freq, output=None, start_stage=None,
                    end_stage=None, label=None, axes=None, sampling_rate=None,
-                   unwrap_phase=False, plot_degrees=False, show=True, outfile=None):
+                   unwrap_phase=False, plot_degrees=False, show=True, outfile=None,
+                   nyquist=None):
     """
     Show bode plot of instrument response.
 
@@ -304,7 +584,7 @@ def plot_diff_resp(response, resp2, min_freq, output=None, start_stage=None,
         msg = "Can not plot response for channel with sampling rate `0`."
         raise ZeroSamplingRate(msg)
 
-    nyquist = sampling_rate / 2.0
+    max_freq = sampling_rate / 2.0
     '''
     t_samp = 1.0 / sampling_rate
     nyquist = sampling_rate / 2.0
@@ -315,7 +595,6 @@ def plot_diff_resp(response, resp2, min_freq, output=None, start_stage=None,
         end_stage=end_stage)
     '''
 
-    max_freq = sampling_rate / 2
     nfreqs = 200
     n1 = np.log10(min_freq)
     n2 = np.log10(max_freq)
@@ -332,27 +611,27 @@ def plot_diff_resp(response, resp2, min_freq, output=None, start_stage=None,
 
     resp1 = response
     x1 = resp1.get_evalresp_response_for_frequencies(
-        freqs, output=output, start_stage=None, end_stage=None)
+        freqs, output=output, start_stage=start_stage, end_stage=end_stage)
     x2 = resp2.get_evalresp_response_for_frequencies(
-        freqs, output=output, start_stage=None, end_stage=None)
+        freqs, output=output, start_stage=start_stage, end_stage=end_stage)
     x1_mag = np.abs(x1)
     x1_pha = np.angle(x1, deg=plot_degrees)
     x2_mag = np.abs(x2)
     x2_pha = np.angle(x2, deg=plot_degrees)
 
-    diff_mag = np.zeros_like(freqs)
-    diff_pha = np.zeros_like(freqs)
+    diff_mag = np.full(freqs.shape, np.nan, dtype=float)
+    diff_pha = np.full(freqs.shape, np.nan, dtype=float)
     for i, f in enumerate(freqs):
-        # print("%3d %f %f %f" % (i, f, x1_mag[i], x2_mag[i]))
         if x2_mag[i] > 0 and x1_mag[i] > 0:
             diff_mag[i] = 20 * (np.log10(x1_mag[i]) - np.log10(x2_mag[i]))
+            diff_pha[i] = x1_pha[i] - x2_pha[i]
+    if unwrap_phase:
+        if plot_degrees:
+            diff_pha = np.rad2deg(np.unwrap(np.deg2rad(diff_pha)))
         else:
-            diff_mag[i] = -10
-        # if i == 10:
-        # diff_mag[i] = 1000
-
-        diff_pha[i] = x1_pha[i] - x2_pha[i]
-        # print("%3d %f %f %f" % (i, f, diff_mag[i], diff_pha[i]))
+            diff_pha = np.unwrap(diff_pha)
+    else:
+        diff_pha = _wrap_phase(diff_pha, plot_degrees)
 
     if axes:
         ax1, ax2 = axes
@@ -407,9 +686,10 @@ def plot_diff_resp(response, resp2, min_freq, output=None, start_stage=None,
     # ax2.semilogx(freqs, diff_pha, color=color, lw=lw)
     ax2.semilogx(freqs, diff_pha, color=color, marker=marker)
 
-    # plot nyquist frequency
-    for ax in (ax1, ax2):
-        ax.axvline(nyquist, ls="--", color=color, lw=lw)
+    # Dashed line is the response Nyquist, drawn only inside the shown range.
+    if nyquist and 0 < nyquist <= max_freq * (1 + 1e-4):
+        for ax in (ax1, ax2):
+            ax.axvline(nyquist, ls="--", color=color, lw=lw)
 
     # only do adjustments if we initialized the figure in here
     if not axes:
@@ -424,6 +704,19 @@ def plot_diff_resp(response, resp2, min_freq, output=None, start_stage=None,
             plt.show()
 
     return fig
+
+
+def _wrap_phase(diff, degrees):
+    """Fold a phase difference into (-180, 180] degrees or (-pi, pi] radians.
+
+    A raw subtraction of two wrapped phases jumps by a full turn. That jump
+    is not an instrument difference, and a Bode axis clipped at ±180 hides it.
+    NaN stays NaN so a zero-magnitude sample does not become a line.
+    """
+    span = 360.0 if degrees else (2.0 * pi)
+    half = span / 2.0
+    wrapped = (diff + half) % span - half
+    return np.where(np.isnan(diff), np.nan, wrapped)
 
 
 def _adjust_bode_plot_figure(fig, plot_degrees=False, grid=True, show=True, plot_output=None):
@@ -500,8 +793,47 @@ def _pitick2latex(x):
     return string
 
 
+def polynomial_chain_gain(response):
+    """Product of stage gains after the sensor polynomial.
+
+    The builder scales InstrumentPolynomial by the datalogger chain only.
+    """
+    from obspy.core.inventory.response import PolynomialResponseStage
+
+    gain = 1.0
+    after_polynomial = False
+    for stage in getattr(response, 'response_stages', None) or []:
+        if isinstance(stage, PolynomialResponseStage):
+            after_polynomial = True
+            continue
+        if not after_polynomial:
+            continue
+        value = getattr(stage, 'stage_gain', None)
+        if value:
+            gain *= float(value)
+    return gain or 1.0
+
+
+def _polynomial_output_sweep_bounds(poly, default_min=-20., default_max=20.):
+    """Prefer approximation bounds when they look like an output sweep range."""
+    try:
+        lower = float(getattr(poly, 'approximation_lower_bound', None))
+        upper = float(getattr(poly, 'approximation_upper_bound', None))
+    except (TypeError, ValueError):
+        return default_min, default_max
+    if lower != lower or upper != upper or lower >= upper:
+        return default_min, default_max
+    units = str(getattr(poly, 'output_units', '') or '').upper()
+    # Approximation bounds are usually in input space (degC, strain, …).
+    # Only reuse them as the output sweep when units look like volts.
+    if units in ('V', 'VOLT', 'VOLTS'):
+        pad = max((upper - lower) * 0.05, 0.1)
+        return lower - pad, upper + pad
+    return default_min, default_max
+
+
 def plot_polynomial_resp(response, label=None, axes=None, folder=None, outfile=None,
-                         vmin=-20., vmax=20., dv=0.10):
+                         vmin=None, vmax=None, dv=0.10):
     """
         Plot polynomial response
         The way that polynomial responses are calculated is a bit "bassackwards":
@@ -518,11 +850,9 @@ def plot_polynomial_resp(response, label=None, axes=None, folder=None, outfile=N
     :param response: channel polynomial response
     :type output: ObsPy response object
 
-    MTH: By default, plot_polynomial_resp will step over voltage from -20V to +20V
-         with dV step=0.1V, but the final plot xy ranges will be set by
-         the input (x-axis) range: poly.approximation_lower_bound - upper_bound
-         However, I left vmin/vmax/dv configurable in case a calling function wants
-         to control this to limit plot range (somehow).
+    Default sweep is ±20 V (legacy). When *vmin*/*vmax* are omitted and the first
+    PolynomialResponseStage exposes approximation_lower/upper_bound in the same
+    units as the stage output (e.g. volts), those bounds drive the sweep instead.
     """
 
     from obspy.core.inventory.response import PolynomialResponseStage, InstrumentPolynomial
@@ -540,19 +870,17 @@ def plot_polynomial_resp(response, label=None, axes=None, folder=None, outfile=N
     file_path = os.path.join(folder, f'{sanitized_file_name}')
     outfile = file_path
 
-    # We'll use the overall gain to scale between Volts and Counts
-    net_gain = 1.0
-    for i, stage in enumerate(response.response_stages):
-        if stage.stage_gain is not None and stage.stage_gain:
-            net_gain *= stage.stage_gain
-    if net_gain is None:
-        net_gain = 1.0
+    # InstrumentPolynomial coefficients are already scaled by the datalogger
+    # gain. Use that same product, not the sensor stage as well.
+    net_gain = polynomial_chain_gain(response)
 
     def _coeff_val(c):
         v = getattr(c, 'value', c)
         return float(v) if v is not None else 0.0
 
     poly = response.response_stages[0]
+    if vmin is None or vmax is None:
+        vmin, vmax = _polynomial_output_sweep_bounds(poly, default_min=-20., default_max=20.)
     xlabel = poly.input_units
     ylabel = poly.output_units
 
@@ -643,13 +971,9 @@ def get_polynomial_resp_csv(response, folder=None, outfile=None,
     file_path = os.path.join(folder, f'{sanitized_file_name}')
     outfile = file_path
 
-    # We'll use the overall gain to scale between Volts and Counts
-    net_gain = 1.0
-    for i, stage in enumerate(response.response_stages):
-        if stage.stage_gain is not None and stage.stage_gain:
-            net_gain *= stage.stage_gain
-    if net_gain is None:
-        net_gain = 1.0
+    # InstrumentPolynomial coefficients are already scaled by the datalogger
+    # gain. Use that same product, not the sensor stage as well.
+    net_gain = polynomial_chain_gain(response)
 
     def _coeff_val(c):
         v = getattr(c, 'value', c)
@@ -722,7 +1046,18 @@ def print_polynomial_resp(response):
     return ret
 
 
+INVALID_STORED_RESPONSE = (
+    'Stored channel response is damaged. Select the response again.'
+)
+
+
+def _is_response_object(response):
+    return not isinstance(response, str) and hasattr(response, 'instrument_polynomial')
+
+
 def polynomial_or_polezero_response(response):
+    if not _is_response_object(response):
+        return INVALID_STORED_RESPONSE
     response_str = str(response)
     if response.instrument_polynomial:
         try:

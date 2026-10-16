@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -39,19 +40,40 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterList', {
     'yasmine.view.xml.builder.parameter.ParameterListModel',
     'yasmine.view.xml.builder.parameter.ParameterListController',
     'yasmine.view.xml.builder.parameter.ParameterEditor',
-    'yasmine.view.xml.builder.parameter.ParameterEditorExt'
+    'yasmine.view.xml.builder.parameter.ParameterEditorExt',
+    'yasmine.view.xml.builder.parameter.items.measurement.MeasurementMetadata',
+    'yasmine.view.xml.builder.parameter.items.measurement.MeasurementMetadataWindow'
   ],
   viewModel: 'parameter-list',
   controller: 'parameter-list',
+  initComponent: function () {
+    var hideTitle = !!(this.hideTitle || (this.config && this.config.hideTitle));
+    var tbar;
+    if (hideTitle) {
+      // Card / user-library: drop title + collapse; keep help on the Add Field bar.
+      this.tools = [];
+      this.collapsible = false;
+      this.header = false;
+      tbar = Ext.apply({}, this.tbar || {});
+      tbar.items = Ext.Array.from(tbar.items).concat([{
+        tooltip: 'Help',
+        iconCls: 'x-fa fa-question',
+        handler: 'onHelpClick'
+      }]);
+      this.tbar = tbar;
+    }
+    this.callParent();
+  },
   bind: {
     store: '{infoStore}',
     title: '{title}',
-    selection: '{theRow}',
-    collapsible: '{!hideTitle}'
+    selection: '{theRow}'
   },
   multiColumnSort: true,
   viewConfig: {
-    loadMask: false
+    loadMask: true,
+    deferEmptyText: false,
+    emptyText: '<div class="yasmine-empty-state">Select an item in the hierarchy to inspect its parameters.</div>'
   },
   plugins: {
     ptype: 'cellediting',
@@ -75,7 +97,7 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterList', {
   columns: [
     {
       text: 'Name',
-      dataIndex: 'name',
+      dataIndex: 'label',
       renderer: 'nameRenderer',
       flex: 1
     },
@@ -102,22 +124,63 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterList', {
           allowBlank: false
         }
       }
+    },
+    {
+      xtype: 'actioncolumn',
+      text: 'Metadata',
+      width: 108,
+      align: 'center',
+      menuDisabled: true,
+      sortable: false,
+      items: [{
+        handler: 'onMeasurementMetadataClick',
+        isDisabled: function (view, rowIndex, colIndex, item, record) {
+          return !yasmine.view.xml.builder.parameter.items.measurement.MeasurementMetadata
+            .isSupported(record.get('name'));
+        },
+        getTip: function (value, metadata, record) {
+          var helper = yasmine.view.xml.builder.parameter.items.measurement.MeasurementMetadata;
+          if (!helper.isSupported(record.get('name'))) {
+            return null;
+          }
+          return Ext.htmlEncode(
+            helper.getSummary(record.get('name'), record.get('valueMeta')) ||
+            'Add measurement metadata'
+          );
+        },
+        getClass: function (value, metadata, record) {
+          var helper = yasmine.view.xml.builder.parameter.items.measurement.MeasurementMetadata;
+          if (!helper.isSupported(record.get('name'))) {
+            return 'x-hidden-display';
+          }
+          return 'x-fa fa-sliders';
+        }
+      }]
     }
   ],
   listeners: {
     cellkeydown: 'onCellKeyDown'
   },
-  tbar: [
+  tools: [
+    {
+      type: 'help',
+      handler: 'onHelpClick'
+    }
+  ],
+  tbar: {
+    cls: 'yasmine-wrap-toolbar parameter-list-bar',
+    items: [
     {
       xtype: 'combobox',
       disabled: true,
-      width: 200,
+      flex: 1,
+      minWidth: 80,
       bind: {
         selection: '{selectedAvailableParameter}',
         store: '{availableParamsStore}',
         disabled: '{!isAvailableParamsEnabled}'
       },
-      displayField: 'name',
+      displayField: 'label',
       reference: 'availableParamsCntr',
       emptyText: 'Add Field',
       queryMode: 'local',
@@ -136,11 +199,13 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterList', {
     {
       tooltip: 'Delete Parameter',
       iconCls: 'x-fa fa-minus',
+      cls: 'yasmine-danger-action',
       handler: 'onDeleteClick',
       disabled: true,
       bind: {
         disabled: '{!theRow}'
       }
     }
-  ]
+    ]
+  }
 });

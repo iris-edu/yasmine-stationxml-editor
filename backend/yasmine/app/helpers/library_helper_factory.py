@@ -29,6 +29,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -49,6 +50,7 @@ class LibraryHelperFactory:
             return self._create_nrl_helper()
         if library_type == LibraryTypeEnum.NRLV2_ONLINE:
             return self._create_nrlv2_helper(application)
+        raise ValueError('Unknown library type: %s' % library_type)
 
     def _create_ial_helper(self):
         return IalHelper()

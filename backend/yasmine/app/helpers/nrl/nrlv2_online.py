@@ -1,3 +1,4 @@
+# 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # This file is part of the yasmine editing tool.
@@ -22,18 +23,12 @@ from obspy.core.inventory.util import Equipment  # type: ignore[reportMissingImp
 
 from yasmine.app.helpers.base_helper import _normalize_response_units
 from yasmine.app.settings import NRLV2_DEFAULT_URL
+from yasmine.app.utils.url_guard import NRL_SCHEMES, UrlGuardError, validate_url
 
 CONNECT_TIMEOUT = 10
 READ_TIMEOUT = 30
 MAX_RETRIES = 2
 BACKOFF_FACTOR = 1.0
-
-# SSRF: block private/local addresses
-BLOCKED_HOSTS = re.compile(
-    r'^(localhost|127\.|10\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|192\.168\.|'
-    r'::1|fe80:|169\.254\.)',
-    re.IGNORECASE
-)
 
 
 class Nrlv2OnlineError(Exception):
@@ -44,16 +39,56 @@ class Nrlv2OnlineError(Exception):
 
 
 def _validate_url(base_url):
-    """SSRF protection: only allow http/https to non-private hosts."""
-    if not base_url or not isinstance(base_url, str):
-        raise Nrlv2OnlineError('NRLV2_BAD_REQUEST', 'Invalid URL')
-    base_url = base_url.strip().rstrip('/')
-    parsed = urlparse(base_url)
-    if parsed.scheme not in ('http', 'https'):
-        raise Nrlv2OnlineError('NRLV2_BAD_REQUEST', 'Only http/https allowed')
-    host = (parsed.hostname or '').lower()
-    if BLOCKED_HOSTS.match(host):
+    """SSRF protection: http/https only. Raw private IPs blocked; hostnames allowed."""
+    try:
+        validate_url(
+            base_url,
+            schemes=NRL_SCHEMES,
+            require_allowlist=False,
+            allow_private_hostnames=True,
+        )
+    except UrlGuardError:
         raise Nrlv2OnlineError('NRLV2_BAD_REQUEST', 'Private/local URLs not allowed')
+
+
+NRL_CATALOG_ELEMENTS = ('sensor', 'datalogger', 'integrated', 'soh')
+NRL_SINGLE_ELEMENTS = ('integrated', 'soh')
+
+
+def _catalog_element(data):
+    """First element object from an NRL catalog payload."""
+    cur = data.get('NRLCatalog') if isinstance(data, dict) else None
+    cur = cur if isinstance(cur, dict) else data
+    element = cur.get('element') if isinstance(cur, dict) else None
+    if isinstance(element, list):
+        element = element[0] if element else None
+    return element if isinstance(element, dict) else {}
+
+
+def _catalog_help(entry):
+    """Plain-text help from an NRL catalog node. The service stores it as detail."""
+    if not isinstance(entry, dict):
+        return ''
+    detail = entry.get('detail')
+    if detail is None:
+        return ''
+    return str(detail).strip()
+
+
+def nrlv2_equipment_flags(instconfig):
+    """Return (fill_sensor, fill_datalogger) for an NRLv2 instconfig.
+
+    Integrated instruments are one device, so both StationXML equipment
+    fields are filled. SOH responses describe a recorder channel.
+    """
+    if not instconfig:
+        return False, False
+    head = instconfig.split(':', 1)[0]
+    if head.startswith('integrated_'):
+        return True, True
+    if head.startswith('soh_'):
+        return False, True
+    return head.startswith('sensor_'), ('datalogger_' in instconfig)
 
 
 def _parse_instconfig_equipment(instconfig):
@@ -213,34 +248,63 @@ class Nrlv2OnlineHelper:
                 cur = val
         return cur if isinstance(cur, list) else [cur] if cur else []
 
-    def get_sensors_keys(self, path=None):
-        """Build tree for sensors. path='' for manufacturers, 'Mfr' for models.
-        For path mfr/model returns [] so frontend uses modifier panel instead."""
-        el = 'sensor'
+    def _require_element(self, element):
+        if element not in NRL_CATALOG_ELEMENTS:
+            raise Nrlv2OnlineError('NRLV2_BAD_REQUEST', 'unsupported element')
+
+    def get_element_nodes(self, element, path=None):
+        """Return (tree nodes, element help).
+
+        Element help is the catalog detail for the element itself and is
+        only present when listing manufacturers.
+        """
+        self._require_element(element)
+        if path:
+            return self.get_element_keys(element, path), ''
         if not path:
-            data = self.catalog(element=el, level='manufacturer')
+            data = self.catalog(element=element, level='manufacturer')
             mfrs = self._parse_catalog_tree(data, ['element', 'manufacturer'])
+            element_help = _catalog_help(_catalog_element(data))
             if not mfrs:
-                return []
-            return [{'text': 'Select the manufacturer', 'key': m.get('name', ''), 'id': m.get('name', ''), 'leaf': False}
-                    for m in (mfrs if isinstance(mfrs, list) else [mfrs])]
+                return [], element_help
+            return [{
+                'text': 'Select the manufacturer',
+                'key': m.get('name', ''),
+                'id': m.get('name', ''),
+                'leaf': False,
+                'help': _catalog_help(m),
+            } for m in (mfrs if isinstance(mfrs, list) else [mfrs])], element_help
+
+    def get_element_keys(self, element, path=None):
+        """Build a manufacturer/model tree for one catalog element.
+
+        path is empty for manufacturers and 'Mfr' for models. A path of
+        mfr/model returns [] so the frontend opens the modifier panel.
+        """
+        self._require_element(element)
+        if not path:
+            return self.get_element_nodes(element, path)[0]
         parts = path.split('/', 1)
         mfr = parts[0]
         if len(parts) == 1:
-            data = self.catalog(element=el, manufacturer=mfr, level='model')
+            data = self.catalog(element=element, manufacturer=mfr, level='model')
             models = self._parse_catalog_tree(data, ['element', 'manufacturer', 'model'])
             if not models:
                 return []
-            return [{'text': 'Select the model', 'key': m.get('name', ''), 'id': f'{mfr}/{m.get("name", "")}', 'leaf': False}
-                    for m in (models if isinstance(models, list) else [models])]
-        model = parts[1]
+            return [{
+                'text': 'Select the model',
+                'key': m.get('name', ''),
+                'id': f'{mfr}/{m.get("name", "")}',
+                'leaf': False,
+                'help': _catalog_help(m),
+            } for m in (models if isinstance(models, list) else [models])]
         return []
 
-    def get_sensor_configurations(self, manufacturer, model):
-        """Get configurations with parameters for modifier UI.
-        Returns {configurations, parameterNames, parameterOptions}."""
+    def get_element_configurations(self, element, manufacturer, model):
+        """Configurations and parameter choices for the modifier UI."""
+        self._require_element(element)
         data = self.catalog(
-            element='sensor',
+            element=element,
             manufacturer=manufacturer,
             model=model,
             level='configuration'
@@ -252,8 +316,6 @@ class Nrlv2OnlineHelper:
             return {'configurations': [], 'parameterNames': [], 'parameterOptions': {}}
         cfgs = configs if isinstance(configs, list) else [configs]
         configurations = []
-        param_names = []
-        param_options = {}
         for c in cfgs:
             configurations.append({
                 'instconfig': c.get('instconfig', ''),
@@ -269,19 +331,38 @@ class Nrlv2OnlineHelper:
                 'parameterOptions': {},
             }
         param_names = list(first_with_params['parameters'].keys())
+        param_options = {}
         for pname in param_names:
             vals = []
             for c in configurations:
                 v = (c.get('parameters') or {}).get(pname)
                 if v is not None and str(v).strip():
                     vals.append(str(v).strip())
-            sorted_vals = self._sort_param_options(vals)
-            param_options[pname] = ['*'] + sorted_vals
+            param_options[pname] = ['*'] + self._sort_param_options(vals)
         return {
             'configurations': configurations,
             'parameterNames': param_names,
             'parameterOptions': param_options,
         }
+
+    def get_element_response_str(self, instconfig, source=None):
+        """Preview text for one integrated or SOH instconfig."""
+        resp = self.get_channel_response_obj(instconfig, source=source)
+        from yasmine.app.utils.response_plot import polynomial_or_polezero_response
+        try:
+            return polynomial_or_polezero_response(resp)
+        except Exception:
+            return str(resp)
+
+    def get_sensors_keys(self, path=None):
+        """Build tree for sensors. path='' for manufacturers, 'Mfr' for models.
+        For path mfr/model returns [] so frontend uses modifier panel instead."""
+        return self.get_element_keys('sensor', path)
+
+    def get_sensor_configurations(self, manufacturer, model):
+        """Get configurations with parameters for modifier UI.
+        Returns {configurations, parameterNames, parameterOptions}."""
+        return self.get_element_configurations('sensor', manufacturer, model)
 
     def _sort_param_options(self, values):
         """Sort parameter values by heuristic: numeric, Hz/Vpp, then string."""
@@ -303,69 +384,9 @@ class Nrlv2OnlineHelper:
     def get_datalogger_configurations(self, manufacturer, model):
         """Get configurations with parameters for modifier UI.
         Returns {configurations, parameterNames, parameterOptions}."""
-        data = self.catalog(
-            element='datalogger',
-            manufacturer=manufacturer,
-            model=model,
-            level='configuration'
-        )
-        configs = self._parse_catalog_tree(
-            data, ['element', 'manufacturer', 'model', 'configuration']
-        )
-        if not configs:
-            return {'configurations': [], 'parameterNames': [], 'parameterOptions': {}}
-        cfgs = configs if isinstance(configs, list) else [configs]
-        configurations = []
-        param_names = []
-        param_options = {}
-        for c in cfgs:
-            configurations.append({
-                'instconfig': c.get('instconfig', ''),
-                'description': c.get('description', c.get('instconfig', '')),
-                'parameters': c.get('parameters') or {},
-                'source': c.get('source'),
-            })
-        first_with_params = next((c for c in configurations if c['parameters']), None)
-        if not first_with_params or len(configurations) <= 1:
-            return {
-                'configurations': configurations,
-                'parameterNames': [],
-                'parameterOptions': {},
-            }
-        param_names = list(first_with_params['parameters'].keys())
-        for pname in param_names:
-            vals = []
-            for c in configurations:
-                v = (c.get('parameters') or {}).get(pname)
-                if v is not None and str(v).strip():
-                    vals.append(str(v).strip())
-            sorted_vals = self._sort_param_options(vals)
-            param_options[pname] = ['*'] + sorted_vals
-        return {
-            'configurations': configurations,
-            'parameterNames': param_names,
-            'parameterOptions': param_options,
-        }
+        return self.get_element_configurations('datalogger', manufacturer, model)
 
     def get_dataloggers_keys(self, path=None):
         """Build tree for dataloggers. Same structure as sensors.
         For path mfr/model returns [] so frontend uses modifier panel instead."""
-        el = 'datalogger'
-        if not path:
-            data = self.catalog(element=el, level='manufacturer')
-            mfrs = self._parse_catalog_tree(data, ['element', 'manufacturer'])
-            if not mfrs:
-                return []
-            return [{'text': 'Select the manufacturer', 'key': m.get('name', ''), 'id': m.get('name', ''), 'leaf': False}
-                    for m in (mfrs if isinstance(mfrs, list) else [mfrs])]
-        parts = path.split('/', 1)
-        mfr = parts[0]
-        if len(parts) == 1:
-            data = self.catalog(element=el, manufacturer=mfr, level='model')
-            models = self._parse_catalog_tree(data, ['element', 'manufacturer', 'model'])
-            if not models:
-                return []
-            return [{'text': 'Select the model', 'key': m.get('name', ''), 'id': f'{mfr}/{m.get("name", "")}', 'leaf': False}
-                    for m in (models if isinstance(models, list) else [models])]
-        model = parts[1]
-        return []
+        return self.get_element_keys('datalogger', path)

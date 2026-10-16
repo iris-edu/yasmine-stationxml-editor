@@ -1,0 +1,8 @@
+{
+  "schemaVersion": "1.2",
+  "namespace": "http://www.fdsn.org/xml/station/1",
+  "sourceUrl": "https://www.fdsn.org/xml/station/fdsn-station-1.2.xsd",
+  "documentationUrl": "https://docs.fdsn.org/projects/stationxml/en/v1.2/",
+  "repositoryUrl": "https://github.com/FDSN/StationXML",
+  "sha256": "5d5ce5e6fd26510f87a15bce194894bfaacd3e38a8d04ee26123e8a07da56096"
+}

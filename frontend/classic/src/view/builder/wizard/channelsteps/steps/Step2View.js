@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -34,47 +35,99 @@
 Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step2View', {
   extend: 'Ext.panel.Panel',
   xtype: 'channel-step-2',
-  requires: ['overrides.form.field.Radio'],
   controller: {
+    selectedValue: null,
     isValid: function () {
       if (!this.getSelectedValue()) {
         Ext.Msg.alert('Error', 'Please make a choice', Ext.emptyFn);
         return false;
       }
-
       return true;
     },
     storeStepData: function () {
       let viewModel = this.getViewModel();
-      viewModel.get('stepsStoredData').selectedLibrary = this.getSelectedValue();
-      viewModel.get('channelInfo').set('libraryType', this.getSelectedValue());
+      let library = this.getSelectedValue();
+      viewModel.get('stepsStoredData').selectedLibrary = library;
+      viewModel.set('selectedLibrary', library);
+      viewModel.get('channelInfo').set('libraryType', library);
+      if (library !== 'nrl' && library !== 'nrlv2_online') {
+        viewModel.get('stepsStoredData').nrlResponseType = null;
+        viewModel.set('nrlResponseType', null);
+        viewModel.get('channelInfo').set('nrlResponseType', null);
+      }
     },
     getSelectedValue: function () {
-      let cmp = this.lookup('librarySelectionCmp');
-      return cmp.getValue().rb;
+      return this.selectedValue;
+    },
+    selectLibrary: function (value) {
+      this.selectedValue = value;
+      this.getViewModel().set('selectedLibrary', value);
+      this.syncChoiceButtons();
+      let wizard = this.getView().up('wizard-per-sample-rate-channel');
+      if (wizard) {
+        wizard.getController().updateNavigationButtonState();
+      }
+    },
+    syncChoiceButtons: function () {
+      let selected = this.selectedValue;
+      Ext.Array.each(this.getView().query('button[choiceValue]'), function (btn) {
+        btn.toggle(btn.choiceValue === selected, true);
+      });
+    },
+    onLibraryChoice: function (button) {
+      if (button.isDisabled()) {
+        return;
+      }
+      this.selectLibrary(button.choiceValue);
     }
+  },
+  layout: {
+    type: 'vbox',
+    align: 'stretch'
   },
   items: [
     {
-      xtype: 'radiogroup',
-      width: 245,
-      reference: 'librarySelectionCmp',
-      vertical: true,
-      columns: 1,
+      xtype: 'component',
+      html: '<b>Select a library to build a response.</b>',
+      margin: '0 0 12 0'
+    },
+    {
+      xtype: 'container',
+      cls: 'yasmine-wizard-choice-list',
+      layout: {
+        type: 'vbox',
+        align: 'stretch'
+      },
+      defaults: {
+        xtype: 'button',
+        enableToggle: true,
+        allowDepress: false,
+        textAlign: 'left',
+        margin: '0 0 8 0',
+        cls: 'yasmine-wizard-choice-btn',
+        handler: 'onLibraryChoice'
+      },
       items: [
-        {xtype: 'component', html: '<b>Select a library to build a response.</b>', cls: 'x-form-check-group-label'},
-        {boxLabel: 'NRL Offline (downloaded archive)', name: 'rb', inputValue: 'nrl'},
-        {boxLabel: 'AROL', name: 'rb', inputValue: 'arol'},
         {
-          boxLabel: 'NRL Online',
-          name: 'rb',
-          inputValue: 'nrlv2_online',
+          text: 'NRL Offline (downloaded archive)',
+          choiceValue: 'nrl'
+        },
+        {
+          text: 'AROL',
+          choiceValue: 'arol'
+        },
+        {
+          text: 'NRL Online',
+          choiceValue: 'nrlv2_online',
           bind: {
             disabled: '{!nrlv2OnlineEnabled}',
             tooltip: '{nrlv2OnlineTooltip}'
           }
         },
-        {boxLabel: 'I don\'t need a response', name: 'rb', inputValue: 'none'}
+        {
+          text: 'I don\'t need a response',
+          choiceValue: 'none'
+        }
       ]
     }
   ]

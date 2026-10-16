@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -42,6 +43,33 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonListContr
         personUpdated: 'onPersonUpdated'
       }
     }
+  },
+  syncPersonChrome: function () {
+    var view = this.getView();
+    var viewModel = this.getViewModel();
+    var toolbar;
+    var label;
+    var buttons;
+    var personLabel;
+    if (!view || view.destroyed || !viewModel) {
+      return;
+    }
+    viewModel.notify();
+    personLabel = viewModel.get('personLabel') || 'Author';
+    toolbar = view.getDockedItems('toolbar[dock=top]')[0];
+    if (!toolbar) {
+      return;
+    }
+    label = toolbar.down('#personCollectionLabel');
+    if (label && label.setText) {
+      label.setText(viewModel.get('personCollectionLabel') || 'Authors');
+    }
+    buttons = toolbar.query('button');
+    Ext.Array.each(['Add ', 'Delete ', 'Edit '], function (prefix, index) {
+      if (buttons[index] && buttons[index].setTooltip) {
+        buttons[index].setTooltip(prefix + personLabel);
+      }
+    });
   },
   initData: function (persons) {
     let store = this.getViewModel().getStore('personStore');
@@ -93,12 +121,16 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonListContr
       }
 
       record.modified = {};
-      store.insert(0, record);
+      if (!store.contains(record)) {
+        store.insert(0, record);
+      }
     });
   },
   onPersonUpdated: function (person) {
     var store = this.getViewModel().getStore('personStore');
-    store.insert(0, person);
+    if (!store.contains(person)) {
+      store.insert(0, person);
+    }
     var grid = this.getView();
     if (grid && grid.getView()) {
       grid.getView().refresh();
@@ -155,10 +187,22 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonListContr
       });
   },
   showForm(record) {
+    if (this.personEditor && !this.personEditor.destroyed) {
+      this.personEditor.close();
+    }
     var editor = Ext.create({ xtype: 'person-edit' });
+    this.personEditor = editor;
     editor.getViewModel().set('person', record);
     editor.getViewModel().set('nodeTypeId', this.getViewModel().get('nodeTypeId'));
     editor.getViewModel().set('parameterId', this.getViewModel().get('parameterId'));
+    editor.getViewModel().set(
+      'stationXmlPersonPath',
+      this.getViewModel().get('stationXmlPersonPath') || 'Author'
+    );
+    editor.getViewModel().set(
+      'stationXmlParameterName',
+      this.getViewModel().get('stationXmlParameterName') || 'comments'
+    );
     editor.getController().initData();
     editor.show();
   }

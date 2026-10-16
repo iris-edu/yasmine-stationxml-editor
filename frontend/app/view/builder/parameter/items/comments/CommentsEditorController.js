@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -43,17 +44,6 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorCont
       }
     }
   },
-  getNextCommentId: function (store) {
-    var maxId = 0;
-    var items = store.getRange ? store.getRange() : [];
-    items.forEach(function (item) {
-      var id = item.get ? item.get('id') : item.id;
-      if (id != null && id >= 0) {
-        maxId = Math.max(maxId, id);
-      }
-    });
-    return maxId + 1;
-  },
   initData: function () {
     let value = this.getViewModel().get('record').get('value');
     let store = this.getViewModel().getStore('commentStore');
@@ -67,19 +57,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorCont
     if (!Array.isArray(items) || items.length === 0) {
       return;
     }
-    var usedIds = new Set();
-    var nextId = 1;
     items.forEach(function (item) {
       if (!item || typeof item !== 'object') return;
-      var id = item.id;
-      if (id == null || id < 0 || usedIds.has(id)) {
-        id = nextId++;
-      } else {
-        usedIds.add(id);
-        nextId = Math.max(nextId, id + 1);
-      }
       let comment = new yasmine.view.xml.builder.parameter.items.comments.Comment();
-      comment.set('id', id);
+      comment.set('id', item.id == null ? null : item.id);
       comment.set('subject', item.subject);
       comment.set('value', item.value);
       comment.set('begin_effective_time', item.begin_effective_time);
@@ -102,22 +83,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorCont
         store.each(function (r) { items.push(r); });
       }
     }
-    var usedIds = new Set();
-    var nextId = 1;
     let comments = items.map(function (item) {
       let data = item.getData ? item.getData() : item;
-      var id = data.id;
-      if (id == null || id < 0 || usedIds.has(id)) {
-        id = nextId++;
-        if (item.set) item.set('id', id);
-      } else {
-        usedIds.add(id);
-        nextId = Math.max(nextId, id + 1);
-      }
       return {
         'py/object': 'obspy.core.inventory.util.Comment',
-        id: id,
-        subject: data.subject || '',
+        id: data.id == null ? null : data.id,
+        subject: data.subject || null,
         value: data.value || '',
         begin_effective_time: data.begin_effective_time || null,
         end_effective_time: data.end_effective_time || null,
@@ -126,6 +97,19 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorCont
     });
 
     record.set('value', comments);
+  },
+  validate: function () {
+    let errors = [];
+    this.getViewModel().getStore('commentStore').each(function (comment, index) {
+      if (!Ext.String.trim(comment.get('value') || '')) {
+        errors.push('Comment ' + (index + 1) + ' requires a value.');
+      }
+    });
+    this.getViewModel().set('validation.activeErrors', errors);
+    if (errors.length) {
+      return false;
+    }
+    return this.callParent(arguments);
   },
   onCommentUpdated: function (record) {
     let store = this.getViewModel().getStore('commentStore');
@@ -139,10 +123,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorCont
     }
   },
   onAddClick: function () {
-    var store = this.getViewModel().getStore('commentStore');
-    var nextId = this.getNextCommentId(store);
     var comment = new yasmine.view.xml.builder.parameter.items.comments.Comment();
-    comment.set('id', nextId);
     this.showEditForm(comment);
   },
   onEditClick: function () {

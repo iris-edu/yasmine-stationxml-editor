@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -62,6 +63,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditor
     });
   },
   fillRecord: function () {
+    this.syncSelectedEquipmentCalibrationDates();
     let equipmentsStore = this.getViewModel().getStore('equipmentsStore');
     let equipments = [];
     equipmentsStore.getData().items.forEach(function (equipment) {
@@ -94,34 +96,30 @@ Ext.define('yasmine.view.xml.builder.parameter.items.equipments.EquipmentsEditor
       let store = editor.grid.getStore();
       store.remove(record);
     }
+    this.syncSelectedEquipmentCalibrationDates();
+  },
+  syncSelectedEquipmentCalibrationDates: function () {
+    let selectedEquipment = this.getViewModel().get('selectedEquipment');
+    if (!selectedEquipment) {
+      return;
+    }
+    let calibrationDates = [];
+    this.getViewModel().getStore('calibrationDateStore').each(function (record) {
+      let value = record.get('value');
+      if (value) {
+        calibrationDates.push(value);
+      }
+    });
+    selectedEquipment.set('calibrationDates', calibrationDates);
   },
   onCalibrationDateEdited: function (editor, context) {
-    let selectedEquipment = this.getViewModel().get('selectedEquipment');
-    let calibrationDates = selectedEquipment.get('calibrationDates');
-    if (!calibrationDates) {
-      calibrationDates = [];
-    }
-
-    let record = context.record;
-    if (record.previousValues.value) {
-      calibrationDates = calibrationDates.filter(function(value){
-        return value !== record.previousValues.value;
-      });
-    }
-
-    calibrationDates.push(record.get('value'));
-    selectedEquipment.set('calibrationDates', calibrationDates);
+    this.syncSelectedEquipmentCalibrationDates();
   },
   onDeleteCalibrationDateClick: function (grid, rowIndex) {
     let store = this.getViewModel().getStore('calibrationDateStore');
     let dateToRemove = store.getAt(rowIndex);
-    let selectedEquipment = this.getViewModel().get('selectedEquipment');
-    let calibrationDates = selectedEquipment.get('calibrationDates');
-    let calibrationDateFiltered = calibrationDates.filter(function(value){
-      return value !== dateToRemove.get('value');
-    });
-    selectedEquipment.set('calibrationDates', calibrationDateFiltered);
     dateToRemove.drop();
+    this.syncSelectedEquipmentCalibrationDates();
   },
   onEquipmentSelect: function (grid, record) {
     let dates = record.get('calibrationDates');

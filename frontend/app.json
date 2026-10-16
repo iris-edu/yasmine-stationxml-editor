@@ -1,7 +1,8 @@
+/* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov */
 {
     "name": "yasmine",
     "namespace": "yasmine",
-    "version": "4.1.2-beta",
+    "version": "4.4.0-beta",
     "framework": "ext",
 
     /**

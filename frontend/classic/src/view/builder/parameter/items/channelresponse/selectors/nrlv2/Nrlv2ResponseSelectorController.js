@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * NRLv2 Response Selector Controller - Same logic as NRL, data from webservice
 *
@@ -11,7 +12,32 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
   alias: 'controller.nrlv2-response-selector',
   requires: ['yasmine.utils.ResponseRecalculateUtil'],
 
+  isSingleElement: function () {
+    let element = this.getViewModel() && this.getViewModel().get('responseElement');
+    if (!element && this.getView().getResponseElement) {
+      element = this.getView().getResponseElement();
+    }
+    return element === 'integrated' || element === 'soh';
+  },
+
+  applyResponseElement: function () {
+    let element = this.getView().getResponseElement();
+    if (element !== 'integrated' && element !== 'soh') {
+      return;
+    }
+    let vm = this.getViewModel();
+    vm.set('responseElement', element);
+    let store = this.getStore('dataloggerStore');
+    store.getProxy().setUrl('/api/nrlv2/' + element + '/');
+    let root = store.getRoot();
+    if (root) {
+      root.set('text', element);
+      root.set('title', null);
+    }
+  },
+
   initViewModel: function () {
+    this.applyResponseElement();
     let dataloggerStore = this.getStore('dataloggerStore');
     let sensorStore = this.getStore('sensorStore');
     dataloggerStore.on('load', this.onStoreLoad, this);
@@ -19,7 +45,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     sensorStore.on('load', this.onStoreLoad, this);
     sensorStore.on('beforeload', this.onSensorStoreBeforeLoad, this);
     dataloggerStore.getRoot().expand();
-    sensorStore.getRoot().expand();
+    if (!this.isSingleElement()) {
+      sensorStore.getRoot().expand();
+    }
     this.syncActiveSelectorTab();
   },
 
@@ -69,6 +97,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
 
   onStoreLoad: function (store, records, successful, deferredCount) {
     let me = this;
+    if (typeof deferredCount !== 'number') {
+      me.captureRootHelp(store, arguments[3], arguments[4]);
+      deferredCount = 0;
+    }
     deferredCount = deferredCount || 0;
     let root = store.getRoot();
     let breadcrumb = store === this.getStore('dataloggerStore')
@@ -79,6 +111,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
       return;
     }
     if (!breadcrumb) return;
+    me.applyRootHelp(store, breadcrumb);
     let sel = breadcrumb.getSelection();
     if (root && root.hasChildNodes && root.hasChildNodes() && !sel) {
       breadcrumb.setSelection(root);
@@ -94,16 +127,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
         let path = loadedNode.getId ? String(loadedNode.getId() || '') : '';
         let parts = path ? path.split('/') : [];
         let isManufacturer = parts.length === 1 && path !== '0' && path !== 'root';
-        let msg = store === this.getStore('dataloggerStore')
-          ? 'Manufacturer has no models'
-          : 'Manufacturer has no sensors';
         if (isManufacturer) {
-          loadedNode.appendChild({
-            text: msg,
-            id: path + '/_empty',
-            leaf: true,
-            _emptyPlaceholder: true
-          });
+          me.appendEmptyPlaceholder(loadedNode, path, store);
           Ext.defer(function () {
             me.refreshBreadcrumbArrow(breadcrumb, loadedNode);
           }, 100);
@@ -112,13 +137,53 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     }
   },
 
+  captureRootHelp: function (store, operation, node) {
+    let loaded = node || (operation && operation.node);
+    if (!loaded || !loaded.isRoot || !loaded.isRoot()) {
+      return;
+    }
+    let response = operation && operation.getResponse && operation.getResponse();
+    let parsed = {};
+    try {
+      parsed = JSON.parse((response && response.responseText) || '{}');
+    } catch (e) {
+      return;
+    }
+    let help = parsed.help ? String(parsed.help).trim() : '';
+    if (help) {
+      store._elementHelp = help;
+    }
+  },
+
+  applyRootHelp: function (store, breadcrumb) {
+    let help = store && store._elementHelp;
+    if (!help || !breadcrumb) {
+      return;
+    }
+    let root = store.getRoot();
+    if (root && root.get('help') !== help) {
+      root.set('help', help);
+    }
+    if (breadcrumb._syncHelpButtons) {
+      breadcrumb._syncHelpButtons(breadcrumb.getSelection() || root);
+    }
+  },
+
   init: function () {
     let me = this;
     this.getView().on('boxready', function () {
+      if (me.isSingleElement()) {
+        let sensorTab = me.getView().items.getAt(1);
+        if (sensorTab && sensorTab.tab) {
+          sensorTab.tab.hide();
+        }
+      }
       me.setupBreadcrumbLoadOnSelect(me.lookupReference('dataloggerCmp'), me.getStore('dataloggerStore'));
-      me.setupBreadcrumbLoadOnSelect(me.lookupReference('sensorCmp'), me.getStore('sensorStore'));
+      if (!me.isSingleElement()) {
+        me.setupBreadcrumbLoadOnSelect(me.lookupReference('sensorCmp'), me.getStore('sensorStore'));
+        me.setupSensorModifierPanel();
+      }
       me.setupDataloggerModifierPanel();
-      me.setupSensorModifierPanel();
     });
   },
 
@@ -168,8 +233,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
 
   loadDataloggerConfigurations: function (manufacturer, model) {
     let me = this;
+    let element = this.getViewModel().get('responseElement');
+    let url = (element === 'integrated' || element === 'soh')
+      ? '/api/nrlv2/' + element + '/configurations/'
+      : '/api/nrlv2/datalogger/configurations/';
     Ext.Ajax.request({
-      url: '/api/nrlv2/datalogger/configurations/',
+      url: url,
       method: 'GET',
       params: { manufacturer: manufacturer, model: model },
       timeout: 35000,
@@ -228,10 +297,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
           forceSelection: false,
           anyMatch: true,
           editable: false,
-          width: 240,
-          minWidth: 240,
+          flex: 1,
+          minWidth: 0,
+          maxWidth: 280,
+          width: yasmine.utils.ResponsiveUtil.fitMinWidth(240),
           listConfig: {
-            minWidth: 280
+            minWidth: yasmine.utils.ResponsiveUtil.fitMinWidth(280)
           },
           store: Ext.create('Ext.data.Store', {
             fields: ['value'],
@@ -254,6 +325,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
       });
       panel.setHidden(false);
       Ext.resumeLayouts(true);
+      if (panel.updateLayout) {
+        panel.updateLayout();
+      }
       Ext.defer(function () {
         me.refreshDataloggerModifierOptions();
         me.refreshDataloggerConfigStore();
@@ -314,6 +388,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
           text: text,
           textAlign: 'left',
           margin: '0 0 4 0',
+          width: '100%',
           cls: isSelected ? 'x-btn-default-small x-btn-pressed' : '',
           style: 'white-space: normal;',
           handler: function () {
@@ -587,10 +662,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
           forceSelection: false,
           anyMatch: true,
           editable: false,
-          width: 240,
-          minWidth: 240,
+          flex: 1,
+          minWidth: 0,
+          maxWidth: 280,
+          width: yasmine.utils.ResponsiveUtil.fitMinWidth(240),
           listConfig: {
-            minWidth: 280
+            minWidth: yasmine.utils.ResponsiveUtil.fitMinWidth(280)
           },
           store: Ext.create('Ext.data.Store', {
             fields: ['value'],
@@ -612,6 +689,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
       });
       panel.setHidden(false);
       Ext.resumeLayouts(true);
+      if (panel.updateLayout) {
+        panel.updateLayout();
+      }
       Ext.defer(function () {
         me.refreshSensorModifierOptions();
         me.refreshSensorConfigStore();
@@ -651,6 +731,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
           text: text,
           textAlign: 'left',
           margin: '0 0 4 0',
+          width: '100%',
           cls: isSelected ? 'x-btn-default-small x-btn-pressed' : '',
           style: 'white-space: normal;',
           handler: function () {
@@ -853,7 +934,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
   setupBreadcrumbLoadOnSelect: function (breadcrumb, store) {
     if (!breadcrumb || !store) return;
     let me = this;
-    let url = store === me.getStore('dataloggerStore') ? '/api/nrlv2/dataloggers/' : '/api/nrlv2/sensors/';
+    let url = store.getProxy().getUrl();
     breadcrumb.on('selectionchange', function (cmp, node) {
       if (node && !node.isLeaf() && !node.hasChildNodes()) {
         let nodeId = node.getId();
@@ -919,9 +1000,14 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     }
     let sensorInstconfig = vm.get('sensorInstconfig');
     let dataloggerInstconfig = vm.get('dataloggerInstconfig');
-    if (!sensorInstconfig || !dataloggerInstconfig) return;
+    let single = this.isSingleElement();
+    if (single) {
+      if (!dataloggerInstconfig) return;
+    } else if (!sensorInstconfig || !dataloggerInstconfig) {
+      return;
+    }
 
-    let instconfig = sensorInstconfig + ':' + dataloggerInstconfig;
+    let instconfig = single ? dataloggerInstconfig : (sensorInstconfig + ':' + dataloggerInstconfig);
     let sensorSource = vm.get('sensorSource');
     let dataloggerSource = vm.get('dataloggerSource');
     let source = (sensorSource && sensorSource === dataloggerSource) ? sensorSource : (sensorSource || dataloggerSource);
@@ -934,6 +1020,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
   },
 
   isSensorCompleted: function () {
+    if (this.isSingleElement()) {
+      return true;
+    }
     return !!this.getViewModel().get('sensorPreview');
   },
 
@@ -970,7 +1059,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     vm.set(instconfigProperty, null);
     vm.set(device + 'Source', null);
 
-    if (!node || !node.isLeaf()) {
+    if (!node || !node.isLeaf() || this.isEmptyPlaceholder(node) || !node.get('key')) {
       Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', false);
       yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(vm);
       yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(vm);
@@ -984,14 +1073,32 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     this.loadPreviewResponse(device, instconfig, source);
   },
 
+  isEmptyPlaceholder: function (node) {
+    if (!node) {
+      return false;
+    }
+    if (node.get('_emptyPlaceholder')) {
+      return true;
+    }
+    let id = node.getId ? String(node.getId() || '') : '';
+    return id.length >= 7 && id.substring(id.length - 7) === '/_empty';
+  },
+
   loadPreviewResponse: function (device, instconfig, source) {
+    if (!instconfig) {
+      return;
+    }
     let that = this;
     let params = { instconfig: instconfig };
     if (source) params.source = source;
+    let element = this.getViewModel().get('responseElement');
+    let url = (device === 'datalogger' && (element === 'integrated' || element === 'soh'))
+      ? '/api/nrlv2/' + element + '/response/'
+      : '/api/nrlv2/' + device + '/response/';
     Ext.Ajax.request({
       method: 'GET',
       params: params,
-      url: `/api/nrlv2/${device}/response/`,
+      url: url,
       timeout: 35000,
       success: function (response) {
         that.getViewModel().set(device + 'Preview', response.responseText);
@@ -1007,9 +1114,14 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     let vm = this.getViewModel();
     let sensorInstconfig = vm.get('sensorInstconfig');
     let dataloggerInstconfig = vm.get('dataloggerInstconfig');
-    if (!sensorInstconfig || !dataloggerInstconfig) return;
+    let single = this.isSingleElement();
+    if (single) {
+      if (!dataloggerInstconfig) return;
+    } else if (!sensorInstconfig || !dataloggerInstconfig) {
+      return;
+    }
 
-    let instconfig = sensorInstconfig + ':' + dataloggerInstconfig;
+    let instconfig = single ? dataloggerInstconfig : (sensorInstconfig + ':' + dataloggerInstconfig);
     let min = vm.get('minFrequency');
     let max = vm.get('maxFrequency');
     let sensorSource = vm.get('sensorSource');
@@ -1019,17 +1131,21 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
 
     let params = { instconfig: instconfig, min: min, max: max };
     if (source) params.source = source;
+    Ext.apply(params, yasmine.utils.ResponseRecalculateUtil.plotStageParams(vm));
+    yasmine.utils.ResponseRecalculateUtil.setPlotLoading(this.getView(), true);
     Ext.Ajax.request({
       method: 'GET',
       params: params,
       url: '/api/nrlv2/channel/response/preview/',
       timeout: 120000,
       success: function (response, options) {
+        yasmine.utils.ResponseRecalculateUtil.setPlotLoading(that.getView(), false);
         let result = JSON.parse(response.responseText);
         if (result.success) {
           vm.set('channelResponseText', result.text);
           vm.set('channelResponseImageUrl', result.plot_url || null);
           vm.set('channelResponseCsvUrl', result.csv_url || null);
+          yasmine.utils.ResponseRecalculateUtil.applyPlotMaxFrequency(vm, result);
           vm.set('channelResponsePlotMessage', result.message || null);
           Ext.ux.Mediator.fireEvent('parameterEditorController-canSaveButton', true);
           yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(vm);
@@ -1045,13 +1161,16 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
             icon: Ext.MessageBox.ERROR
           });
         }
+      },
+      failure: function () {
+        yasmine.utils.ResponseRecalculateUtil.setPlotLoading(that.getView(), false);
       }
     });
   },
 
   loadChannelResponsePlot: function () {
     if (this.getViewModel().get('responseTree')) {
-      this.recalculateSensitivity();
+      this.recalculateSensitivity({prompt: false});
       return;
     }
     this.loadChannelResponseIfPossible();
@@ -1059,30 +1178,40 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
 
   downloadChannelResponsePlot: function () {
     let url = this.getViewModel().get('channelResponseImageUrl');
-    if (url) {
-      let w = window.open('', '_blank');
-      w.location = url;
-      w.focus();
+    if (!url) {
+      return;
+    }
+    let opened = window.open(url, '_blank');
+    if (opened) {
+      opened.focus();
     }
   },
 
   downloadChannelResponseCsv: function () {
     let url = this.getViewModel().get('channelResponseCsvUrl');
-    if (url) {
-      let w = window.open('', '_self');
-      w.location = url;
-      w.focus();
+    if (!url) {
+      return;
+    }
+    let opened = window.open(url, '_self');
+    if (opened) {
+      opened.focus();
     }
   },
 
-  recalculateSensitivity: function () {
+  recalculateSensitivity: function (options) {
+    options = options || {};
     let vm = this.getViewModel();
     let sensorInstconfig = vm.get('sensorInstconfig');
     let dataloggerInstconfig = vm.get('dataloggerInstconfig');
-    if (!sensorInstconfig || !dataloggerInstconfig) {
+    let single = this.isSingleElement();
+    if (single) {
+      if (!dataloggerInstconfig) {
+        return;
+      }
+    } else if (!sensorInstconfig || !dataloggerInstconfig) {
       return;
     }
-    let instconfig = sensorInstconfig + ':' + dataloggerInstconfig;
+    let instconfig = single ? dataloggerInstconfig : (sensorInstconfig + ':' + dataloggerInstconfig);
     let sensorSource = vm.get('sensorSource');
     let dataloggerSource = vm.get('dataloggerSource');
     let source = (sensorSource && sensorSource === dataloggerSource)
@@ -1096,10 +1225,11 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     if (source) {
       payload.source = source;
     }
-    Ext.Ajax.request({
-      method: 'POST',
-      url: '/api/channel/response/recalculate-sensitivity/',
-      jsonData: payload,
+    Ext.apply(payload, yasmine.utils.ResponseRecalculateUtil.plotStageParams(vm));
+    let handlers = {
+      apply: function (result) {
+        yasmine.utils.ResponseRecalculateUtil.applyRecalculateResult(vm, result);
+      },
       success: function (response) {
         let result = JSON.parse(response.responseText);
         if (!result.success) {
@@ -1110,6 +1240,18 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
       },
       failure: function () {
         yasmine.utils.ResponseRecalculateUtil.showRecalculateError();
+      }
+    };
+    if (options.prompt === false) {
+      yasmine.utils.ResponseRecalculateUtil.postRecalculateSensitivity(
+        payload, null, handlers
+      );
+      return;
+    }
+    yasmine.utils.ResponseRecalculateUtil.promptRecalculateSensitivityWithReview(payload, {
+      apply: handlers.apply,
+      failure: function () {
+        yasmine.utils.ResponseRecalculateUtil.showRecalculateError('Cannot load recalculation options.');
       }
     });
   }

@@ -1,41 +1,115 @@
 /**
+ * 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
  * Generates a set of style rules for the "navigation" tab UI.
  */
 @include extjs-tab-panel-ui(
     $ui: 'navigation',
     $ui-tab-background-color: transparent,
-    $ui-tab-background-color-over: #505050,
-    $ui-tab-background-color-active: #303030,
+    $ui-tab-background-color-over: rgba(255, 255, 255, 0.08),
+    $ui-tab-background-color-active: $yasmine-primary,
     $ui-tab-background-gradient: 'none',
     $ui-tab-background-gradient-over: 'none',
     $ui-tab-background-gradient-active: 'none',
-    $ui-tab-color: #acacac,
-    $ui-tab-color-over: #c4c4c4,
+    $ui-tab-color: #b9c8d1,
+    $ui-tab-color-over: #fff,
     $ui-tab-color-active: #fff,
-    $ui-tab-glyph-color: #acacac,
-    $ui-tab-glyph-color-over: #c4c4c4,
+    $ui-tab-glyph-color: #b9c8d1,
+    $ui-tab-glyph-color-over: #fff,
     $ui-tab-glyph-color-active: #fff,
     $ui-tab-glyph-opacity: 1,
     $ui-tab-border-radius: 0,
     $ui-tab-border-width: 0,
     $ui-tab-inner-border-width: 0,
-    $ui-tab-padding: 24px,
+    $ui-tab-padding: 8px 12px,
     $ui-tab-margin: 0,
     $ui-tab-font-size: 15px,
     $ui-tab-font-size-over: 15px,
     $ui-tab-font-size-active: 15px,
-    $ui-tab-line-height: 19px,
-    $ui-tab-font-weight: bold,
-    $ui-tab-font-weight-over: bold,
-    $ui-tab-font-weight-active: bold,
-    $ui-tab-icon-width: 24px,
-    $ui-tab-icon-height: 24px,
-    $ui-tab-icon-spacing: 5px,
-    $ui-bar-background-color: #404040,
+    $ui-tab-line-height: 28px,
+    $ui-tab-font-weight: 600,
+    $ui-tab-font-weight-over: 600,
+    $ui-tab-font-weight-active: 700,
+    $ui-tab-icon-width: 28px,
+    $ui-tab-icon-height: 28px,
+    $ui-tab-icon-spacing: 8px,
+    $ui-bar-background-color: $yasmine-primary-dark,
     $ui-bar-background-gradient: 'none',
     $ui-bar-padding: 0,
     $ui-strip-height: 0
 );
+
+/**
+ * Content tabs inside windows and editors. Underline on the muted
+ * toolbar surface, navy labels, primary accent for the active tab.
+ */
+@include extjs-tab-panel-ui(
+    $ui: 'sheet',
+    $ui-tab-background-color: transparent,
+    $ui-tab-background-color-over: $yasmine-primary-soft,
+    $ui-tab-background-color-active: transparent,
+    $ui-tab-background-color-disabled: transparent,
+    $ui-tab-background-gradient: 'none',
+    $ui-tab-background-gradient-over: 'none',
+    $ui-tab-background-gradient-active: 'none',
+    $ui-tab-background-opacity: 1,
+    $ui-tab-background-opacity-over: 1,
+    $ui-tab-background-opacity-active: 1,
+    $ui-tab-background-opacity-disabled: 1,
+    $ui-tab-color: $yasmine-text-muted,
+    $ui-tab-color-over: $yasmine-primary-dark,
+    $ui-tab-color-active: $yasmine-primary-dark,
+    $ui-tab-color-disabled: $yasmine-text-muted,
+    $ui-tab-glyph-color: $yasmine-text-muted,
+    $ui-tab-glyph-color-over: $yasmine-primary-dark,
+    $ui-tab-glyph-color-active: $yasmine-primary-dark,
+    $ui-tab-glyph-opacity: 1,
+    $ui-tab-border-radius: 0,
+    $ui-tab-border-width: 0,
+    $ui-tab-border-color: transparent,
+    $ui-tab-border-color-over: transparent,
+    $ui-tab-border-color-active: transparent,
+    $ui-tab-border-color-disabled: transparent,
+    $ui-tab-inner-border-width: 0,
+    $ui-tab-padding: 10px 16px,
+    $ui-tab-margin: 0,
+    $ui-tab-font-size: 13px,
+    $ui-tab-font-size-over: 13px,
+    $ui-tab-font-size-active: 13px,
+    $ui-tab-line-height: 18px,
+    $ui-tab-font-weight: 600,
+    $ui-tab-font-weight-over: 600,
+    $ui-tab-font-weight-active: 700,
+    $ui-tab-font-family: $yasmine-font-family,
+    $ui-tab-outline-width-focus: 2px,
+    $ui-tab-outline-color-focus: $yasmine-focus,
+    $ui-tab-outline-offset-focus: -2px,
+    $ui-tab-opacity-disabled: 0.45,
+    $ui-bar-background-color: $yasmine-surface-muted,
+    $ui-bar-background-gradient: 'none',
+    $ui-bar-border-width: 0,
+    $ui-bar-padding: 0 8px,
+    $ui-strip-height: 0,
+    $ui-strip-border-width: 0,
+    $ui-bar-scroller-glyph-color: $yasmine-text-muted,
+    $ui-bar-plain-scroller-glyph-color: $yasmine-text-muted
+);
+
+.x-tab-bar-sheet {
+    border-bottom: 1px solid $yasmine-border;
+}
+
+.x-tab-sheet {
+    box-shadow: inset 0 -2px 0 transparent;
+}
+
+.x-tab-sheet.x-tab-over {
+    box-shadow: inset 0 -2px 0 $yasmine-border-strong;
+}
+
+.x-tab-sheet.x-tab-active,
+.x-tab-sheet.x-tab-active.x-tab-over {
+    box-shadow: inset 0 -2px 0 $yasmine-primary;
+}
 
 /**
  * Generates a set of style rules for the "navigation" panel UI.
@@ -47,29 +121,66 @@
     $ui-header-glyph-opacity: 1,
     $ui-header-font-size: 20px,
     $ui-header-line-height: 24px,
-    $ui-header-font-weight: bold,
-    $ui-header-icon-height: 24px,
-    $ui-header-icon-width: 24px,
-    $ui-header-icon-spacing: 15px,
-    $ui-header-background-color: $base-color,
+    $ui-header-font-weight: 650,
+    $ui-header-icon-height: 28px,
+    $ui-header-icon-width: 28px,
+    $ui-header-icon-spacing: 10px,
+    $ui-header-background-color: $yasmine-primary-dark,
     $ui-header-padding: 0,
-    $ui-header-text-margin: 36px,
+    $ui-header-text-margin: 6px 12px,
     $ui-header-noborder-adjust: false
 );
 
-.x-title-icon-navigation {
-    font-family: FontAwesome;
+.x-panel-header-navigation {
+    background-color: $yasmine-primary-dark !important;
+    background-image: none !important;
+}
+
+.x-panel-header-navigation .x-title-text-navigation,
+.x-panel-header-navigation .yasmine-header-text {
     color: #fff;
-    font-size: 24px;
-    line-height: 24px;
+}
+
+.yasmine-header-brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.yasmine-header-logo {
+    display: block;
+    width: 42px;
+    height: 42px;
+    border-radius: 10px;
+    flex: 0 0 auto;
+    box-shadow:
+        0 0 0 1px rgba(255, 255, 255, 0.24),
+        0 4px 12px rgba(4, 25, 43, 0.3);
+}
+
+.yasmine-header-text {
+    line-height: 1.15;
+    white-space: nowrap;
+    letter-spacing: 0.1px;
+}
+
+.yasmine-header-version {
+    font-size: 10px;
+    margin-top: 2px;
+    padding-left: 1px;
+    color: #c9d9e3;
+    font-weight: 500;
+    letter-spacing: 0.2px;
 }
 
 .x-tab-icon-el-navigation {
     font-family: FontAwesome;
-    color: #acacac;
+    color: #b9c8d1;
+    font-size: 26px;
+    line-height: 28px;
 
     .x-tab-over & {
-        color: #c4c4c4;
+        color: #fff;
     }
 
     .x-tab-active & {
@@ -78,15 +189,21 @@
 }
 
 .x-panel-header-title-navigation > .x-title-text-navigation:after {
-    top: 30px;
+    top: 22px;
     right: -24px;
 }
 
+.x-panel-header-navigation {
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+}
+
 .equipment{
-	border: solid rgb(208, 208, 208) 1px;
+	border: solid $yasmine-border 1px;
 	margin: 0 5 0 0;
 }
 
 .errorBorder{
-	border-color: red;
+	border-color: $yasmine-danger;
 }

@@ -43,7 +43,17 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
     channelResponseText: null,
     channelResponsePlotMessage: null,
     minFrequency: 0.001,
-    maxFrequency: null
+    maxFrequency: null,
+    plotStartStage: null,
+    plotEndStage: null,
+    hasPlotStages: false,
+    plotLoading: false
+  },
+  stores: {
+    plotStageStore: {
+      fields: ['number', 'label'],
+      data: []
+    }
   },
   formulas: {
     nrlv2OnlineEnabled: function (get) {

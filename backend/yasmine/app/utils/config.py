@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -69,3 +70,4 @@ class ConfigDict(object):
             return self.get(*StationCfgEnum.CODE), self.get(*StationCfgEnum.NUM_CHANNELS), XmlNodeEnum.CHANNEL, self.get(*StationCfgEnum.REQUIRED_FIELDS)
         elif node_id == XmlNodeEnum.CHANNEL:
             return self.get(*ChannelCfgEnum.CODE), 0, None, self.get(*ChannelCfgEnum.REQUIRED_FIELDS)
+        raise ValueError('Unknown node type: %s' % node_id)

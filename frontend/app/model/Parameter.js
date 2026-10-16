@@ -27,12 +27,18 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
 
 Ext.define('yasmine.model.Parameter', {
   extend: 'Ext.data.Model',
+  requires: [
+    'Ext.data.identifier.Negative',
+    'yasmine.utils.StationXmlHelpContext'
+  ],
+  identifier: 'negative',
   proxy: {
     type: 'rest',
     url: '/api/xml/attr/',
@@ -55,12 +61,24 @@ Ext.define('yasmine.model.Parameter', {
     { name: 'parameterId', type: 'int', mapping: 'attr_id' },
     { name: 'nodeId', type: 'int', mapping: 'node_inst_id' },
     { name: 'node_id', type: 'int', persist: false },
+    { name: 'node_type_id', type: 'int', persist: false },
+    {
+      name: 'label',
+      persist: false,
+      depends: ['name', 'node_type_id'],
+      calculate: function (data) {
+        return yasmine.utils.StationXmlHelpContext.labelForParameter(
+          data.name,
+          data.node_type_id
+        );
+      }
+    },
     {
       name: 'value',
       mapping: 'value_obj',
       convertOnSet: false,
       convert: function (value, record) {
-        if (record.get('attr_class') == 'yasmine-date-field') {
+        if (record.get('class') == 'yasmine-date-field') {
           if (value) {
             if (typeof value === 'string') {
               return Ext.Date.parse(value, yasmine.Globals.DateReadFormat, true);
@@ -73,7 +91,14 @@ Ext.define('yasmine.model.Parameter', {
         return value
       },
       persist: true
-    }, {
+    },
+    {
+      name: 'valueMeta',
+      mapping: 'value_meta',
+      defaultValue: null,
+      persist: true
+    },
+    {
       name: 'isComplexType',
       convertOnSet: false,
       convert: function (v, record) {

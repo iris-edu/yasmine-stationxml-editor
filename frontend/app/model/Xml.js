@@ -27,12 +27,17 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
 
 Ext.define('yasmine.model.Xml', {
     extend: 'Ext.data.Model',
+    requires: [
+        'Ext.data.identifier.Negative'
+    ],
+    identifier: 'negative',
     proxy: {
         type: 'rest',
         url: '/api/xml/',
@@ -43,19 +48,25 @@ Ext.define('yasmine.model.Xml', {
         }
     },
     fields: [
+        { name: 'id', type: 'int', persist: false },
         { name: 'name', type: 'string', persist: true },
         { name: 'source', type: 'string', persist: true },
         { name: 'module', type: 'string', persist: true },
         { name: 'uri', type: 'string', persist: true },
         { name: 'sender', type: 'string', persist: true },
-        { name: 'updated_at', type: 'date', persist: false, dateFormat: 'd/m/Y H:i:s'},
-        { name: 'created_at', type: 'date', persist: false, dateFormat: 'd/m/Y H:i:s'}
+        {
+            name: 'schemaVersion',
+            type: 'string',
+            mapping: 'schema_version',
+            defaultValue: '1.2',
+            persist: false,
+            convert: function () { return '1.2'; }
+        },
+        { name: 'updated_at', type: 'date', persist: false, dateFormat: 'Y-m-d\\TH:i:s'},
+        { name: 'created_at', type: 'date', persist: true, dateFormat: 'Y-m-d\\TH:i:s'}
     ],
     validators: {
         name: { type: 'presence', allowEmpty: false },
-        source: { type: 'presence', allowEmpty: false },
-        module: { type: 'presence', allowEmpty: false },
-        uri: { type: 'presence', allowEmpty: false },
-        sender: { type: 'presence', allowEmpty: false }
+        created_at: { type: 'presence', allowEmpty: false }
     }
 });

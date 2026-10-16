@@ -45,20 +45,29 @@ class EtagHelper:
 
     def is_new_etag_available(self):
         self._init_etag_file()
-
-        self.etag_new = self._load_etag()
-        with open(self.etag_file, 'rt') as f:
-            return self.etag_new != f.read()
+        token = self._load_etag()
+        # None means the HEAD failed. Do not treat that as a new archive.
+        if token is None:
+            self.etag_new = None
+            return False
+        self.etag_new = token or 'none'
+        with open(self.etag_file, 'rt') as handle:
+            stored = handle.read().strip()
+        if not stored:
+            return True
+        return self.etag_new != stored
 
     def save_etag(self):
         if self.etag_new:
-            with open(self.etag_file, 'wt') as f:
-                f.write(self.etag_new)
+            with open(self.etag_file, 'wt') as handle:
+                handle.write(self.etag_new)
 
     def _init_etag_file(self):
         open(self.etag_file, 'a').close()
 
     def _load_etag(self):
-        h = requests.head(self.url, allow_redirects=True)
-        header = h.headers
-        return header.get('etag')
+        response = requests.head(self.url, allow_redirects=True)
+        if getattr(response, 'status_code', 200) >= 400:
+            return None
+        header = response.headers
+        return header.get('etag') or header.get('last-modified') or header.get('Last-Modified') or 'none'

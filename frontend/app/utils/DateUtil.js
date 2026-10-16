@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,5 +37,63 @@ Ext.define("yasmine.utils.DateUtil", {
   utcDate: function () {
     let now = new Date();
     return new Date(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), now.getUTCHours(), now.getUTCMinutes(), now.getUTCSeconds());
+  },
+  guiFormat: function (style) {
+    return style === 'short'
+      ? yasmine.Globals.DatePrintShortFormat
+      : yasmine.Globals.DatePrintLongFormat;
+  },
+  formatShort: function (value) {
+    if (!value) {
+      return '';
+    }
+    var date = Ext.isDate(value) ? value : Ext.Date.parse(value, yasmine.Globals.DateReadFormat, true);
+    return date ? Ext.Date.format(date, yasmine.Globals.DatePrintShortFormat) : '';
+  },
+  refreshGuiDates: function () {
+    Ext.ComponentQuery.query('datefield[yasmineGuiDate]').forEach(function (field) {
+      var value = field.getValue();
+      field.format = yasmine.utils.DateUtil.guiFormat(field.yasmineGuiDate);
+      field.submitFormat = yasmine.Globals.DateReadFormat;
+      if (field.picker) {
+        field.picker.format = field.format;
+      }
+      if (value) {
+        field.setValue(value);
+      }
+    });
+    Ext.ComponentQuery.query('datecolumn[yasmineGuiDate]').forEach(function (column) {
+      column.format = yasmine.utils.DateUtil.guiFormat(column.yasmineGuiDate);
+      var filter = column.filter;
+      if (filter && filter.isGridFilter) {
+        filter.dateFormat = column.format;
+        if (filter.menu) {
+          filter.menu.destroy();
+          filter.menu = null;
+        }
+      }
+    });
+    Ext.ComponentQuery.query('grid, treepanel').forEach(function (panel) {
+      var view = panel.getView && panel.getView();
+      if (view && view.refresh) {
+        view.refresh();
+      }
+    });
+    Ext.ComponentQuery.query('dataview').forEach(function (view) {
+      if (view.refresh) {
+        view.refresh();
+      }
+    });
+    Ext.ComponentQuery.query('treepanel').forEach(function (tree) {
+      var root = tree.getRootNode && tree.getRootNode();
+      if (!root || !root.cascade) {
+        return;
+      }
+      root.cascade(function (node) {
+        if (node.getField && node.getField('text')) {
+          node.set('text', node.get('text'));
+        }
+      });
+    });
   }
 });

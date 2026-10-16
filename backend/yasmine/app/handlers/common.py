@@ -27,11 +27,13 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 
 # -*- coding: utf-8 -*-
+import json
 import os
 
 from tornado.template import Loader
@@ -39,6 +41,7 @@ from tornado.web import HTTPError
 
 from yasmine.app.handlers.base import AsyncThreadMixin, BaseHandler
 from yasmine.app.settings import TEMPLATES_DIR
+from yasmine.app.utils.build_info import build_info
 
 
 class HomeHandler(BaseHandler):
@@ -46,7 +49,31 @@ class HomeHandler(BaseHandler):
     SUPPORTED_METHODS = ['POST', 'GET']
 
     def get(self):
-        self.render("index.html")
+        info = build_info()
+        self.render(
+            "index.html",
+            build_timestamp_json=json.dumps(info['build_timestamp']),
+            commit_revision_json=json.dumps(info['commit_revision']),
+        )
+
+
+class HealthHandler(BaseHandler):
+
+    def get(self):
+        self.write({'success': True, 'status': 'ok'})
+
+
+class BuildInfoHandler(BaseHandler):
+
+    def get(self):
+        info = build_info()
+        self.write({
+            'success': True,
+            'data': {
+                'build_timestamp': info['build_timestamp'],
+                'commit_revision': info['commit_revision'],
+            },
+        })
 
 
 class HelpHandler(AsyncThreadMixin, BaseHandler):

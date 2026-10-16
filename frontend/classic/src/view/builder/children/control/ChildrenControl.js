@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,13 +37,18 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControl', {
   xtype: 'children-control',
   requires: [
     'yasmine.view.xml.builder.children.control.ChildrenControlController',
-    'yasmine.view.xml.builder.children.control.ChildrenControlModel'
+    'yasmine.view.xml.builder.children.control.ChildrenControlModel',
+    'yasmine.view.xml.builder.map.StationMap',
+    'yasmine.view.xml.builder.children.ExtensionsDialog'
   ],
   viewModel: 'children-control',
   controller: 'children-control',
+  cls: 'yasmine-wrap-toolbar children-control-bar',
   items: [
     {
       iconCls: 'x-fa fa-plus',
+      tooltip: 'Add child node',
+      cls: 'yasmine-primary-action',
       disabled: false,
       bind: {
         disabled: '{!canCreateChild}'
@@ -75,6 +81,7 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControl', {
     {
       xtype: 'button',
       iconCls: 'x-fa fa-minus',
+      cls: 'yasmine-danger-action',
       handler: 'onDeleteClick',
       disabled: true,
       bind: {
@@ -87,16 +94,54 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControl', {
       iconCls: 'x-fa fa-sign-out fa-rotate-270',
       disabled: true,
       bind: {
+        tooltip: 'Save selected {currentNodeTitle} to a user library',
         disabled: '{!canTemplate}',
         menu: '{extractNodeMenu}'
       },
     },
     '-',
-    '->',
+    {
+      xtype: 'button',
+      itemId: 'mapButton',
+      iconCls: 'x-fa fa-globe',
+      text: 'Map',
+      tooltip: 'Show stations and channels on a map',
+      disabled: true,
+      bind: {
+        disabled: '{!canShowMap}'
+      },
+      handler: 'onMapClick'
+    },
+    {
+      xtype: 'button',
+      itemId: 'extensionsButton',
+      iconCls: 'x-fa fa-puzzle-piece',
+      text: 'Extensions',
+      tooltip: 'Show foreign-namespace extension sidecars for the selected node',
+      disabled: true,
+      bind: {
+        disabled: '{!selectedNode}'
+      },
+      handler: 'onExtensionsClick'
+    },
+    '-',
+    {
+      xtype: 'tbfill',
+      itemId: 'epochFill',
+      cls: 'yasmine-toolbar-fill'
+    },
     '-',
     {
       xtype: 'combobox',
-      width: 235,
+      itemId: 'epochCombo',
+      cls: 'yasmine-epoch-field',
+      // Wide: "Epoch:" + datetime + clear + picker (246).
+      // Tight single-row toolbar: syncEpochField hides the label and uses 186.
+      // xs/sm/compact-height: CSS puts Epoch on its own full-width row.
+      width: 246,
+      flex: 0,
+      fieldLabel: 'Epoch',
+      labelWidth: 50,
       bind: {
         store: '{epochStore}',
         selection: '{selectedEpoch}'
@@ -108,9 +153,7 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControl', {
         }
       },
       displayField: 'dateString',
-      fieldLabel: 'Epoch',
       editable: false,
-      labelWidth: 40,
       listeners: {
         select: 'onEpochSelect'
       },

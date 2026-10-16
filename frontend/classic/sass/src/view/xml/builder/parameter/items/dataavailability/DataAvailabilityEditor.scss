@@ -1,0 +1,14 @@
+/* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
+ * Safari/WebKit bug 188836: overflow:hidden on fieldset/legend clips the
+   Extent checkbox and title, so the block above Spans looks empty. */
+.yasmine-data-availability-extent.x-fieldset,
+.yasmine-data-availability-extent .x-fieldset-header,
+.yasmine-data-availability-extent .x-fieldset-header-text {
+  overflow: visible;
+}
+
+.yasmine-data-availability-extent .x-fieldset-header-text {
+  color: $fieldset-header-color !important;
+  opacity: 1 !important;
+  -webkit-text-fill-color: $fieldset-header-color !important;
+}

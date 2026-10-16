@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -35,6 +36,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.operators.OperatorsEditorFo
   extend: 'Ext.app.ViewController',
   alias: 'controller.operators-editor-form',
   id: 'operators-editor-form-controller', // Required for event listening
+  requires: [
+    'yasmine.utils.HelpUtil',
+    'yasmine.utils.StationXmlHelpContext'
+  ],
   initData: function (record) {
     this.getViewModel().set('record', record);
     this.getViewModel().set('website', record.get('website'));
@@ -51,10 +56,42 @@ Ext.define('yasmine.view.xml.builder.parameter.items.operators.OperatorsEditorFo
     let contactGrid = this.lookupReference('operatorcontactgrid');
     contactGrid.getViewModel().set('nodeTypeId', this.getViewModel().get('nodeTypeId'))
     contactGrid.getViewModel().set('parameterId', this.getViewModel().get('parameterId'))
+    contactGrid.getViewModel().set('stationXmlPersonPath', 'Contact');
+    contactGrid.getViewModel().set('stationXmlParameterName', 'operators');
+    contactGrid.getController().syncPersonChrome();
     contactGrid.getController().initData(contacts);
+    this.bindHelpFields();
+  },
+  bindHelpFields: function () {
+    var view = this.getView();
+    view.stationXmlHelpRelativePath = '';
+    Ext.Array.each(view.query('field'), function (field) {
+      if (field.stationXmlHelpBound) {
+        return;
+      }
+      field.stationXmlHelpBound = true;
+      field.on('focus', function () {
+        view.stationXmlHelpRelativePath =
+          yasmine.utils.StationXmlHelpContext.relativePathForField(
+            'operators',
+            field
+          );
+      });
+    });
+  },
+  onHelpClick: function () {
+    var vm = this.getViewModel();
+    yasmine.utils.HelpUtil.stationXmlHelpMe({
+      nodeType: vm.get('nodeTypeId'),
+      parameterName: 'operators',
+      relativePath: this.getView().stationXmlHelpRelativePath
+    }, 'Operator');
   },
   onSaveClick: function () {
     let record = this.getViewModel().get('record');
+    if (!this.getView().down('form').getForm().isValid()) {
+      return;
+    }
     record.set('contacts', this.lookupReference('operatorcontactgrid').getController().getData());
     record.set('website', this.getViewModel().get('website'));
     record.set('agency', this.getViewModel().get('agency'));

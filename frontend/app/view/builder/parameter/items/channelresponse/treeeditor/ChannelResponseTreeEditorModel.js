@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,26 +37,17 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   alias: 'viewmodel.channel-response-tree-editor',
   data: {
     selectedResponseNode: null,
-    newNodeName: null
+    selectedNodeReadOnly: false,
+    canAddNewNode: false,
+    canDeleteResponseNode: false
   },
   formulas: {
     titleAddNew: function (get) {
       let parentNode = get('selectedResponseNode') ? get('selectedResponseNode').get('key') : 'Response';
-      let newNode = get('newNodeName') ? `<b>${get('newNodeName')}</b>` : 'a new';
-
-      return `Add ${newNode} node into <b>${parentNode}</b> node`;
+      return `Add a schema child to <b>${parentNode}</b>`;
     },
-    // canAddNewNode: function (get) {
-    //   console.log('sss');
-    //   let selectedNode = get('selectedResponseNode');
-    //   if (!selectedNode || selectedNode.isRoot()) {
-    //     return true;
-    //   }
-    //
-    //   return !yasmine.utils.XmlNodeUtil.getValue(selectedNode);
-    // },
     canDelete: function (get) {
-      return !!(get('selectedResponseNode') && get('selectedResponseNode').data.key);
+      return !!get('canDeleteResponseNode');
     },
     deleteNodeTitle: function (get) {
       let selectedNode = get('selectedResponseNode');

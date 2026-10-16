@@ -1,3 +1,4 @@
+# 2026-09-28, version 4.4.0-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # Unit tests for response sensitivity recalculation.
@@ -17,6 +18,7 @@ from obspy.core.inventory.response import (
 
 from yasmine.app.utils.response_sensitivity import (
     PolynomialResponseError,
+    get_sensitivity_recalculate_options,
     get_updated_response_obj,
     load_response_from_preview_params,
     merge_response_into_station_xml,
@@ -70,11 +72,135 @@ class RecalculateResponseSensitivityTest(unittest.TestCase):
         with self.assertRaises(PolynomialResponseError):
             recalculate_response_sensitivity(response)
 
+    def test_display_text_is_rejected(self):
+        text = 'Channel Response\n\tOverall Sensitivity: 904530 defined at 10.000 Hz'
+        with self.assertRaises(ValueError) as context:
+            recalculate_response_sensitivity(text)
+        self.assertIn('damaged', str(context.exception))
+        self.assertNotIn('instrument_polynomial', str(context.exception))
+
     def test_uses_instrument_sensitivity_frequency(self):
         response = _mock_response([10.0, 2.0], output_units='V')
         response.instrument_sensitivity.frequency = 2.0
         _, freq = recalculate_response_sensitivity(response)
         self.assertEqual(freq, 2.0)
+
+    def test_non_positive_sensitivity_frequency_uses_one_hertz(self):
+        response = _mock_response([10.0, 2.0], output_units='V')
+        response.instrument_sensitivity.frequency = 0.0
+        _, freq = recalculate_response_sensitivity(response)
+        self.assertEqual(freq, 1.0)
+
+    def test_missing_sensitivity_frequency_uses_stage_normalization(self):
+        response = _mock_response([10.0, 2.0], output_units='V')
+        response.instrument_sensitivity.frequency = None
+        _, freq = recalculate_response_sensitivity(response)
+        self.assertNotEqual(freq, 1.0)
+        self.assertEqual(freq, response.instrument_sensitivity.frequency)
+
+    def test_zero_stage0_gain_requires_explicit_reset(self):
+        response = _mock_response([2000.0, 4.0], sensitivity_value=0.0)
+        response.instrument_sensitivity.frequency = 21.2308
+        with self.assertRaises(ValueError) as ctx:
+            recalculate_response_sensitivity(response)
+        self.assertIn('0', str(ctx.exception))
+        self.assertEqual(response.instrument_sensitivity.value, 0.0)
+
+    def test_zero_stage0_gain_reset_when_allowed(self):
+        response = _mock_response([2000.0, 4.0], sensitivity_value=0.0)
+        response.instrument_sensitivity.frequency = 21.2308
+        updated, freq = recalculate_response_sensitivity(
+            response, allow_zero_gain_reset=True
+        )
+        self.assertEqual(freq, 21.2308)
+        self.assertAlmostEqual(updated.instrument_sensitivity.value, 8000.0, places=3)
+
+    def test_options_flag_zero_sensitivity_value(self):
+        response = _mock_response([10.0, 2.0], sensitivity_value=0.0)
+        options = get_sensitivity_recalculate_options(response)
+        self.assertTrue(options['zero_sensitivity_value'])
+        self.assertTrue(options['stored_frequency_ignored_by_auto'])
+
+    def test_auto_ignores_instrument_sensitivity_frequency(self):
+        response = _mock_response([10.0, 2.0], output_units='V')
+        response.instrument_sensitivity.frequency = 2.0
+        response.response_stages[0].normalization_frequency = 10.0
+        response.response_stages[-1].decimation_input_sample_rate = 16.9833332
+        response.response_stages[-1].decimation_factor = 1
+        with patch.object(
+            response, 'recalculate_overall_sensitivity', wraps=response.recalculate_overall_sensitivity
+        ) as mock_recalc:
+            # Gain-only stages have no evalresp transfer; call ObsPy path via mock.
+            mock_recalc.side_effect = lambda frequency=None: setattr(
+                response.instrument_sensitivity, 'frequency',
+                4.2458333 if frequency is None else frequency,
+            ) or setattr(response.instrument_sensitivity, 'value', 20.0)
+            _, freq = recalculate_response_sensitivity(response, auto=True)
+        mock_recalc.assert_called_once_with()
+        self.assertAlmostEqual(freq, 4.2458333, places=5)
+
+    def test_explicit_frequency_is_used(self):
+        response = _mock_response([10.0, 2.0], output_units='V')
+        response.instrument_sensitivity.frequency = 2.0
+        with patch.object(response, 'recalculate_overall_sensitivity') as mock_recalc:
+            def _apply(frequency=None):
+                response.instrument_sensitivity.frequency = frequency
+                response.instrument_sensitivity.value = 99.0
+            mock_recalc.side_effect = _apply
+            _, freq = recalculate_response_sensitivity(response, frequency=1.0)
+        mock_recalc.assert_called_once_with(frequency=1.0)
+        self.assertEqual(freq, 1.0)
+
+    def test_explicit_non_positive_frequency_raises(self):
+        response = _mock_response([10.0, 2.0], output_units='V')
+        with self.assertRaises(ValueError):
+            recalculate_response_sensitivity(response, frequency=0.0)
+
+
+class GetSensitivityRecalculateOptionsTest(unittest.TestCase):
+
+    def test_auto_frequency_is_min_of_norm_and_sample_rate_over_four(self):
+        response = _mock_response([10.0, 2.0], output_units='V')
+        response.response_stages[0].normalization_frequency = 10.0
+        response.response_stages[-1].decimation_input_sample_rate = 16.9833332
+        response.response_stages[-1].decimation_factor = 1
+        response.instrument_sensitivity.value = 79894100000.0
+        response.instrument_sensitivity.frequency = 4.2458333
+        options = get_sensitivity_recalculate_options(response)
+        self.assertAlmostEqual(options['normalization_frequency'], 10.0)
+        self.assertAlmostEqual(options['sample_rate'], 16.9833332, places=6)
+        self.assertAlmostEqual(options['auto_frequency'], 4.2458333, places=6)
+        self.assertAlmostEqual(options['reported_sensitivity_value'], 79894100000.0)
+        self.assertAlmostEqual(options['reported_sensitivity_frequency'], 4.2458333)
+
+    def test_auto_frequency_uses_norm_when_sample_rate_missing(self):
+        response = _mock_response([10.0], output_units='V')
+        response.response_stages[0].normalization_frequency = 0.05
+        response.response_stages[0].decimation_input_sample_rate = None
+        response.response_stages[0].decimation_factor = None
+        options = get_sensitivity_recalculate_options(response)
+        self.assertAlmostEqual(options['normalization_frequency'], 0.05)
+        self.assertIsNone(options['sample_rate'])
+        self.assertAlmostEqual(options['auto_frequency'], 0.05)
+
+    def test_sample_rate_scans_from_end(self):
+        response = _mock_response([10.0, 2.0, 1.0], output_units='V')
+        response.response_stages[0].normalization_frequency = 10.0
+        response.response_stages[0].decimation_input_sample_rate = 1000.0
+        response.response_stages[0].decimation_factor = 1
+        response.response_stages[1].decimation_input_sample_rate = None
+        response.response_stages[1].decimation_factor = None
+        response.response_stages[2].decimation_input_sample_rate = 80.0
+        response.response_stages[2].decimation_factor = 4
+        options = get_sensitivity_recalculate_options(response)
+        self.assertAlmostEqual(options['sample_rate'], 20.0)
+        self.assertAlmostEqual(options['auto_frequency'], 5.0)
+
+    def test_polynomial_raises(self):
+        response = MagicMock()
+        response.instrument_polynomial = MagicMock()
+        with self.assertRaises(PolynomialResponseError):
+            get_sensitivity_recalculate_options(response)
 
 
 class ValidateResponseSacpzTest(unittest.TestCase):
@@ -168,6 +294,13 @@ class LoadResponseFromPreviewParamsTest(unittest.TestCase):
 
 class ResponseTreeRoundTripTest(unittest.TestCase):
 
+    def test_empty_response_with_resource_id_round_trip(self):
+        restored = response_tree_to_obj({
+            'Response': {'attributes': {'resourceId': 'YASMINE:unknown'}},
+        })
+        self.assertEqual(restored.resource_id, 'YASMINE:unknown')
+        self.assertEqual(restored.response_stages, [])
+
     def test_response_tree_to_obj_round_trip(self):
         response = _mock_response([2000.0, 4.0], sensitivity_value=100.0)
         tree = response_obj_to_tree_json_standalone(response)
@@ -246,7 +379,6 @@ class ResponseAttributeRoutingTest(unittest.TestCase):
         }
         self.assertTrue(AttributeService._is_new_response_attribute(obj, payload))
         self.assertFalse(AttributeService._is_edit_response_attribute(obj, payload))
-
 
     def test_recalculate_equipment_response_uses_last_tuple_item(self):
         from unittest.mock import MagicMock

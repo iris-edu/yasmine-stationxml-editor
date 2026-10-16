@@ -29,27 +29,43 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 from obspy import UTCDateTime
 from obspy.core.inventory import Site
 from sqlalchemy.orm import joinedload
 
+from yasmine.app.exceptions.exceptions import BusinessException
 from yasmine.app.handlers.equipment import EquipmentMixin
 from yasmine.app.models import XmlNodeInstModel, XmlNodeModel, XmlNodeAttrModel, XmlNodeAttrValModel
 from yasmine.app.services.xml_service import XmlService
 from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.enums.xml_node import XmlNodeEnum, XmlNodeAttrEnum
-from yasmine.app.utils.response_sensitivity import response_tree_to_obj, validate_response_sacpz
+from yasmine.app.helpers.nrl.seed_channel_prefix import parse_number
+from yasmine.app.utils.response_sensitivity import response_tree_to_obj
 
 
 def _to_datetime(val):
     """Convert string/None to Python datetime for SQLite DateTime columns."""
     if val is None or val == '':
         return None
-    utc = UTCDateTime(val)
+    try:
+        utc = UTCDateTime(val)
+    except Exception as err:
+        raise BusinessException('Invalid date') from err
     return utc.datetime
+
+
+def _wizard_date_str(val):
+    """Format a node start_date for wizard Ext date fields (Y-m-dTH:i:s)."""
+    if val is None or val == '':
+        return ''
+    try:
+        return UTCDateTime(val).strftime('%Y-%m-%dT%H:%M:%S')
+    except Exception:
+        return ''
 
 
 class WizardService(HandlerMixin, EquipmentMixin):
@@ -68,8 +84,11 @@ class WizardService(HandlerMixin, EquipmentMixin):
         return inst.id
 
     def create_station(self, xml_id, code, start_date, end_date, network_id, latitude, longitude, elevation):
+        network = self.db.get(XmlNodeInstModel, network_id)
+        if network is None:
+            raise BusinessException('Network not found')
         inst = XmlNodeInstModel(
-            parent=self.db.get(XmlNodeInstModel, network_id),
+            parent=network,
             node=self.db.get(XmlNodeModel, XmlNodeEnum.STATION),
             xml_id=xml_id,
             code=code,
@@ -88,23 +107,30 @@ class WizardService(HandlerMixin, EquipmentMixin):
 
     def create_channels(self, xml_id, code_list, start_date, end_date, station_id, dip_list, azimuth_list, latitude,
                         longitude, elevation, location_code, depth, library_type, sensor_keys, datalogger_keys,
-                        response_tree=None):
+                        response_tree=None, nrl_response_type=None, omit_dip_azimuth=False,
+                        sample_rate=None, nrlv2_source=None):
         channel_node = self.db.get(XmlNodeModel, XmlNodeEnum.CHANNEL)
         station = self.db.get(XmlNodeInstModel, station_id)
+        if station is None:
+            raise BusinessException('Station not found')
+        code_list = list(code_list or [])
+        dip_list = list(dip_list or [])
+        azimuth_list = list(azimuth_list or [])
         channels = []
         # Avoid autoflush while assembling unsaved channel instances linked to station.
         with self.db.no_autoflush:
-            for i in range(len(code_list)):
-                if len(code_list[i]) > 0:
+            for i, raw_code in enumerate(code_list):
+                code = '' if raw_code is None else str(raw_code)
+                if code:
                     inst = XmlNodeInstModel(
                         parent=station,
                         node=channel_node,
                         xml_id=xml_id,
-                        code=code_list[i],
+                        code=code,
                         start_date=_to_datetime(start_date),
                         end_date=_to_datetime(end_date)
                     )
-                    self._create_attr(inst, XmlNodeAttrEnum.CODE, code_list[i])
+                    self._create_attr(inst, XmlNodeAttrEnum.CODE, code)
                     self._create_attr(inst, XmlNodeAttrEnum.START_DATE, start_date)
                     self._create_attr(inst, XmlNodeAttrEnum.END_DATE, end_date)
                     self._create_attr(inst, XmlNodeAttrEnum.LOCATION_CODE, location_code, False)
@@ -112,24 +138,46 @@ class WizardService(HandlerMixin, EquipmentMixin):
                     self._create_attr(inst, XmlNodeAttrEnum.LONGITUDE, longitude)
                     self._create_attr(inst, XmlNodeAttrEnum.ELEVATION, elevation)
                     self._create_attr(inst, XmlNodeAttrEnum.DEPTH, depth)
-                    self._create_attr(inst, XmlNodeAttrEnum.AZIMUTH, azimuth_list[i])
-                    self._create_attr(inst, XmlNodeAttrEnum.DIP, dip_list[i])
+                    if not omit_dip_azimuth and i < len(azimuth_list) and i < len(dip_list):
+                        self._create_attr(inst, XmlNodeAttrEnum.AZIMUTH, azimuth_list[i])
+                        self._create_attr(inst, XmlNodeAttrEnum.DIP, dip_list[i])
 
-                    equipment = self.manage_equipment(inst, sensor_keys, datalogger_keys, library_type)
+                    equipment = self.manage_equipment(
+                        inst, sensor_keys, datalogger_keys, library_type,
+                        nrl_response_type=nrl_response_type,
+                        nrlv2_source=nrlv2_source,
+                    )
                     if response_tree:
                         response_attr = equipment[3]
                         if response_attr is not None:
                             response_obj = response_tree_to_obj(response_tree)
-                            if not response_obj.instrument_polynomial:
-                                validate_response_sacpz(response_obj)
                             response_attr.value_obj = response_obj
                     for attr in equipment:
                         if attr is not None:
                             inst.attr_vals.append(attr)
+                    if equipment[2] is None:
+                        rate = parse_number(sample_rate)
+                        if rate is not None:
+                            self._create_attr(inst, XmlNodeAttrEnum.SAMPLE_RATE, rate)
                     channels.append(inst)
 
         self._save_instances(channels, xml_id)
         return list(map(lambda x: x.id, channels))
+
+    def get_station_info(self, network_node_id):
+        try:
+            network_node_id = int(network_node_id) if network_node_id not in (None, '') else 0
+        except (TypeError, ValueError):
+            network_node_id = 0
+        start_date = ''
+        if network_node_id:
+            network = self.db.get(XmlNodeInstModel, network_node_id)
+            if network is not None:
+                start_date = _wizard_date_str(network.start_date)
+        return {
+            'id': network_node_id,
+            XmlNodeAttrEnum.START_DATE: start_date,
+        }
 
     def get_channel_info(self, station_node_id):
         try:
@@ -157,12 +205,18 @@ class WizardService(HandlerMixin, EquipmentMixin):
             except (TypeError, ValueError):
                 return 0
 
+        start_date = ''
+        if station_node_id:
+            station = self.db.get(XmlNodeInstModel, station_node_id)
+            if station is not None:
+                start_date = _wizard_date_str(station.start_date)
+
         data = {
             'id': station_node_id,
             XmlNodeAttrEnum.LATITUDE: _num(attr_by_name.get(XmlNodeAttrEnum.LATITUDE)),
             XmlNodeAttrEnum.LONGITUDE: _num(attr_by_name.get(XmlNodeAttrEnum.LONGITUDE)),
             XmlNodeAttrEnum.ELEVATION: _num(attr_by_name.get(XmlNodeAttrEnum.ELEVATION)),
-            XmlNodeAttrEnum.START_DATE: '',
+            XmlNodeAttrEnum.START_DATE: start_date,
             XmlNodeAttrEnum.DEPTH: 0,
             '%s1' % XmlNodeAttrEnum.CODE: '',
             '%s2' % XmlNodeAttrEnum.CODE: '',
@@ -193,4 +247,6 @@ class WizardService(HandlerMixin, EquipmentMixin):
             value = UTCDateTime(value)
 
         attr = self.db.query(XmlNodeAttrModel).filter(XmlNodeAttrModel.name == attr_name).first()
+        if attr is None:
+            return
         node_inst.attr_vals.append(XmlNodeAttrValModel(attr=attr, value_obj=value))

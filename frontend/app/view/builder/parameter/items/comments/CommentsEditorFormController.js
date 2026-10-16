@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -37,6 +38,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorForm
   extend: 'Ext.app.ViewController',
   alias: 'controller.comments-editor-form',
   id: 'comments-editor-form-controller', // Required for event listening
+  requires: [
+    'yasmine.utils.HelpUtil',
+    'yasmine.utils.StationXmlHelpContext'
+  ],
   parseCommentDate: function (value) {
     if (!value) return null;
     var date = Ext.Date.parse(value, yasmine.Globals.DateReadFormat, true);
@@ -50,7 +55,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorForm
     this.getViewModel().set('nodeTypeId', nodeTypeId);
 
     this.getViewModel().set('record', record);
-    this.getViewModel().set('id', +record.get('id'));
+    this.getViewModel().set('id', record.get('id'));
     this.getViewModel().set('subject', record.get('subject'));
     this.getViewModel().set('value', record.get('value'));
     this.getViewModel().set('beginEffectiveTime', this.parseCommentDate(record.get('begin_effective_time')));
@@ -59,10 +64,45 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorForm
     let authorGrid = this.lookupReference('person-list');
     authorGrid.getViewModel().set('parameterId', this.getViewModel().get('parameterId'));
     authorGrid.getViewModel().set('nodeTypeId', this.getViewModel().get('nodeTypeId'));
+    authorGrid.getViewModel().set('stationXmlPersonPath', 'Author');
+    authorGrid.getViewModel().set('stationXmlParameterName', 'comments');
+    authorGrid.getController().syncPersonChrome();
     authorGrid.getController().initData(record.get('authors') || []);
+    this.bindHelpFields();
+  },
+  bindHelpFields: function () {
+    var view = this.getView();
+    view.stationXmlHelpRelativePath = '';
+    Ext.Array.each(view.query('field'), function (field) {
+      if (field.stationXmlHelpBound) {
+        return;
+      }
+      field.stationXmlHelpBound = true;
+      field.on('focus', function () {
+        view.stationXmlHelpRelativePath =
+          yasmine.utils.StationXmlHelpContext.relativePathForField(
+            'comments',
+            field
+          );
+      });
+    });
+  },
+  onHelpClick: function () {
+    var vm = this.getViewModel();
+    yasmine.utils.HelpUtil.stationXmlHelpMe({
+      nodeType: vm.get('nodeTypeId'),
+      parameterName: 'comments',
+      relativePath: this.getView().stationXmlHelpRelativePath
+    }, 'Comment');
   },
   onSaveClick: function () {
     let record = this.getViewModel().get('record');
+    let form = this.getView().down('form').getForm();
+    let id = this.getViewModel().get('id');
+    if (!form.isValid()) {
+      return;
+    }
+    record.set('id', id == null || id === '' ? null : Number(id));
     record.set('subject', this.getViewModel().get('subject'));
     record.set('value', this.getViewModel().get('value'));
     var beginTime = this.getViewModel().get('beginEffectiveTime');

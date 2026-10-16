@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -48,9 +49,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorMode
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.items.comments.Comment', {
-    extend: 'Ext.data.Model',
+    extend: 'yasmine.model.CollectionItem',
     fields: [
-        { name: 'id', type: 'int', defaultValue: 0 },
+        { name: 'id', type: 'int', allowNull: true, defaultValue: null },
         { name: 'value', defaultValue: null },
         { name: 'subject', defaultValue: null },
         { name: 'begin_effective_time', defaultValue: null },

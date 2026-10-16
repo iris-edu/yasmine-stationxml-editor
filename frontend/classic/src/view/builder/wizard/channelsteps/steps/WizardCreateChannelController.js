@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -42,7 +43,7 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
   ],
   init: function () {
     this.callParent(arguments);
-    Ext.GlobalEvents.on('nrlv2SettingsChanged', function () {
+    this.mon(Ext.GlobalEvents, 'nrlv2SettingsChanged', function () {
       let vm = this.getViewModel();
       if (vm) vm.set('settingsUpdatedAt', Date.now());
     }, this);
@@ -53,7 +54,7 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
     this.updateNavigationButtonState();
 
     let srNumber = viewModel.get('sampleRateNumber');
-    Ext.ux.Mediator.on(`wizardCreateChannelController-dataIsChanged-${srNumber}`, this.onDataIsChanged, this);
+    this.mon(Ext.ux.Mediator, `wizardCreateChannelController-dataIsChanged-${srNumber}`, this.onDataIsChanged, this);
   },
   isCompleted: function () {
     return this.getViewModel().get('isCompleted');
@@ -73,8 +74,8 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
     let viewModel = this.getViewModel();
     let isCompleted = viewModel.get('isCompleted');
     let label = isCompleted
-      ? '<i class="fa fa-check" style="color: green"></i>'
-      : '<i class="fa fa-ban" style="color: red"></i>';
+      ? '<i class="x-fa fa-check yasmine-status-success"></i>'
+      : '<i class="x-fa fa-ban yasmine-status-danger"></i>';
     viewModel.set('completionStatusLabel', label);
   },
   showNext: function () {
@@ -84,16 +85,24 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
 
     if (this.getViewModel().get('hasNextStep')) {
       this.storeActiveItemData();
+      let previousIndex = this.getViewModel().get('activeIndex');
       this.activateItem(1);
-      this.initActiveItem();
-      this.getViewModel().set('isCompleted', false);
-      this.updateCompletionStatus();
+      // Only init the newly activated card. If every remaining card is
+      // skipped, activateItem is a no-op — re-initing the current card
+      // would wipe answers such as Orientation applies.
+      if (this.getViewModel().get('activeIndex') !== previousIndex) {
+        this.initActiveItem();
+        this.getViewModel().set('isCompleted', false);
+        this.updateCompletionStatus();
+      } else {
+        this.updateNavigationButtonState();
+      }
     }
   },
   showPrevious: function () {
     Ext.Msg.confirm(
       'Warning',
-      'Are you sure you want to go to the previous step? The data for the current step will be deleted',
+      'Go back to the previous step? Answers already entered stay available.',
       (buttonId) => {
         if (buttonId === 'yes') {
           this.activateItem(-1);
@@ -106,18 +115,53 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
     this.getViewModel().set('isCompleted', false);
     this.updateCompletionStatus();
   },
+  shouldSkipCard: function (index) {
+    let card = this.getView().items.getAt(index);
+    if (!card) {
+      return false;
+    }
+    if (card.getItemId() === 'wizard-card-type') {
+      let library = this.getViewModel().get('selectedLibrary');
+      return library !== 'nrl' && library !== 'nrlv2_online';
+    }
+    // Channel code was already entered; dip and azimuth do not apply.
+    if (card.getItemId() === 'wizard-card-5') {
+      return !!this.getViewModel().get('hideDipAzimuth');
+    }
+    return false;
+  },
   activateItem: function (delta) {
     let nextIndex = this.getViewModel().get('activeIndex') + delta;
-    let layout = this.getView().getLayout();
+    let view = this.getView();
+    let count = view.items.getCount();
+    while (nextIndex >= 0 && nextIndex < count && this.shouldSkipCard(nextIndex)) {
+      nextIndex += delta;
+    }
+    if (nextIndex < 0 || nextIndex >= count) {
+      return;
+    }
+    let layout = view.getLayout();
     layout.setActiveItem(nextIndex);
     this.getViewModel().set('activeIndex', nextIndex);
+    if (view.updateLayout) {
+      view.updateLayout();
+    }
     this.updateNavigationButtonState();
     this.updateWizardFooterButtons();
   },
   updateNavigationButtonState: function () {
     let viewModel = this.getViewModel();
-    viewModel.set('hasNextStep', viewModel.get('activeIndex') + 1 < viewModel.get('totalSteps'));
-    viewModel.set('hasPreviousStep', viewModel.get('activeIndex') > 0);
+    let index = viewModel.get('activeIndex');
+    let count = this.getView().items.getCount();
+    let hasNext = false;
+    for (let i = index + 1; i < count; i++) {
+      if (!this.shouldSkipCard(i)) {
+        hasNext = true;
+        break;
+      }
+    }
+    viewModel.set('hasNextStep', hasNext);
+    viewModel.set('hasPreviousStep', index > 0);
   },
   isActiveItemValid: function () {
     let controller = this.getActiveItemController();
@@ -147,9 +191,9 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
   },
   updateWizardFooterButtons: function () {
     let vm = this.getViewModel();
-    let activeIndex = vm.get('activeIndex');
+    let card = this.getView().items.getAt(vm.get('activeIndex'));
     let stepsData = vm.get('stepsStoredData') || {};
-    if (activeIndex !== 2 || stepsData.selectedLibrary === 'none') {
+    if (!card || card.getItemId() !== 'wizard-card-3' || stepsData.selectedLibrary === 'none') {
       Ext.ux.Mediator.fireEvent('wizard-updateActionButtons', []);
       return;
     }
@@ -163,7 +207,16 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChann
   },
   getActiveItemController: function () {
     let activeIndex = this.getViewModel().get('activeIndex');
-    let currentStep = this.lookupReference(`channel-step-${activeIndex + 1}`);
+    let card = this.getView().items.getAt(activeIndex);
+    let stepRef = {
+      'wizard-card-1': 'channel-step-1',
+      'wizard-card-2': 'channel-step-2',
+      'wizard-card-type': 'channel-nrl-response-type',
+      'wizard-card-3': 'channel-step-3',
+      'wizard-card-4': 'channel-step-4',
+      'wizard-card-5': 'channel-step-5'
+    }[card.getItemId()];
+    let currentStep = this.lookupReference(stepRef);
     return currentStep.getController();
   }
 });

@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -55,7 +56,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelequipment.ChannelEqu
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.items.channelequipment.CalibrationDate', {
-    extend: 'Ext.data.Model',
+    extend: 'yasmine.model.CollectionItem',
     fields: [
         { name: 'value', type: 'date' }
     ]

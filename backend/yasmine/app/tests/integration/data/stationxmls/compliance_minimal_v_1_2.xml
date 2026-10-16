@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.2">
+  <Source>Yasmine compliance</Source>
+  <Created>2020-01-01T00:00:00Z</Created>
+  <Network code="XX">
+    <Station code="AAA">
+      <Latitude>1.0</Latitude>
+      <Longitude>2.0</Longitude>
+      <Elevation>3.0</Elevation>
+      <Site>
+        <Name>Compliance</Name>
+      </Site>
+      <Channel code="BHZ" locationCode="00">
+        <Latitude>1.0</Latitude>
+        <Longitude>2.0</Longitude>
+        <Elevation>3.0</Elevation>
+        <Depth>0.0</Depth>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

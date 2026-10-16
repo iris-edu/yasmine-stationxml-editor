@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -42,26 +43,30 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardView', {
   ],
   controller: 'wizard-create',
   viewModel: 'wizard-create',
+  cls: 'yasmine-window yasmine-wizard-window',
   modal: true,
-  frame: true,
+  frame: false,
+  constrain: true,
   closable: false,
   bodyPadding: 5,
   bodyBorder: true,
   layout: 'card',
-  minWidth: 800,
-  minHeight: 600,
+  minWidth: 280,
+  minHeight: 200,
   listeners: {
-    afterlayout: function () {
-      let viewSize = Ext.getBody().getViewSize();
-      let height = viewSize.height;
-      if (this.getHeight() > height) {
-        this.setHeight(height);
+    show: function () {
+      if (!this._initialSizeApplied) {
+        yasmine.utils.ResponsiveUtil.fitWindow(this, {
+          minWidth: 800,
+          minHeight: 600,
+          width: 1000,
+          height: 700
+        });
+        this._initialSizeApplied = true;
       }
-      let width = viewSize.width;
-      if (this.getWidth() > width) {
-        this.setWidth(width);
-      }
-      this.center();
+    },
+    resize: function () {
+      yasmine.utils.ResponsiveUtil.clampWindow(this);
     }
   },
   bind: {
@@ -74,10 +79,13 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardView', {
     {xtype: 'wizard-create-channel'},
     {xtype: 'wizard-final-step'}
   ],
+  buttonAlign: 'right',
   buttons: [
     {
       xtype: 'container',
       reference: 'wizard-action-buttons-container',
+      cls: 'yasmine-wrap-toolbar yasmine-action-buttons',
+      minWidth: 0,
       defaults: {
         margin: '0 5 0 0'
       },
@@ -86,6 +94,7 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardView', {
     '->',
     {
       text: '&laquo; Previous',
+      iconCls: 'x-fa fa-arrow-left',
       hidden: true,
       bind: {
         hidden: '{!hasPrevious}'
@@ -94,6 +103,9 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardView', {
     },
     {
       text: 'Next &raquo;',
+      iconCls: 'x-fa fa-arrow-right',
+      iconAlign: 'right',
+      cls: 'yasmine-primary-action',
       bind: {
         hidden: '{!hasNext}'
       },
@@ -101,6 +113,8 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardView', {
     },
     {
       text: 'Complete Wizard',
+      iconCls: 'x-fa fa-check',
+      cls: 'yasmine-primary-action',
       bind: {
         hidden: '{hasNext}'
       },
@@ -109,6 +123,11 @@ Ext.define('yasmine.view.xml.builder.wizard.WizardView', {
     }
   ],
   tools: [
+    {
+      type: 'help',
+      tooltip: 'Help for the field you are filling',
+      handler: 'onHelpClick'
+    },
     {
       type: 'maximize',
       handler: 'onMaximizeClick'

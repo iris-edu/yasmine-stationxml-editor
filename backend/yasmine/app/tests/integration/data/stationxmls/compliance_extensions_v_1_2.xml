@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" xmlns:ext="urn:yasmine:stationxml-test" schemaVersion="1.2" ext:root="root-flag">
+  <Source>Yasmine compliance</Source>
+  <Created>2020-01-01T00:00:00Z</Created>
+  <Network code="XX" ext:network="network-flag">
+    <ext:NetworkNote kind="meta">network-note</ext:NetworkNote>
+    <Station code="AAA">
+      <Latitude>1.0</Latitude>
+      <Longitude>2.0</Longitude>
+      <Elevation>3.0</Elevation>
+      <Site ext:site="site-flag">
+        <Name>Compliance</Name>
+        <ext:SiteNote>site-note</ext:SiteNote>
+      </Site>
+      <Channel code="BHZ" locationCode="00">
+        <Latitude>1.0</Latitude>
+        <Longitude>2.0</Longitude>
+        <Elevation>3.0</Elevation>
+        <Depth>0.0</Depth>
+        <Response ext:response="response-flag">
+          <ext:ResponseNote>response-note</ext:ResponseNote>
+        </Response>
+      </Channel>
+    </Station>
+  </Network>
+  <ext:RootNote code="root">root-note</ext:RootNote>
+</FDSNStationXML>

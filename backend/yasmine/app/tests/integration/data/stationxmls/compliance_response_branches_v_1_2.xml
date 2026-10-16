@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.2">
+  <Source>Yasmine compliance</Source>
+  <Created>2020-01-01T00:00:00Z</Created>
+  <Network code="XX">
+    <Station code="AAA">
+      <Latitude>1.0</Latitude>
+      <Longitude>2.0</Longitude>
+      <Elevation>3.0</Elevation>
+      <Site>
+        <Name>Compliance</Name>
+      </Site>
+      <Channel code="BHZ" locationCode="00">
+        <Latitude>1.0</Latitude>
+        <Longitude>2.0</Longitude>
+        <Elevation>3.0</Elevation>
+        <Depth>0.0</Depth>
+        <SampleRate>100.0</SampleRate>
+        <Response resourceId="TEST:ALL-FILTERS">
+          <InstrumentSensitivity>
+            <Value>1.0</Value>
+            <Frequency>1.0</Frequency>
+            <InputUnits><Name>m/s</Name></InputUnits>
+            <OutputUnits><Name>count</Name></OutputUnits>
+          </InstrumentSensitivity>
+          <Stage number="1">
+            <PolesZeros>
+              <InputUnits><Name>m/s</Name></InputUnits>
+              <OutputUnits><Name>V</Name></OutputUnits>
+              <PzTransferFunctionType>LAPLACE (RADIANS/SECOND)</PzTransferFunctionType>
+              <NormalizationFactor>1.0</NormalizationFactor>
+              <NormalizationFrequency>1.0</NormalizationFrequency>
+            </PolesZeros>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="2">
+            <Coefficients>
+              <InputUnits><Name>V</Name></InputUnits>
+              <OutputUnits><Name>count</Name></OutputUnits>
+              <CfTransferFunctionType>DIGITAL</CfTransferFunctionType>
+              <Numerator>1.0</Numerator>
+            </Coefficients>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="3">
+            <FIR>
+              <InputUnits><Name>count</Name></InputUnits>
+              <OutputUnits><Name>count</Name></OutputUnits>
+              <Symmetry>NONE</Symmetry>
+              <NumeratorCoefficient>1.0</NumeratorCoefficient>
+            </FIR>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="4">
+            <ResponseList>
+              <InputUnits><Name>count</Name></InputUnits>
+              <OutputUnits><Name>count</Name></OutputUnits>
+              <ResponseListElement>
+                <Frequency>1.0</Frequency>
+                <Amplitude>1.0</Amplitude>
+                <Phase>0.0</Phase>
+              </ResponseListElement>
+            </ResponseList>
+            <StageGain>
+              <Value>1.0</Value>
+              <Frequency>1.0</Frequency>
+            </StageGain>
+          </Stage>
+          <Stage number="5">
+            <Polynomial>
+              <InputUnits><Name>count</Name></InputUnits>
+              <OutputUnits><Name>m/s</Name></OutputUnits>
+              <ApproximationType>MACLAURIN</ApproximationType>
+              <FrequencyLowerBound>0.0</FrequencyLowerBound>
+              <FrequencyUpperBound>10.0</FrequencyUpperBound>
+              <ApproximationLowerBound>-1.0</ApproximationLowerBound>
+              <ApproximationUpperBound>1.0</ApproximationUpperBound>
+              <MaximumError>0.01</MaximumError>
+              <Coefficient number="1">1.0</Coefficient>
+            </Polynomial>
+          </Stage>
+        </Response>
+      </Channel>
+      <Channel code="LHZ" locationCode="00">
+        <Latitude>1.0</Latitude>
+        <Longitude>2.0</Longitude>
+        <Elevation>3.0</Elevation>
+        <Depth>0.0</Depth>
+        <Response>
+          <InstrumentPolynomial>
+            <InputUnits><Name>count</Name></InputUnits>
+            <OutputUnits><Name>m/s</Name></OutputUnits>
+            <ApproximationType>MACLAURIN</ApproximationType>
+            <FrequencyLowerBound>0.0</FrequencyLowerBound>
+            <FrequencyUpperBound>10.0</FrequencyUpperBound>
+            <ApproximationLowerBound>-1.0</ApproximationLowerBound>
+            <ApproximationUpperBound>1.0</ApproximationUpperBound>
+            <MaximumError>0.01</MaximumError>
+            <Coefficient number="1">1.0</Coefficient>
+          </InstrumentPolynomial>
+        </Response>
+      </Channel>
+      <Channel code="LOG" locationCode="00">
+        <Latitude>1.0</Latitude>
+        <Longitude>2.0</Longitude>
+        <Elevation>3.0</Elevation>
+        <Depth>0.0</Depth>
+        <Response resourceId="TEST:EMPTY"/>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

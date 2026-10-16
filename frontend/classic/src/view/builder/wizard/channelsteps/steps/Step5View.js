@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -35,7 +36,7 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step5View', {
   controller: {
     itemIds: ['code1', 'code2', 'code3', 'dip1', 'dip2', 'dip3', 'azimuth1', 'azimuth2', 'azimuth3'],
     isValid: function () {
-      for (itemId of this.itemIds) {
+      for (const itemId of this.itemIds) {
         let fieldCmp = this.getView().down(`#${itemId}`);
         if (fieldCmp.isHidden()) {
           continue;
@@ -48,7 +49,7 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step5View', {
     },
     initComponent: function () {
       let channelInfo = this.getViewModel().get('channelInfo');
-      for (field of channelInfo.getFields()) {
+      for (const field of channelInfo.getFields()) {
         let fieldCmp = this.getView().down(`#${field.name}`);
         if (fieldCmp) {
           let record = new Ext.data.Model({
@@ -64,7 +65,11 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step5View', {
     },
     storeStepData: function () {
       let channelInfo = this.getViewModel().get('channelInfo');
-      for (itemId of this.itemIds) {
+      let skipOrientation = !!this.getViewModel().get('hideDipAzimuth');
+      for (const itemId of this.itemIds) {
+        if (skipOrientation && (itemId.startsWith('dip') || itemId.startsWith('azimuth'))) {
+          continue;
+        }
         if (channelInfo.get(itemId) !== undefined) {
           let fieldCmp = this.getView().down(`#${itemId}`);
           channelInfo.set(itemId, fieldCmp.getViewModel().get('record').get('value'));
@@ -81,13 +86,15 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step5View', {
     align: 'stretch',
     pack: 'start'
   },
-  width: 400,
+  maxWidth: 420,
+  minWidth: 0,
   items: [
     {
       xtype: 'fieldcontainer',
       fieldLabel: 'Channel',
       defaults: {
-        flex: 1
+        flex: 1,
+        minWidth: 0
       },
       layout: 'hbox',
       items: [
@@ -125,8 +132,12 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step5View', {
     {
       xtype: 'fieldcontainer',
       fieldLabel: 'Dip',
+      bind: {
+        hidden: '{hideDipAzimuth}'
+      },
       defaults: {
-        flex: 1
+        flex: 1,
+        minWidth: 0
       },
       layout: 'hbox',
       items: [
@@ -164,8 +175,12 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step5View', {
     {
       xtype: 'fieldcontainer',
       fieldLabel: 'Azimuth',
+      bind: {
+        hidden: '{hideDipAzimuth}'
+      },
       defaults: {
-        flex: 1
+        flex: 1,
+        minWidth: 0
       },
       layout: 'hbox',
       items: [

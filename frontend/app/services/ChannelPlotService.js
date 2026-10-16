@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -31,14 +32,22 @@
 
 Ext.define('yasmine.services.ChannelPlotService', {
   statics: {
-    loadPlot: function (nodeInstanceId, max, min) {
+    parseJson: function (response) {
+      try {
+        return JSON.parse((response && response.responseText) || '{}');
+      } catch (e) {
+        return null;
+      }
+    },
+    loadPlot: function (nodeInstanceId, max, min, stageParams) {
+      let params = Ext.apply({nodeInstanceId, min, max}, stageParams || {});
       return Ext.Ajax.request({
         method: 'GET',
-        params: {nodeInstanceId, min, max},
+        params: params,
         url: `/api/channel/response/plot-url/`,
       }).then((response) => {
-        let result = JSON.parse(response.responseText);
-        return result.success ? result : null;
+        let result = yasmine.services.ChannelPlotService.parseJson(response);
+        return result && result.success ? result : null;
       });
     },
     loadPlotDifference: function (nodeInstance1Id, nodeInstance2Id, max, min) {
@@ -47,8 +56,8 @@ Ext.define('yasmine.services.ChannelPlotService', {
         params: {nodeInstance1Id, nodeInstance2Id, max, min},
         url: `/api/channel/response-difference/plot-url/`,
       }).then((response) => {
-        let result = JSON.parse(response.responseText);
-        return result.success ? result.message : null;
+        let result = yasmine.services.ChannelPlotService.parseJson(response);
+        return result && result.success ? result.message : null;
       });
     }
   }

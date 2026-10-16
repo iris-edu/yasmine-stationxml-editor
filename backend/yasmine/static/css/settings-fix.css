@@ -17,3 +17,102 @@
 .settings-list .x-fieldset-header {
   overflow: visible;
 }
+
+.settings-list .yasmine-settings-intro,
+.settings-list .yasmine-settings-subtitle,
+.settings-list .x-form-item-label-text {
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.settings-list .settings-col {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Keep scrolled fields clear of the docked Save toolbar on short viewports. */
+.settings-list > .x-panel-bodyWrap > .x-panel-body {
+  padding-bottom: 16px !important;
+}
+
+.settings-list .x-toolbar-footer {
+  position: relative;
+  z-index: 8;
+  background: #fff;
+}
+
+.settings-list .x-form-text,
+.settings-list .x-form-field,
+.settings-list .x-form-trigger-wrap {
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+/* Column layout sizes its inner box to the viewport and clips the second
+   column on a phone. Let the settings scroller see the full field list. */
+.settings-list .x-column-inner,
+.settings-list .x-autocontainer-innerCt {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+@media (max-width: 767px) {
+  .settings-list .settings-col {
+    width: 100% !important;
+    float: none !important;
+    clear: both;
+  }
+}
+
+/* Ext docks these toolbars at about 12px and clips the 32px buttons, so
+   the panel body receives the click. Keep the bar as tall as its buttons. */
+.yasmine-builder-menu.x-toolbar-docked-top,
+.children-control-bar.x-toolbar-docked-top,
+.xml-list .x-toolbar-docked-top {
+  z-index: 20 !important;
+  height: auto !important;
+  min-height: 44px !important;
+  overflow: visible !important;
+}
+
+.yasmine-wizard-window .x-window-body,
+.xml-edit .x-window-body {
+  overflow: auto;
+}
+
+.yasmine-window .x-toolbar-docked-bottom {
+  position: relative;
+  z-index: 6;
+}
+
+.yasmine-vp-xs .x-tab-bar-navigation .x-tab,
+.yasmine-vp-sm .x-tab-bar-navigation .x-tab,
+.yasmine-compact-height .x-tab-bar-navigation .x-tab {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.leaflet-control-zoom a {
+  width: 44px !important;
+  height: 44px !important;
+  line-height: 44px !important;
+}
+
+.yasmine-vp-xs .x-tree-elbow-img,
+.yasmine-vp-sm .x-tree-elbow-img,
+.yasmine-vp-xs .x-tree-expander,
+.yasmine-vp-sm .x-tree-expander {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.yasmine-vp-xs .channel-equipment-editor .x-box-inner,
+.yasmine-vp-sm .channel-equipment-editor .x-box-inner,
+.yasmine-compact-height .channel-equipment-editor .x-box-inner,
+.yasmine-vp-xs .channel-equipment-editor .x-box-target,
+.yasmine-vp-sm .channel-equipment-editor .x-box-target,
+.yasmine-compact-height .channel-equipment-editor .x-box-target {
+  flex-direction: column !important;
+  height: auto !important;
+}

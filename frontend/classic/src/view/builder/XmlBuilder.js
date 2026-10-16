@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -44,24 +45,26 @@ Ext.define('yasmine.view.xml.builder.XmlBuilder', {
   ],
   controller: 'builder',
   viewModel: 'builder',
+  cls: 'yasmine-workspace yasmine-builder-workspace',
   layout: {
     type: 'border'
   },
   defaults: {
     collapsible: true,
     split: true,
-    border: true
+    border: false
   },
   items: [
     {
       xtype: 'children',
       collapsible: false,
-      region: 'center'
+      region: 'center',
+      reference: 'builderChildren'
     }
   ],
   tbar: {
     xtype: 'builder-menu',
-    padding: '0 0 0 0',
-    margin: '0 0 10 0'
+    padding: '6 8',
+    margin: 0
   }
 });

@@ -27,6 +27,10 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.3-beta: ASGSR, Alexey Emanov
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
+* 2026-09-28, version 4.4.0-beta: ASGSR, Alexey Emanov
+* 2026-09-29, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,12 +40,40 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResp
   xtype: 'yasmine-channel-response-field',
   requires: [
     'Ext.Img',
+    'Ext.form.Panel',
+    'Ext.form.field.File',
     'Ext.panel.Panel',
     'yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResponseEditorModel',
     'yasmine.view.xml.builder.parameter.items.channelresponse.ChannelResponseEditorController',
+    'yasmine.view.xml.builder.parameter.items.channelresponse.RecalculateSensitivityDialog',
+    'yasmine.view.xml.builder.parameter.items.channelresponse.preview.ResponsePreview',
+    'yasmine.view.xml.builder.parameter.items.channelresponse.selectors.SelectorsContainer',
+    'yasmine.view.xml.builder.parameter.items.channelresponse.nrl.NrlResponseTypeSelector',
     'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.ChannelResponseTreeEditor'
   ],
   viewModel: 'channel-response-editor',
   controller: 'channel-response-editor',
-  layout: 'fit'
+  cls: 'yasmine-channel-response-field',
+  layout: 'fit',
+  flex: 1,
+  minHeight: 240,
+  dockedItems: [{
+    xtype: 'form',
+    dock: 'bottom',
+    reference: 'respImportForm',
+    hidden: true,
+    height: 0,
+    items: [{
+      xtype: 'filefield',
+      reference: 'respFileField',
+      name: 'file',
+      accept: '.resp,.RESP',
+      hidden: true,
+      buttonOnly: true,
+      hideLabel: true,
+      listeners: {
+        change: 'onRespFileChange'
+      }
+    }]
+  }]
 });

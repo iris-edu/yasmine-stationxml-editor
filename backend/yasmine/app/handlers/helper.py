@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -63,8 +64,8 @@ class ImportUrlUserLibraryHandler(AsyncThreadMixin, BaseHandler):
             UserLibraryService(self).import_from_url(params['url'])
         except BusinessException as err:
             return {'success': False, 'message': str(err)}
-        except URLError as err:
-            return {'success': False, 'message': err.reason}
+        except (URLError, ValueError) as err:
+            return {'success': False, 'message': getattr(err, 'reason', None) or str(err)}
         except BadZipFile as err:
             return {'success': False, 'message': f"{err}"}
         except FileNotFoundError as err:
@@ -75,14 +76,17 @@ class ImportUrlUserLibraryHandler(AsyncThreadMixin, BaseHandler):
 
 class ImportZipUserLibraryHandler(AsyncThreadMixin, BaseHandler):
     def async_post(self, *_, **__):
-        body = self.request.files['zip-path'][0]['body']
+        files = self.request.files.get('zip-path')
+        if not files:
+            return {'success': False, 'message': 'zip-path file is required'}
+        body = files[0]['body']
         try:
             with ZipFile(io.BytesIO(body)) as zip_file:
                 UserLibraryService(self).import_from_zip(zip_file)
         except BusinessException as err:
             return {'success': False, 'message': str(err)}
-        except URLError as err:
-            return {'success': False, 'message': err.reason}
+        except (URLError, ValueError) as err:
+            return {'success': False, 'message': getattr(err, 'reason', None) or str(err)}
         except BadZipFile as err:
             return {'success': False, 'message': f"{err}"}
         except FileNotFoundError as err:

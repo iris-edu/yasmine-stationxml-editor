@@ -1,3 +1,4 @@
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # This file is part of the yasmine editing tool.
@@ -36,6 +37,10 @@ from yasmine.app.helpers.utils.utils import ChannelUtils
 from yasmine.app.settings import MEDIA_ROOT
 
 
+from yasmine.app.tests.common import skip_unless_network
+
+
+@skip_unless_network
 class ResponsePlotDifferenceTest(unittest.TestCase):
     _helper = None
 

@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -35,7 +36,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   extend: 'Ext.grid.Panel',
   xtype: 'channel-response-value-editor',
   requires: [
-    'Ext.grid.column.Action'
+    'Ext.grid.column.Action',
+    'yasmine.view.xml.builder.parameter.items.float.StationXmlDoubleField'
   ],
   hideHeaders: true,
   bind: {
@@ -58,12 +60,25 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
     setNodeName: function (nodeName) {
       this.getViewModel().set('nodeName', nodeName);
     },
-    setRecord: function (name, value, canHaveValue) {
+    setRecord: function (name, value, canHaveValue, definition, readOnly) {
       let store = this.getView().getStore();
+      if (!store || store.isEmptyStore) {
+        store = Ext.create('Ext.data.Store', {
+          model: 'XmlValue',
+          data: []
+        });
+        this.getView().setStore(store);
+      }
       if (store.count() > 0) {
         store.removeAll(true);
       }
-      store.add(Ext.create('XmlValue', {name: name, value: value, canHaveValue: canHaveValue}));
+      store.add(Ext.create('XmlValue', {
+        name: name,
+        value: value,
+        canHaveValue: canHaveValue,
+        definition: definition,
+        readOnly: readOnly
+      }));
       store.commitChanges();
     },
     onRowEdit: function (e, data) {
@@ -93,10 +108,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
       dataIndex: 'name',
       flex: 1,
       renderer: function (val) {
-        return `Name: <span data-qtip="Node Name"><b>${val}</b></span>`;
-      },
-      editor: {
-        allowBlank: false
+        return `Name: <span data-qtip="Node names are defined by StationXML"><b>${Ext.htmlEncode(val)}</b></span>`;
       }
     },
     {
@@ -107,22 +119,50 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
         if (!record.record.get('canHaveValue')) {
           return 'Value: <span data-qtip="Value is allowed only if the node doesn\'t have children" style="color: #e2000c">Not allowed</span>'
         }
-        let value = (val) ? val : 'N/A';
-        return `Value: <span data-qtip="Node Value"><b>${value}</b></span>`;
+        let value = (val !== null && val !== undefined && val !== '') ? val : 'N/A';
+        let tip = record.record.get('readOnly') ? 'Foreign or unsupported nodes are read-only' : 'Typed StationXML value';
+        return `Value: <span data-qtip="${tip}"><b>${Ext.htmlEncode(String(value))}</b></span>`;
       },
       getEditor: function (record) {
         if (!record) {
           return false;
         }
 
-        if (!record.get('canHaveValue')) {
+        if (!record.get('canHaveValue') || record.get('readOnly')) {
           return false;
         }
 
-        return Ext.create('Ext.grid.CellEditor', {
-          field: Ext.create('Ext.form.field.Text', {
+        let definition = record.get('definition') || {};
+        let field;
+        if (definition.enum && definition.enum.length) {
+          field = Ext.create('Ext.form.field.ComboBox', {
+            store: definition.enum,
+            queryMode: 'local',
+            forceSelection: true,
+            editable: false,
+            allowBlank: false
+          });
+        } else if (definition.valueType === 'integer') {
+          field = Ext.create('Ext.form.field.Number', {
+            allowBlank: false,
+            allowDecimals: false,
+            minValue: definition.minimum,
+            maxValue: definition.maximum
+          });
+        } else if (definition.valueType === 'number') {
+          field = Ext.create({
+            xtype: 'yasmine-stationxml-double-field',
+            allowBlank: false,
+            minValue: definition.minimum,
+            maxValue: definition.maximum
+          });
+        } else {
+          field = Ext.create('Ext.form.field.Text', {
             allowBlank: true
-          })
+          });
+        }
+        return Ext.create('Ext.grid.CellEditor', {
+          field: field
         });
       }
     }
@@ -131,10 +171,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
 });
 
 Ext.define('XmlValue', {
-  extend: 'Ext.data.Model',
+  extend: 'yasmine.model.CollectionItem',
   fields: [
     'name',
     'value',
-    'canHaveValue'
+    'canHaveValue',
+    'definition',
+    'readOnly'
   ]
 });

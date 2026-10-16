@@ -1,5 +1,7 @@
 # yasmine GUI
 
+The Classic interface edits FDSN StationXML 1.2. Field help loads `/api/stationxml/help/1.2/`.
+
 Frontend
 
 ## Compile GUI

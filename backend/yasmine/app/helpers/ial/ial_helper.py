@@ -95,15 +95,38 @@ class IalHelper(BaseHelper):
         return IalChannelResponseBuilder().build(sensor, datalogger)
 
     def guess_channel_code(self, sensors_keys, datalogger_keys):
-        return IalChannelCodeHelper().guess_code(sensors_keys, datalogger_keys)
+        try:
+            sensor = self.get_sensor_response_obj(sensors_keys)
+        except Exception:
+            sensor = None
+        try:
+            datalogger = self.get_datalogger_response_obj(datalogger_keys)
+        except Exception:
+            datalogger = None
+        return IalChannelCodeHelper().guess_code(sensor, datalogger)
 
     def _load_library(self):
         self.logger.info(f'Loading and unzipping AROL from {IAL_URL}')
         temp_folder = FileConvertorService().convert_from_url(IAL_URL)
-        shutil.rmtree(self.content_folder, True)
-        shutil.copytree(temp_folder, self.content_folder)
+        staging = self.content_folder + '.new'
+        backup = self.content_folder + '.bak'
+        shutil.rmtree(staging, True)
+        shutil.copytree(temp_folder, staging)
         shutil.rmtree(temp_folder)
-        self.logger.info(f'AROL has been unzipped')
+        replaced = False
+        try:
+            if os.path.isdir(self.content_folder):
+                shutil.rmtree(backup, True)
+                os.rename(self.content_folder, backup)
+                replaced = True
+            os.rename(staging, self.content_folder)
+        except Exception:
+            if replaced and os.path.isdir(backup) and not os.path.isdir(self.content_folder):
+                os.rename(backup, self.content_folder)
+            shutil.rmtree(staging, True)
+            raise
+        shutil.rmtree(backup, True)
+        self.logger.info('AROL has been unzipped')
 
     def _load_response(self, file):
         if not os.path.exists(file):
@@ -151,7 +174,14 @@ class IalHelper(BaseHelper):
         return data_copy
 
     def _build_path(self, file_path, folder):
-        return os.path.join(self.content_data_folder, folder, file_path.replace('yaml', 'json'))
+        root = os.path.realpath(os.path.join(self.content_data_folder, folder))
+        relative = str(file_path or '').replace('\\', '/').replace('yaml', 'json')
+        if not relative or any(part in ('', '.', '..') for part in relative.split('/')):
+            raise ValueError('invalid path')
+        candidate = os.path.realpath(os.path.join(root, relative))
+        if candidate != root and not candidate.startswith(root + os.sep):
+            raise ValueError('invalid path')
+        return candidate
 
     def _create_keys_files(self):
         sensors, dataloggers = IalKeyCreator().create_keys(self.content_data_folder)

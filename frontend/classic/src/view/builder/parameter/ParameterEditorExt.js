@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -44,11 +45,26 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditorExt', {
     title: '{title}'
   },
   modal: true,
-  frame: true,
+  frame: false,
+  cls: 'yasmine-window',
   closable: false,
   scrollable: true,
+  minWidth: 280,
   defaultFocus: 'focusItem',
   defaultButton: 'saveButton',
+  listeners: {
+    show: function () {
+      yasmine.utils.ResponsiveUtil.fitWindow(this, {
+        minWidth: 400,
+        minHeight: 220,
+        width: 480,
+        height: 260
+      });
+    },
+    afterlayout: function () {
+      yasmine.utils.ResponsiveUtil.clampWindow(this);
+    }
+  },
   items: [{
     xtype: 'form',
     bodyPadding: 20,
@@ -62,6 +78,7 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditorExt', {
       formBind: true,
       reference: 'saveButton',
       iconCls: 'x-fa fa-floppy-o',
+      cls: 'yasmine-primary-action',
       handler: 'onSaveClick'
     }, {
       text: 'Cancel',

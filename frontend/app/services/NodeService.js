@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -61,15 +62,30 @@ Ext.define('yasmine.services.NodeService', {
         url: `/api/xml/tree/${xmlId}/${nodeInstanceId}`
       });
     },
+    loadExtensions: function (xmlId, nodeInstanceId) {
+      return Ext.Ajax.request({
+        method: 'GET',
+        url: `/api/xml/extensions/${xmlId}/${nodeInstanceId}/`
+      }).then((response) => {
+        return yasmine.services.NodeService.parseJson(response);
+      }).then((result) => result && result.success ? result.data : null);
+    },
+    loadLibraryExtensions: function (libraryId, nodeInstanceId) {
+      return Ext.Ajax.request({
+        method: 'GET',
+        url: `/api/user-library/extensions/${libraryId}/${nodeInstanceId}/`
+      }).then((response) => {
+        return yasmine.services.NodeService.parseJson(response);
+      }).then((result) => result && result.success ? result.data : null);
+    },
     loadNodeAttributes: function (nodeInstanceId) {
       return Ext.Ajax.request({
         method: 'GET',
         url: `/api/xml/attr/`,
         params: {filter: JSON.stringify([{property: 'node_inst_id', value: nodeInstanceId}])},
       }).then((response) => {
-        let result = JSON.parse(response.responseText);
-        return result.success ? result.data : null;
-      });
+        return yasmine.services.NodeService.parseJson(response);
+      }).then((result) => result && result.success ? result.data : null);
     },
     findSimilarChannel: function (xmlId, nodeInstanceId) {
       return Ext.Ajax.request({
@@ -77,9 +93,8 @@ Ext.define('yasmine.services.NodeService', {
         url: `/api/xml/similar-channel/`,
         params: {xmlId, nodeInstanceId},
       }).then((response) => {
-        let result = JSON.parse(response.responseText);
-        return result.success ? result.data : null;
-      });
+        return yasmine.services.NodeService.parseJson(response);
+      }).then((result) => result && result.success ? result.data : null);
     },
     findNodePath: function (nodeId) {
       return Ext.Ajax.request({
@@ -87,9 +102,21 @@ Ext.define('yasmine.services.NodeService', {
         url: `/api/xml/node-path/`,
         params: {nodeId},
       }).then((response) => {
-        let result = JSON.parse(response.responseText);
-        return result.success ? result.data : null;
-      });
+        return yasmine.services.NodeService.parseJson(response);
+      }).then((result) => result && result.success ? result.data : null);
+    },
+    parseJson: function (response) {
+      try {
+        return JSON.parse((response && response.responseText) || '{}');
+      } catch (e) {
+        return null;
+      }
+    },
+    parentIdFromPath: function (path) {
+      if (!path || path.length < 2) {
+        return 0;
+      }
+      return path[path.length - 2].id;
     },
     findParent: function (nodeId) {
       let response = Ext.Ajax.request({
@@ -98,14 +125,9 @@ Ext.define('yasmine.services.NodeService', {
         url: `/api/xml/node-path/`,
         params: {nodeId},
       });
-      let result = JSON.parse(response.responseText).data.path;
-      if (result.length === 1) {
-        return 0;
-      }
-
-      if (result.length === 2) {
-        return result[0].id;
-      }
+      let parsed = yasmine.services.NodeService.parseJson(response);
+      let result = parsed && parsed.data ? parsed.data.path : null;
+      return yasmine.services.NodeService.parentIdFromPath(result);
     },
   }
 })

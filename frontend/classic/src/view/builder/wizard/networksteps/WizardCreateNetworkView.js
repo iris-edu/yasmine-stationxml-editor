@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -68,12 +69,16 @@ Ext.define('yasmine.view.xml.builder.wizard.networksteps.WizardCreateNetworkView
   layout: 'center',
   items: [
     {
+      cls: 'yasmine-wizard-card',
+      padding: 24,
       layout: {
         type: 'vbox',
         align: 'stretch',
         pack: 'start'
       },
-      width: 300,
+      width: '100%',
+      maxWidth: 420,
+      minWidth: 0,
       reference: 'container',
       items: [
         {

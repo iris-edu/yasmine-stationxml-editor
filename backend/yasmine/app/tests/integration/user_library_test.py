@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -50,12 +51,16 @@ class ParseUserLibraryYamlTest(unittest.TestCase, DbMixin):
 
     def test_import_user_library_from_folder(self):
         folder = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/gatito/gatito-master/')
+        if not os.path.isdir(folder):
+            self.skipTest('gatito fixture folder is missing')
         UserLibraryService(self).import_from_folder(folder)
         self._check_common_result()
         self._check_folder_result()
 
     def test_import_user_library_from_zip(self):
         file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data/gatito/gatito-master.zip')
+        if not os.path.isfile(file):
+            self.skipTest('gatito zip fixture is missing')
         with ZipFile(file, 'r') as zip_file:
             UserLibraryService(self).import_from_zip(zip_file)
         self._check_common_result()

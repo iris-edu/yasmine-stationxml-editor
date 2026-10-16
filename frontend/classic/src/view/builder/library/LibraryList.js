@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -44,57 +45,77 @@ Ext.define('yasmine.view.xml.builder.library.LibraryList', {
     title: '"{libraryName}" library | {nodeLevelTitle}\'s'
   },
   modal: true,
-  frame: true,
+  frame: false,
+  cls: 'yasmine-window yasmine-library-picker',
+  constrain: true,
+  minWidth: 280,
+  minHeight: 240,
   closable: false,
-  bodyBorder: true,
-  width: '90%',
-  height: '90%',
+  bodyBorder: false,
+  width: 1000,
+  height: 700,
   layout: 'fit',
+  listeners: {
+    show: function () {
+      yasmine.utils.ResponsiveUtil.fitWindow(this, {
+        minWidth: 800,
+        minHeight: 500,
+        width: 1000,
+        height: 700
+      });
+    },
+    afterlayout: function () {
+      yasmine.utils.ResponsiveUtil.clampWindow(this);
+    }
+  },
   items: [
     {
       xtype: 'dataview',
-      loadMask: false,
+      loadMask: true,
       bind: {
         store: '{nodesStore}',
         selection: '{selectedNode}'
       },
       tpl: Ext.create('Ext.XTemplate',
         '<tpl for=".">',
-        '<div class="phone  x-unselectable" style="border-color: {locationColor}',
-        '<tpl if="last">',
-        '; clear: both;',
-        '</tpl>',
-        '<tpl if="type == \'back\'">',
-        '; height: 68px;',
-        '</tpl>',
-        '">',
+        '<div class="phone yasmine-node-card x-unselectable',
+        '<tpl if="type == \'back\'"> yasmine-node-card-back-item</tpl>',
+        '"',
+        '<tpl if="locationColor"> style="border-left-color: {locationColor}"</tpl>',
+        '>',
         '<tpl if="type == \'node\'">',
-        '<div><b>Code: </b> <span style="color: black;">{name}</span></div>',
-        '<div><b>Start: </b> <span style="color: black;">{start:date(yasmine.Globals.DatePrintShortFormat)}</span></div>',
-        '<div><b>End: </b> <span style="color: black;">{end:date(yasmine.Globals.DatePrintShortFormat)}</span></div>',
+        '<div class="yasmine-node-card-title">{name}</div>',
+        '<div><b>Start</b><span>{[this.displayDate(values.start)]}</span></div>',
+        '<div><b>End</b><span>{[this.displayDate(values.end)]}</span></div>',
         '</tpl>',
         '<tpl if="nodeType == 1">',
-        '<div><b>Description: </b><span style="color: black;">{description}</span></div>',
+        '<div><b>Description</b><span>{description}</span></div>',
         '</tpl>',
         '<tpl if="nodeType == 2">',
-        '<div><b>Longitude: </b> <span style="color: black;">{longitude}</span></div>',
-        '<div><b>Latitude: </b> <span style="color: black;">{latitude}</span></div>',
-        '<div><b>Site: </b> <span style="color: black;">{site}</span></div>',
+        '<div><b>Longitude</b><span>{longitude}</span></div>',
+        '<div><b>Latitude</b><span>{latitude}</span></div>',
+        '<div><b>Site</b><span>{site}</span></div>',
         '</tpl>',
         '<tpl if="nodeType == 3">',
-        '<div><b>Sample Rate: </b> <span style="color: black;">{sampleRate}</span></div>',
-        '<div><b>Sensor: </b> <span style="color: black;">{sensor}</span></div>',
+        '<div><b>Sample rate</b><span>{sampleRate}</span></div>',
+        '<div><b>Sensor</b><span>{sensor}</span></div>',
         '</tpl>',
         '<tpl if="has_children == true">',
-        '<div><b>Click To Expand</b></div>',
+        '<div class="yasmine-node-card-hint">Open children</div>',
         '</tpl>',
         '<tpl if="type == \'back\'">',
-        '<i class="fa fa-chevron-circle-left fa-5x" style="color: #5fa2dd; padding-left: 37px;" aria-hidden="true"></i>',
+        '<i class="x-fa fa-arrow-left yasmine-node-card-back" aria-hidden="true"></i>',
         '</tpl>',
         '</div>',
-        '</tpl>'
+        '</tpl>',
+        {
+          displayDate: function (value) {
+            return yasmine.utils.DateUtil.formatShort(value);
+          }
+        }
       ),
       id: 'phones-template-list',
+      cls: 'yasmine-node-cards',
       scrollable: true,
       itemSelector: 'div.phone',
       listeners: {
@@ -118,6 +139,7 @@ Ext.define('yasmine.view.xml.builder.library.LibraryList', {
     {
       text: 'Insert into Station XML',
       iconCls: 'x-fa fa-sign-out fa-rotate-90',
+      cls: 'yasmine-primary-action',
       handler: 'onInsertClick',
       disabled: true,
       bind: {

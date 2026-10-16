@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -37,6 +38,8 @@ Ext.define('yasmine.view.xml.builder.comparison.Comparison', {
   extend: 'Ext.panel.Panel',
   xtype: 'xml-comparison',
   requires: [
+    'Ext.plugin.Responsive',
+    'yasmine.utils.ResponseRecalculateUtil',
     'yasmine.view.xml.builder.comparison.ComparisonController',
     'yasmine.view.xml.builder.comparison.ComparisonModel',
     'yasmine.view.xml.builder.parameter.items.channelresponse.preview.ResponseChart'
@@ -44,25 +47,41 @@ Ext.define('yasmine.view.xml.builder.comparison.Comparison', {
   viewModel: 'comparison',
   controller: 'comparison',
   title: 'Compare',
+  cls: 'xml-comparison',
+  scrollable: 'y',
   layout: {
     type: 'vbox',
     align: 'stretch'
   },
   bodyBorder: true,
   tbar: {
-    style: 'background-color: #ecebeb',
+    cls: 'yasmine-compare-toolbar',
+    layout: {
+      type: 'hbox',
+      align: 'middle'
+    },
     items: [
       {
         xtype: 'numberfield',
-        fieldLabel: 'Min Frequency',
+        fieldLabel: 'Min',
+        labelWidth: 32,
+        flex: 1,
+        minWidth: 0,
         allowDecimals: true,
         decimalPrecision: 5,
         minValue: 0,
+        hideTrigger: true,
+        keyNavEnabled: false,
+        mouseWheelEnabled: false,
         margin: '0 10 0 0',
         bind: {
           value: '{minFrequency}'
         },
         listeners: {
+          change: function (field, newValue) {
+            yasmine.utils.ResponseRecalculateUtil.limitMaxForPointBudget(
+              field.lookupViewModel(), newValue);
+          },
           specialkey: function (field, e) {
             if (e.getKey() === e.ENTER) {
               e.stopEvent();
@@ -77,10 +96,16 @@ Ext.define('yasmine.view.xml.builder.comparison.Comparison', {
       },
       {
         xtype: 'numberfield',
-        fieldLabel: 'Max Frequency',
+        fieldLabel: 'Max',
+        labelWidth: 32,
+        flex: 1,
+        minWidth: 0,
         allowDecimals: true,
         decimalPrecision: 5,
         minValue: 0,
+        hideTrigger: true,
+        keyNavEnabled: false,
+        mouseWheelEnabled: false,
         margin: '0 10 0 0',
         bind: {
           value: '{maxFrequency}'
@@ -100,120 +125,141 @@ Ext.define('yasmine.view.xml.builder.comparison.Comparison', {
       },
       {
         xtype: 'button',
-        iconCls: 'fa fa-refresh',
+        iconCls: 'x-fa fa-refresh',
         tooltip: 'Rebuild Plots',
-        text: 'Rebuild Plots',
+        text: '',
         handler: 'rebuildPlots'
       }
     ]
   },
+  listeners: {
+    afterrender: 'syncComparisonSplit'
+  },
   items: [
     {
+      reference: 'comparisonSplit',
       layout: {
         type: 'hbox',
         align: 'stretch'
       },
       flex: 1,
+      minHeight: 220,
       items: [
         {
           tbar: {
-            height: 44,
             items: [
               {
-                xtype: 'panel',
+                xtype: 'component',
+                flex: 1,
+                minWidth: 0,
                 bind: {
-                  html: 'XML: <b>{xml.name}</b>'
-                }
-              },
-              '->',
-              {
-                xtype: 'panel',
-                bind: {
-                  html: 'Channel: <b>{xml1ChannelTitle}</b>'
+                  html: '<div style="padding:2px 0;line-height:1.35">XML: <b>{xml.name}</b><br>Channel: <b>{xml1ChannelTitle}</b></div>'
                 }
               }
             ]
           },
-          style: 'border-right: solid #d0d0d0 1px;',
+          cls: 'yasmine-compare-pane yasmine-compare-pane-primary',
           flex: 1,
+          minHeight: 160,
+          plugins: 'responsive',
+          responsiveConfig: {
+            'width < 1280 || height < 500': {
+              flex: 1,
+              height: null,
+              minHeight: 240
+            },
+            'width >= 1280 && height >= 500': {
+              flex: 1,
+              height: null,
+              minHeight: 160
+            }
+          },
           layout: 'fit',
           items: [
             {
-              style: 'border-top: solid #d0d0d0 1px;',
               xtype: 'response-chart',
-              cls: 'comparison-chart',
+              cls: 'comparison-chart yasmine-section-divider',
               reference: 'xml1Chart',
               hidden: true,
               bind: {
                 hidden: '{xml1ChartMessage}'
-              },
-              viewModel: {
-                data: {
-                  showChartControls: false,
-                  showDownloadButtons: false,
-                  channelResponseImageUrl: null
-                }
               }
             },
             {
-              style: 'border-top: solid #d0d0d0 1px;',
+              cls: 'yasmine-section-divider',
               hidden: true,
               bind: {
                 hidden: '{!xml1ChartMessage}',
-                html: '<div style="height: 100%; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 16px">{xml1ChartMessage}</div>'
+                html: '<div class="yasmine-compare-msg">{xml1ChartMessage}</div>'
               }
             }
           ]
         },
         {
-          tbar: [
-            {
-              xtype: 'combobox',
-              emptyText: 'Select XML',
-              displayField: 'name',
-              queryMode: 'local',
-              bind: {
-                store: '{xmlStore}'
-              },
-              listeners: {
-                select: 'onXml2Select'
-              },
-              fieldStyle: 'font-weight: 700'
+          cls: 'yasmine-compare-pane',
+          tbar: {
+            layout: {
+              type: 'hbox',
+              align: 'middle'
             },
-            '->',
-            {
-              xtype: 'panel',
-              bind: {
-                html: 'Channel: <b>{xml2ChannelTitle}</b>'
+            items: [
+              {
+                xtype: 'combobox',
+                emptyText: 'Select XML',
+                displayField: 'name',
+                queryMode: 'local',
+                flex: 1,
+                minWidth: 0,
+                bind: {
+                  store: '{xmlStore}'
+                },
+                listeners: {
+                  select: 'onXml2Select'
+                },
+                fieldStyle: 'font-weight: 700'
+              },
+              {
+                xtype: 'component',
+                margin: '0 0 0 8',
+                minWidth: 0,
+                bind: {
+                  html: 'Ch: <b>{xml2ChannelTitle}</b>'
+                }
               }
-            }
-          ],
+            ]
+          },
           flex: 1,
+          minHeight: 160,
+          plugins: 'responsive',
+          responsiveConfig: {
+            'width < 1280 || height < 500': {
+              flex: 1,
+              height: null,
+              minHeight: 240
+            },
+            'width >= 1280 && height >= 500': {
+              flex: 1,
+              height: null,
+              minHeight: 160
+            }
+          },
           layout: 'fit',
           items: [
             {
-              style: 'border-top: solid #d0d0d0 1px;',
               xtype: 'response-chart',
-              cls: 'comparison-chart',
+              cls: 'comparison-chart yasmine-section-divider',
               reference: 'xml2Chart',
               hidden: true,
               bind: {
                 hidden: '{xml2ChartMessage}'
-              },
-              viewModel: {
-                data: {
-                  showChartControls: false,
-                  showDownloadButtons: false,
-                  channelResponseImageUrl: null
-                }
               }
             },
             {
-              style: 'border-top: solid #d0d0d0 1px;',
+              cls: 'yasmine-section-divider',
               hidden: true,
               bind: {
                 hidden: '{!xml2ChartMessage}',
-                html: '<div style="height: 100%; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 16px">{xml2ChartMessage}</div>'
+                html: '<div class="yasmine-compare-msg">{xml2ChartMessage}</div>'
               }
             }
           ]
@@ -221,9 +267,23 @@ Ext.define('yasmine.view.xml.builder.comparison.Comparison', {
       ]
     },
     {
-      style: 'border-top: solid #d0d0d0 1px;',
+      cls: 'yasmine-section-divider yasmine-compare-result',
       layout: 'fit',
       flex: 1,
+      minHeight: 160,
+      plugins: 'responsive',
+      responsiveConfig: {
+        'width < 1280 || height < 500': {
+          flex: 1,
+          height: null,
+          minHeight: 240
+        },
+        'width >= 1280 && height >= 500': {
+          flex: 1,
+          height: null,
+          minHeight: 160
+        }
+      },
       items: [
         {
           xtype: 'response-chart',
@@ -232,19 +292,13 @@ Ext.define('yasmine.view.xml.builder.comparison.Comparison', {
           hidden: true,
           bind: {
             hidden: '{xml3ChartMessage}'
-          },
-          viewModel: {
-            data: {
-              showChartControls: false,
-              showDownloadButtons: false
-            }
           }
         },
         {
           hidden: true,
           bind: {
             hidden: '{!xml3ChartMessage}',
-            html: '<div style="height: 100%; display: flex; justify-content: center; align-items: center; font-weight: 700; font-size: 16px">{xml3ChartMessage}</div>'
+            html: '<div class="yasmine-compare-msg">{xml3ChartMessage}</div>'
           }
         }
       ],

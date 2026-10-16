@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -34,6 +35,16 @@
 Ext.define("yasmine.view.xml.builder.parameter.items.identifiers.IdentifiersPreview", {
     xtype: 'yasmine-identifiers-field-preview',
     getPreview: function (value){
-        return (value) ? value.join('; ') : null;
+        if (!value) {
+            return null;
+        }
+        return value.map(function (identifier) {
+            if (identifier && typeof identifier === 'object') {
+                return identifier.type ?
+                    identifier.type + ': ' + identifier.value :
+                    identifier.value;
+            }
+            return identifier;
+        }).join('; ');
     }
 });

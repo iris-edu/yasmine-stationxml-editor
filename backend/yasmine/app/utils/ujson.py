@@ -29,6 +29,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -37,22 +38,34 @@
 from datetime import datetime, date
 import json
 
+import jsonpickle
+import jsonpickle.ext.numpy as jsonpickle_numpy
+import obspy
 from jsonpickle.unpickler import Unpickler
 from obspy.core.utcdatetime import UTCDateTime
-import jsonpickle
-import obspy
 
 from yasmine.app.settings import DATE_FORMAT_SYSTEM
-from yasmine.app.utils.date import strptime
-import jsonpickle.ext.numpy as jsonpickle_numpy
+from yasmine.app.utils.date import parse_naive_datetime, parse_utcdatetime
 
-# Fallback formats when parsing dates from frontend (e.g. Y-m-d from datefield display)
-DATE_FORMATS = [
-    DATE_FORMAT_SYSTEM,  # '%d/%m/%Y %H:%M:%S' - primary
-    '%Y-%m-%d %H:%M:%S',  # ISO-like, used by frontend DatePrintLongFormat
-    '%Y-%m-%d',
-    '%d/%m/%Y',
-]
+ALLOWED_PY_OBJECTS = {
+    'obspy.core.inventory.util.ExternalReference',
+    'obspy.core.inventory.util.Site',
+    'obspy.core.inventory.util.Equipment',
+    'obspy.core.inventory.util.Operator',
+    'obspy.core.inventory.util.PhoneNumber',
+    'obspy.core.inventory.util.Person',
+    'obspy.core.inventory.util.Comment',
+    'obspy.core.utcdatetime.UTCDateTime',
+}
+
+
+def _is_allowed_py_object(name):
+    if not isinstance(name, str):
+        return False
+    if name in ALLOWED_PY_OBJECTS:
+        return True
+    return name.startswith('obspy.core.inventory.') or name.startswith('numpy.')
+
 
 jsonpickle_numpy.register_handlers()
 
@@ -64,15 +77,40 @@ class JSONEncoder(json.JSONEncoder):
     def encode_date(self, date):
         return date.strftime(DATE_FORMAT_SYSTEM)
 
+    def _stringify_utcdatetimes(self, obj, seen=None):
+        """Replace nested UTCDateTime values with ISO-8601 strings in place.
+
+        encode_complex_obj previously only converted dates on the top-level object,
+        so nested values (e.g. DataAvailability.spans[*].start/end) were left as
+        jsonpickle UTCDateTime py/state blobs the frontend could not parse.
+        """
+        if seen is None:
+            seen = set()
+        obj_id = id(obj)
+        if obj_id in seen or not hasattr(obj, '__dict__'):
+            return
+        seen.add(obj_id)
+
+        for attr, value in list(obj.__dict__.items()):
+            if isinstance(value, (UTCDateTime, datetime, date)):
+                setattr(obj, attr, self.encode_date(
+                    value.datetime if isinstance(value, UTCDateTime) else value
+                ))
+            elif isinstance(value, list):
+                new_list = []
+                for item in value:
+                    if isinstance(item, (UTCDateTime, datetime, date)):
+                        new_list.append(self.encode_date(
+                            item.datetime if isinstance(item, UTCDateTime) else item
+                        ))
+                    else:
+                        if item is not None and obspy.__name__ in getattr(item, '__module__', ''):
+                            self._stringify_utcdatetimes(item, seen)
+                        new_list.append(item)
+                setattr(obj, attr, new_list)
+
     def encode_complex_obj(self, obj):
-        for attr, value in obj.__dict__.items():
-            if isinstance(value, UTCDateTime) or isinstance(value, datetime) or isinstance(value, date):
-                setattr(obj, attr, self.encode_date(value))
-            elif isinstance(value, list) and "_date" in attr:
-                res = []
-                for v in value:
-                    res.append(self.encode_date(v))
-                setattr(obj, attr, res)
+        self._stringify_utcdatetimes(obj)
 
         def convert(key):
             return key.replace('_', '', 1) if key.find('_') == 0 else key
@@ -119,27 +157,20 @@ class JSONDecoder(json.JSONDecoder):
         return self._parse_date(value)
 
     def _parse_date(self, value):
-        """Parse date string, trying multiple formats for frontend compatibility.
-        Returns UTCDateTime for ObsPy compatibility (Comment, etc.)."""
+        """Parse an ISO-8601 string that ObsPy UTCDateTime accepts."""
         if not value or value == '':
             return None
-        if hasattr(value, 'strftime'):
-            return UTCDateTime(value) if not isinstance(value, UTCDateTime) else value
-        value = str(value).strip()
-        for fmt in DATE_FORMATS:
-            try:
-                dt = strptime(value, fmt)
-                return UTCDateTime(dt)
-            except (ValueError, TypeError):
-                continue
-        raise ValueError('Unable to parse date: %r' % value)
+        return parse_utcdatetime(value)
 
     def decode_complex_obj(self, pairs):
         res_dict = {}
         for k, v in pairs:
-            if "_date" in k or "_time" in k:
+            if k.endswith('_date') or k.endswith('_time'):
                 v = self.decode_date(v)
             res_dict[k] = v
+        py_object = res_dict.get('py/object')
+        if not _is_allowed_py_object(py_object):
+            raise ValueError('Unsupported object type: %s' % py_object)
         context = Unpickler()
         res = context.restore(res_dict, reset=True)
 
@@ -150,9 +181,11 @@ class JSONDecoder(json.JSONDecoder):
         for key, value in pairs:
             if isinstance(value, str) and key in ['created_at', 'updated_at', 'start_date', 'end_date']:
                 try:
-                    obj[key] = self.decode_date(value)
-                except ValueError:
+                    parsed = parse_naive_datetime(value)
+                except (TypeError, ValueError):
                     obj[key] = value
+                else:
+                    obj[key] = parsed
             else:
                 obj[key] = value
         return obj
@@ -177,7 +210,11 @@ class JSONDecoder(json.JSONDecoder):
         if isinstance(obj, dict):
             for key in obj:
                 value = obj.get(key)
-                if 'id' in key and (value == '' or value == '-1' or value < 0):
+                if 'id' in key and (
+                    value == ''
+                    or value == '-1'
+                    or (isinstance(value, (int, float)) and not isinstance(value, bool) and value < 0)
+                ):
                     obj[key] = None
 
         return obj

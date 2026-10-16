@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -34,6 +35,10 @@
 Ext.define('yasmine.view.main.MainController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.main',
+  requires: [
+    'yasmine.view.xml.builder.XmlBuilder',
+    'yasmine.view.userlibrary.builder.UserLibraryBuilder'
+  ],
   routes: {
     'xmls': {action: 'onXml'},
     'xml-builder/:id': {action: 'onXmlBuilder', conditions: {':id': '([0-9]+)'}},
@@ -43,89 +48,110 @@ Ext.define('yasmine.view.main.MainController', {
     'test': {action: 'onTest'},
     'user-library-builder/:id': {action: 'onUserLibraryBuilder', conditions: {':id': '([0-9]+)'}}
   },
-  onXml: function () {
+  withLayouts: function (fn) {
     Ext.suspendLayouts();
-    this.cleanAllContainer();
+    try {
+      fn.call(this);
+    } finally {
+      // A throw while suspended leaves the whole shell blank.
+      Ext.resumeLayouts(true);
+    }
+  },
+  onXml: function () {
+    this.withLayouts(function () {
+      this.cleanAllContainer();
 
-    let container = this.lookupReference('xmlContainer');
-    container.add([Ext.create({xtype: 'xml-list'})]);
+      let container = this.lookupReference('xmlContainer');
+      container.add([Ext.create({xtype: 'xml-list'})]);
 
-    this.activateContainer(container)
-    Ext.resumeLayouts(true);
+      this.activateContainer(container);
+    });
   },
   onXmlBuilder: function (id) {
-    Ext.suspendLayouts();
-    this.cleanAllContainer();
+    this.withLayouts(function () {
+      this.cleanAllContainer();
 
-    let container = this.lookupReference('xmlContainer');
-    let xmlBuilder = Ext.create({xtype: 'xmlBuilder'});
-    let xmlViewModel = xmlBuilder.getViewModel();
-    xmlViewModel.set('xmlId', id);
+      let container = this.lookupReference('xmlContainer');
+      let xmlBuilder = Ext.create({xtype: 'xmlBuilder'});
+      let xmlViewModel = xmlBuilder.getViewModel();
+      xmlViewModel.set('xmlId', id);
 
-    container.add(xmlBuilder);
+      container.add(xmlBuilder);
 
-    this.activateContainer(container);
-    Ext.resumeLayouts(true);
+      this.activateContainer(container);
+    });
   },
   onUserLibraryBuilder: function (id) {
-    Ext.suspendLayouts();
-    this.cleanAllContainer();
+    this.withLayouts(function () {
+      this.cleanAllContainer();
 
-    let container = this.lookupReference('userLibraryContainer');
-    let libraryBuilder = Ext.create({xtype: 'userlibrary-builder'});
+      let container = this.lookupReference('userLibraryContainer');
+      let libraryBuilder = Ext.create({xtype: 'userlibrary-builder'});
 
-    libraryBuilder.getController().initModel(id);
-    container.add(libraryBuilder);
+      libraryBuilder.getController().initModel(id);
+      container.add(libraryBuilder);
 
-    this.activateContainer(container);
-    Ext.resumeLayouts(true);
+      this.activateContainer(container);
+    });
   },
   onSettings: function () {
-    Ext.suspendLayouts();
-    this.cleanAllContainer();
+    this.withLayouts(function () {
+      this.cleanAllContainer();
 
-    let container = this.lookupReference('settingsContainer');
-    container.add([Ext.create({xtype: 'settings-list'})]);
+      let container = this.lookupReference('settingsContainer');
+      container.add([Ext.create({xtype: 'settings-list'})]);
 
-    this.activateContainer(container);
-    Ext.resumeLayouts(true);
+      this.activateContainer(container);
+    });
   },
   onUserLibrary: function () {
-    Ext.suspendLayouts();
-    this.cleanAllContainer();
+    this.withLayouts(function () {
+      this.cleanAllContainer();
 
-    let container = this.lookupReference('userLibraryContainer');
-    container.add(Ext.create({xtype: 'userlibrary-list'}));
+      let container = this.lookupReference('userLibraryContainer');
+      container.add(Ext.create({xtype: 'userlibrary-list'}));
 
-    this.activateContainer(container);
-    Ext.resumeLayouts(true);
+      this.activateContainer(container);
+    });
   },
   onAboutInfo: function () {
-    Ext.suspendLayouts();
-    this.cleanAllContainer();
+    this.withLayouts(function () {
+      this.cleanAllContainer();
 
-    let container = this.lookupReference('aboutContainer');
-    container.add(Ext.create({xtype: 'about-info'}));
+      let container = this.lookupReference('aboutContainer');
+      container.add(Ext.create({xtype: 'about-info'}));
 
-    this.activateContainer(container);
-    Ext.resumeLayouts(true);
+      this.activateContainer(container);
+      this.loadBuildInfo();
+    });
+  },
+  loadBuildInfo: function () {
+    var viewModel = this.getViewModel();
+    Ext.Ajax.request({
+      url: '/api/build/',
+      success: function (response) {
+        var data = response.responseData || {};
+        viewModel.set('serverBuildTimestamp', data.build_timestamp || '');
+        viewModel.set('serverCommitRevision', data.commit_revision || '');
+      }
+    });
   },
   onTest: function () {
-    Ext.suspendLayouts();
-    this.cleanAllContainer();
+    this.withLayouts(function () {
+      this.cleanAllContainer();
 
-    let container = this.lookupReference('testContainer');
-    container.add(Ext.create({xtype: 'test-container'}));
+      let container = this.lookupReference('testContainer');
+      container.add(Ext.create({xtype: 'test-container'}));
 
-    this.activateContainer(container);
-    Ext.resumeLayouts(true);
+      this.activateContainer(container);
+    });
   },
   onTabActivated: function (panel, tab) {
     if (tab.reference === 'settingsContainer') {
       this.redirectTo('settings');
     } else if (tab.reference === 'xmlContainer') {
       this.redirectTo('xmls');
-    } else if (tab.reference === 'useLibraryContainer') {
+    } else if (tab.reference === 'userLibraryContainer') {
       this.redirectTo('user-libraries');
     } else if (tab.reference === 'aboutContainer') {
       this.redirectTo('about');

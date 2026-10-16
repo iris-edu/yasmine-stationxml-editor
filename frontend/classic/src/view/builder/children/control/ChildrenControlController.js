@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -35,8 +36,98 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
   extend: 'Ext.app.ViewController',
   alias: 'controller.children-control',
   init: function () {
-    Ext.ux.Mediator.on('node-selected', this.onNodeSelected, this);
-    Ext.ux.Mediator.on('node-updated', this.onNodeUpdated, this);
+    this.mon(Ext.ux.Mediator, 'node-selected', this.onNodeSelected, this);
+    this.mon(Ext.ux.Mediator, 'node-updated', this.onNodeUpdated, this);
+    this.mon(Ext.GlobalEvents, 'resize', this.syncMapButton, this, {buffer: 150});
+    this.mon(Ext.GlobalEvents, 'resize', this.syncEpochField, this, {buffer: 150});
+    this.syncMapButton();
+    var view = this.getView();
+    view.on('afterlayout', this.syncEpochField, this);
+  },
+  syncEpochField: function () {
+    var view = this.getView();
+    var field = view.down('#epochCombo');
+    var fill = view.down('#epochFill');
+    var layout = view.getLayout();
+    var inner = layout && layout.innerCt;
+    var used = 0;
+    var room;
+    var hideLabel;
+    var width;
+    var changed = false;
+    var me = this;
+    var wrapEpoch;
+    var ru = yasmine.utils.ResponsiveUtil;
+    if (!field || field.destroyed || !view.rendered || !inner) {
+      return;
+    }
+    // xs/sm/compact-height: CSS puts Epoch on its own full-width row.
+    // Keep the Epoch label visible so the control keeps its identity.
+    // Do not keep forcing 186px — that fights width:100% and retriggers
+    // afterlayout every pass.
+    wrapEpoch = ru && (ru.getWidth() < 768 || ru.isCompactHeight());
+    if (wrapEpoch) {
+      if (field.hideLabel !== false) {
+        field.setHideLabel(false);
+        changed = true;
+      }
+      if (field.emptyText !== 'Select Epoch') {
+        field.emptyText = 'Select Epoch';
+        if (field.inputEl) {
+          field.applyEmptyText();
+        }
+      }
+      if (changed) {
+        Ext.defer(function () {
+          if (me.getView && me.getView() && !me.getView().destroyed &&
+              ru && ru.syncWrappingToolbars) {
+            ru.syncWrappingToolbars();
+          }
+        }, 20);
+      }
+      return;
+    }
+    view.items.each(function (item) {
+      var el;
+      if (item === fill) {
+        return false;
+      }
+      if (item === field || item.hidden || !item.rendered) {
+        return;
+      }
+      el = item.getEl();
+      used = Math.max(used, el.getLocalX() + el.getWidth());
+    });
+    room = inner.getWidth() - used;
+    hideLabel = room < 246 + 8;
+    width = hideLabel ? 186 : 246;
+    if (field.hideLabel !== hideLabel) {
+      field.setHideLabel(hideLabel);
+      changed = true;
+    }
+    if (field.getWidth() !== width) {
+      field.setWidth(width);
+      changed = true;
+    }
+    // Docked wrap height is measured in JS. After Epoch width/label
+    // changes the second row can grow without a resize event — resync
+    // so Select Epoch does not paint over the Inventory tree root.
+    if (changed) {
+      Ext.defer(function () {
+        if (me.getView && me.getView() && !me.getView().destroyed &&
+            ru && ru.syncWrappingToolbars) {
+          ru.syncWrappingToolbars();
+        }
+      }, 20);
+    }
+  },
+  syncMapButton: function () {
+    var button = this.getView().down('#mapButton');
+    var narrow = yasmine.utils.ResponsiveUtil && yasmine.utils.ResponsiveUtil.getWidth() <= yasmine.utils.ResponsiveUtil.STACK_MAX;
+    if (!button || button.destroyed) {
+      return;
+    }
+    button.setText(narrow ? '' : 'Map');
   },
   initViewModel: function (viewModel) {
     viewModel.getStore('userLibraryStore').load({
@@ -77,13 +168,23 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
   },
   deleteNode: function (nodeId) {
     let xmlId = this.getViewModel().get('xmlId');
-    yasmine.services.NodeService.deleteNode(xmlId, nodeId).then(() => {
+    yasmine.services.NodeService.deleteNode(xmlId, nodeId).then((response) => {
+      let result = yasmine.services.NodeService.parseJson(response);
+      if (result && result.success === false) {
+        Ext.Msg.alert('Delete', result.message || 'Cannot delete this node.');
+        return;
+      }
       Ext.ux.Mediator.fireEvent('node-deleted', nodeId);
+    }, () => {
+      Ext.Msg.alert('Delete', 'Cannot delete this node.');
     });
   },
   createDefaultNode: function () {
     let xmlId = this.getViewModel().get('xmlId');
     let selectedNode = this.getViewModel().get('selectedNode');
+    if (!selectedNode) {
+      return;
+    }
     let nodeType = yasmine.utils.NodeTypeConverter.getChild(selectedNode.nodeType);
     yasmine.services.NodeService.createNode(xmlId, selectedNode.id, nodeType).then((result) => {
       Ext.ux.Mediator.fireEvent('node-created', result.responseData.nodeId);
@@ -92,6 +193,9 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
   addNodeFromLibrary: function (libraryNodeId) {
     let xmlId = this.getViewModel().get('xmlId');
     let selectedNode = this.getViewModel().get('selectedNode');
+    if (!selectedNode) {
+      return;
+    }
     let nodeType = yasmine.utils.NodeTypeConverter.getChild(selectedNode.nodeType);
     yasmine.services.NodeService.addNodeFromLibrary(xmlId, selectedNode.id, nodeType, libraryNodeId).then((result) => {
       Ext.ux.Mediator.fireEvent('node-created', result.responseData.nodeId);
@@ -111,6 +215,9 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
   },
   onExtractClick: function (event) {
     let selectedNode = this.getViewModel().get('selectedNode');
+    if (!selectedNode || !selectedNode.id) {
+      return;
+    }
     let nodeType = selectedNode.nodeType;
     Ext.Ajax.request({
       url: '/api/user-library/node/',
@@ -124,9 +231,11 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
       success: function (response) {
         let result = JSON.parse(response.responseText);
         if (result.success) {
-          Ext.toast(
-            {html: `The ${yasmine.utils.NodeTypeConverter.toString(nodeType)} has been added to "${event.libraryName}" library`, align: 't'}
-          );
+          Ext.toast({
+            html: 'The ' + Ext.String.htmlEncode(yasmine.utils.NodeTypeConverter.toString(nodeType)) +
+              ' has been added to "' + Ext.String.htmlEncode(event.libraryName || '') + '" library',
+            align: 't'
+          });
         } else {
           Ext.MessageBox.show({
             title: 'An error occurred',
@@ -153,6 +262,10 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
     listView.show();
   },
   onWizardClick: function () {
+    let selectedNode = this.getViewModel().get('selectedNode');
+    if (!selectedNode) {
+      return;
+    }
     let wizard = Ext.create({
       xtype: 'wizard-create',
       listeners: {saved: () => Ext.ux.Mediator.fireEvent('node-created')}
@@ -165,8 +278,10 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
     wizardModel.set('stationId', null);
     wizardModel.set('stationCode', null);
 
-    let selectedNode = this.getViewModel().get('selectedNode');
     yasmine.services.NodeService.findNodePath(selectedNode.id).then((data) => {
+      if (wizard.destroyed) {
+        return;
+      }
       for (const node of data.path) {
         if (node.nodeType === yasmine.NodeTypeEnum.network) {
           wizardModel.set('networkId', node.id);
@@ -185,15 +300,70 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlController'
       wizard.show();
     });
   },
+  onMapClick: function () {
+    let selectedNode = this.getViewModel().get('selectedNode');
+    if (!selectedNode) {
+      return;
+    }
+    let epoch = this.getViewModel().get('selectedEpoch');
+    let mapWindow = Ext.create({xtype: 'station-map'});
+    mapWindow.getController().loadMap({
+      xmlId: this.getViewModel().get('xmlId'),
+      nodeId: selectedNode.id || 0,
+      epoch: epoch && epoch.get ? epoch.get('date') : null,
+      epochLabel: epoch && epoch.get ? epoch.get('dateString') : null
+    });
+    mapWindow.show();
+  },
   onAddDefaultClick: function () {
     this.createDefaultNode();
   },
   onDeleteClick: function () {
     let node = this.getViewModel().get('selectedNode');
-    Ext.Msg.confirm('Confirm', `Are you sure you want to delete '${node.name}'?`, (btn) => {
-      if (btn === 'yes') {
-        this.deleteNode(node.id);
+    if (!node) {
+      return;
+    }
+    let xmlId = this.getViewModel().get('xmlId');
+    let that = this;
+    let name = Ext.String.htmlEncode(node.name || '');
+    yasmine.services.NodeService.loadExtensions(xmlId, node.id).then(function (summary) {
+      let msg = "Are you sure you want to delete '" + name + "'?";
+      if (summary && summary.sidecarNodeCount) {
+        msg += '<br><br>This also permanently removes <b>' +
+          Ext.htmlEncode(String(summary.sidecarNodeCount)) +
+          '</b> extension sidecar(s) (' +
+          Ext.htmlEncode(String(summary.elementCount || 0)) +
+          ' foreign element(s), ' +
+          Ext.htmlEncode(String(summary.attributeCount || 0)) +
+          ' attribute(s)).';
       }
+      Ext.Msg.confirm('Confirm', msg, function (btn) {
+        if (btn === 'yes') {
+          that.deleteNode(node.id);
+        }
+      });
+    }, function () {
+      Ext.Msg.confirm('Confirm', "Are you sure you want to delete '" + name + "'?", function (btn) {
+        if (btn === 'yes') {
+          that.deleteNode(node.id);
+        }
+      });
+    });
+  },
+
+  onExtensionsClick: function () {
+    let node = this.getViewModel().get('selectedNode');
+    if (!node) {
+      return;
+    }
+    let xmlId = this.getViewModel().get('xmlId');
+    yasmine.services.NodeService.loadExtensions(xmlId, node.id).then(function (summary) {
+      Ext.create({
+        xtype: 'node-extensions-dialog',
+        summary: summary || {nodes: []}
+      }).show();
+    }, function () {
+      Ext.Msg.alert('Extensions', 'Unable to load extension sidecars.');
     });
   },
 });

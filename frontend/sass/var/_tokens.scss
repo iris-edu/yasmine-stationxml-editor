@@ -1,0 +1,41 @@
+/* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov */
+$yasmine-brand-blue: #247fd7 !default;
+$yasmine-brand-blue-deep: #176f9f !default;
+$yasmine-brand-navy: #123b5d !default;
+$yasmine-brand-green: #57905a !default;
+$yasmine-brand-gold: #d29a2a !default;
+
+$yasmine-primary: $yasmine-brand-blue-deep !default;
+$yasmine-primary-dark: $yasmine-brand-navy !default;
+$yasmine-primary-strong: #0f5275 !default;
+$yasmine-primary-soft: #e8f2f8 !default;
+$yasmine-accent: #0d7c78 !default;
+
+$yasmine-canvas: #f4f7f9 !default;
+$yasmine-surface: #ffffff !default;
+$yasmine-surface-muted: #eef3f6 !default;
+$yasmine-surface-raised: #f9fbfc !default;
+
+$yasmine-text: #243746 !default;
+$yasmine-text-muted: #607483 !default;
+$yasmine-border: #ced9e0 !default;
+$yasmine-border-strong: #afc0ca !default;
+
+$yasmine-success: #357749 !default;
+$yasmine-warning: #a66700 !default;
+$yasmine-danger: #b4433f !default;
+$yasmine-focus: $yasmine-brand-blue !default;
+
+$yasmine-radius-sm: 3px !default;
+$yasmine-radius-md: 6px !default;
+$yasmine-radius-lg: 10px !default;
+
+$yasmine-space-1: 4px !default;
+$yasmine-space-2: 8px !default;
+$yasmine-space-3: 12px !default;
+$yasmine-space-4: 16px !default;
+$yasmine-space-5: 24px !default;
+$yasmine-space-6: 32px !default;
+
+$yasmine-font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif !default;
+$yasmine-font-mono: Menlo, Monaco, Consolas, "Liberation Mono", monospace !default;

@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -33,7 +34,11 @@
 Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.ResponseChart', {
   extend: 'Ext.container.Container',
   xtype: 'response-chart',
+  requires: [
+    'yasmine.utils.ResponseRecalculateUtil'
+  ],
   minHeight: 0,
+  flex: 1,
   style: {
     'border-width': 'thin',
     'border-style': 'solid',
@@ -47,11 +52,19 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
     formulas: {
       chartImageHtml: function (get) {
         var url = get('channelResponseImageUrl');
-        if (!url) return '';
-        var escaped = (url || '').replace(/"/g, '&quot;');
-        return '<div class="response-chart-img-wrap">' +
-          '<img src="' + escaped + '" alt="Chart" class="response-chart-img" />' +
-          '</div>';
+        if (url) {
+          var escaped = (url || '').replace(/"/g, '&quot;');
+          return '<div class="response-chart-img-wrap">' +
+            '<img src="' + escaped + '" alt="Chart" class="response-chart-img" />' +
+            '</div>';
+        }
+        if (get('plotLoading')) {
+          return '<div class="response-chart-img-wrap response-chart-loading">' +
+            '<i class="fa fa-spinner fa-spin" aria-hidden="true"></i>' +
+            '<div>Building plot…</div>' +
+            '</div>';
+        }
+        return '';
       },
       chartOrMessageIndex: function (get) {
         return get('channelResponsePlotMessage') ? 1 : 0;
@@ -64,107 +77,203 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
   },
   items: [
     {
-      padding: '0 0 0 5',
+      xtype: 'container',
+      cls: 'response-chart-toolbar',
+      flex: 0,
+      padding: '4 4 4 4',
       layout: {
-        type: 'hbox',
-        pack: 'center',
-        padding: '5 0 0 0'
+        type: 'vbox',
+        align: 'stretch'
       },
-      height: 38,
       hidden: true,
       bind: {
-        hidden: '{!channelResponseImageUrl || !showChartControls}'
+        hidden: '{!channelResponseImageUrl || (!showChartControls && !showDownloadButtons)}'
+      },
+      listeners: {
+        show: function (cmp) {
+          var chart = cmp.up('response-chart');
+          if (chart && !chart.destroyed && chart.updateLayout) {
+            Ext.defer(function () {
+              if (chart && !chart.destroyed) {
+                chart.updateLayout();
+              }
+            }, 10);
+          }
+        }
       },
       items: [
         {
-          xtype: 'numberfield',
-          fieldLabel: 'Min <i class="fa fa-question-circle" data-qtip="Min Frequency"></i>',
-          labelWidth: 50,
-          width: 150,
-          allowDecimals: true,
-          decimalPrecision: 5,
-          minValue: 0,
-          margin: '0 10 0 0',
-          bind: {
-            value: '{minFrequency}'
+          xtype: 'container',
+          cls: 'response-chart-toolbar-row',
+          layout: {
+            type: 'hbox',
+            align: 'middle'
           },
-          listeners: {
-            specialkey: function (field, e) {
-              if (e.getKey() === e.ENTER) {
-                e.stopEvent();
-                var ctrl = field.lookupController();
-                if (ctrl && typeof ctrl.loadChannelResponsePlot === 'function') {
-                  ctrl.loadChannelResponsePlot();
+          bind: {
+            hidden: '{!showChartControls}'
+          },
+          items: [
+            {
+              xtype: 'numberfield',
+              fieldLabel: 'Min',
+              labelWidth: 32,
+              flex: 1,
+              minWidth: 90,
+              allowDecimals: true,
+              decimalPrecision: 5,
+              minValue: 0,
+              hideTrigger: true,
+              keyNavEnabled: false,
+              mouseWheelEnabled: false,
+              margin: '0 6 0 0',
+              bind: {
+                value: '{minFrequency}'
+              },
+              listeners: {
+                change: function (field, newValue) {
+                  yasmine.utils.ResponseRecalculateUtil.limitMaxForPointBudget(
+                    field.lookupViewModel(), newValue);
+                },
+                specialkey: function (field, e) {
+                  if (e.getKey() === e.ENTER) {
+                    e.stopEvent();
+                    var ctrl = field.lookupController();
+                    if (ctrl && typeof ctrl.loadChannelResponsePlot === 'function') {
+                      ctrl.loadChannelResponsePlot();
+                    }
+                    return false;
+                  }
                 }
-                return false;
+              }
+            },
+            {
+              xtype: 'numberfield',
+              fieldLabel: 'Max',
+              labelWidth: 32,
+              flex: 1,
+              minWidth: 90,
+              allowDecimals: true,
+              decimalPrecision: 5,
+              minValue: 0,
+              hideTrigger: true,
+              keyNavEnabled: false,
+              mouseWheelEnabled: false,
+              bind: {
+                value: '{maxFrequency}'
+              },
+              listeners: {
+                specialkey: function (field, e) {
+                  if (e.getKey() === e.ENTER) {
+                    e.stopEvent();
+                    var ctrl = field.lookupController();
+                    if (ctrl && typeof ctrl.loadChannelResponsePlot === 'function') {
+                      ctrl.loadChannelResponsePlot();
+                    }
+                    return false;
+                  }
+                }
               }
             }
-          }
+          ]
         },
         {
-          xtype: 'numberfield',
-          fieldLabel: 'Max <i class="fa fa-question-circle" data-qtip="Max Frequency"></i>',
-          labelWidth: 50,
-          width: 150,
-          allowDecimals: true,
-          decimalPrecision: 5,
-          minValue: 0,
-          margin: '0 10 0 0',
-          bind: {
-            value: '{maxFrequency}'
+          xtype: 'container',
+          cls: 'response-chart-toolbar-row',
+          margin: '4 0 0 0',
+          layout: {
+            type: 'hbox',
+            align: 'middle',
+            wrap: true
           },
-          listeners: {
-            specialkey: function (field, e) {
-              if (e.getKey() === e.ENTER) {
-                e.stopEvent();
-                var ctrl = field.lookupController();
-                if (ctrl && typeof ctrl.loadChannelResponsePlot === 'function') {
-                  ctrl.loadChannelResponsePlot();
+          items: [
+            {
+              xtype: 'button',
+              iconCls: 'fa fa-refresh',
+              tooltip: 'Rebuild Plot',
+              margin: '0 4 0 0',
+              bind: {
+                hidden: '{!showChartControls}'
+              },
+              handler: 'loadChannelResponsePlot'
+            },
+            {
+              xtype: 'button',
+              margin: '0 4 0 0',
+              bind: {
+                hidden: '{!showDownloadButtons}'
+              },
+              iconCls: 'fa fa-area-chart',
+              tooltip: 'Download Plot',
+              handler: 'downloadChannelResponsePlot'
+            },
+            {
+              xtype: 'button',
+              margin: '0 4 4 0',
+              bind: {
+                hidden: '{!showDownloadButtons}'
+              },
+              iconCls: 'fa fa-table',
+              tooltip: 'Download CSV',
+              handler: 'downloadChannelResponseCsv'
+            },
+            {
+              xtype: 'combobox',
+              reference: 'plotStartStage',
+              fieldLabel: 'Start',
+              labelWidth: 36,
+              flex: 1,
+              minWidth: 120,
+              margin: '0 4 0 0',
+              editable: false,
+              forceSelection: true,
+              queryMode: 'local',
+              displayField: 'label',
+              valueField: 'number',
+              bind: {
+                store: '{plotStageStore}',
+                value: '{plotStartStage}',
+                hidden: '{!showChartControls}',
+                disabled: '{!hasPlotStages}'
+              },
+              listeners: {
+                select: function (field) {
+                  yasmine.utils.ResponseRecalculateUtil.onPlotStageComboSelect(field, 'start');
                 }
-                return false;
+              }
+            },
+            {
+              xtype: 'combobox',
+              reference: 'plotEndStage',
+              fieldLabel: 'End',
+              labelWidth: 32,
+              flex: 1,
+              minWidth: 120,
+              editable: false,
+              forceSelection: true,
+              queryMode: 'local',
+              displayField: 'label',
+              valueField: 'number',
+              bind: {
+                store: '{plotStageStore}',
+                value: '{plotEndStage}',
+                hidden: '{!showChartControls}',
+                disabled: '{!hasPlotStages}'
+              },
+              listeners: {
+                select: function (field) {
+                  yasmine.utils.ResponseRecalculateUtil.onPlotStageComboSelect(field, 'end');
+                }
               }
             }
-          }
-        },
-        {
-          xtype: 'button',
-          iconCls: 'fa fa-refresh',
-          tooltip: 'Rebuild Plot',
-          handler: 'loadChannelResponsePlot'
+          ]
         }
-      ]
-    },
-    {
-      layout: 'hbox',
-      items: [
-        {
-          xtype: 'button',
-          hidden: true,
-          margin: '0 0 0 10',
-          bind: {
-            hidden: '{!channelResponseImageUrl|| !showDownloadButtons}'
-          },
-          iconCls: 'fa fa-area-chart',
-          tooltip: 'Download Plot',
-          handler: 'downloadChannelResponsePlot'
-        },
-        {
-          xtype: 'button',
-          hidden: true,
-          margin: '0 0 0 10',
-          bind: {
-            hidden: '{!channelResponseImageUrl || !showDownloadButtons}'
-          },
-          iconCls: 'fa fa-table',
-          tooltip: 'Download CSV',
-          handler: 'downloadChannelResponseCsv'
-        },
       ]
     },
     {
       xtype: 'container',
       flex: 1,
       minHeight: 0,
+      cls: 'response-chart-body',
       layout: {
         type: 'card',
         activeItem: 0
@@ -174,19 +283,11 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
       },
       items: [
         {
-          xtype: 'container',
-          layout: 'fit',
-          overflow: 'hidden',
-          items: [
-            {
-              xtype: 'component',
-              cls: 'response-chart-img-container',
-              overflow: 'hidden',
-              bind: {
-                html: '{chartImageHtml}'
-              }
-            }
-          ]
+          xtype: 'component',
+          cls: 'response-chart-img-container',
+          bind: {
+            html: '{chartImageHtml}'
+          }
         },
         {
           xtype: 'displayfield',

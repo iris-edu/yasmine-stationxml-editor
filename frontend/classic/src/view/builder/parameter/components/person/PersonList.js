@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -40,11 +41,12 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonList', {
   ],
   viewModel: 'person-list',
   controller: 'person-list',
+  minWidth: 0,
   bind: {
     store: '{personStore}',
     selection: '{selectedRow}'
   },
-  style: 'border: solid #d0d0d0 1px',
+  cls: 'yasmine-panel-outline',
   columns: [
     {
       text: 'Names',
@@ -90,34 +92,46 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonList', {
     }
   ],
   listeners: {
-    itemdblclick: 'onEditClick'
+    itemdblclick: 'onEditClick',
+    afterrender: 'syncPersonChrome'
   },
-  tbar: [
-    {
-      tooltip: 'Add Person',
-      iconCls: 'x-fa fa-plus',
-      handler: 'onAddClick'
+  tbar: {
+    cls: 'yasmine-wrap-toolbar',
+    overflowHandler: 'scroller',
+    defaults: {
+      minWidth: 0
     },
-    {
-      tooltip: 'Delete Person',
-      disabled: true,
-      bind: {
-        disabled: '{!selectedRow}'
+    items: [
+      {
+        tooltip: 'Add Author',
+        iconCls: 'x-fa fa-plus',
+        handler: 'onAddClick'
       },
-      iconCls: 'x-fa fa-minus',
-      handler: 'onDeleteClick',
-    },
-    {
-      tooltip: 'Edit Person',
-      disabled: true,
-      bind: {
-        disabled: '{!selectedRow}'
+      {
+        bind: {
+          disabled: '{!selectedRow}'
+        },
+        tooltip: 'Delete Author',
+        disabled: true,
+        iconCls: 'x-fa fa-minus',
+        handler: 'onDeleteClick',
       },
-      iconCls: 'x-fa fa-pencil',
-      handler: 'onEditClick',
-    },
-    {xtype: 'container', flex: 1},
-    {xtype: 'label', html: 'PERSONS'},
-    {xtype: 'container', flex: 1}
-  ]
+      {
+        bind: {
+          disabled: '{!selectedRow}'
+        },
+        tooltip: 'Edit Author',
+        disabled: true,
+        iconCls: 'x-fa fa-pencil',
+        handler: 'onEditClick',
+      },
+      {xtype: 'tbspacer', flex: 1, minWidth: 0},
+      {
+        xtype: 'label',
+        itemId: 'personCollectionLabel',
+        text: 'Authors'
+      },
+      {xtype: 'tbspacer', flex: 1, minWidth: 0}
+    ]
+  }
 });

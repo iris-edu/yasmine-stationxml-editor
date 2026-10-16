@@ -1,18 +1,86 @@
-/* Force Settings fieldset titles to be visible (fix for Safari/WebKit bug 188836).
+/* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
+ * Force Settings fieldset titles to be visible (fix for Safari/WebKit bug 188836).
    Same fix as AROL filter - overflow:hidden on fieldset/legend hides content.
    NRLv2 online support (2026): ASGSR, Alexey Emanov. */
 .settings-list .x-fieldset-header-text {
-  color: $fieldset-header-color !important;
+  color: $yasmine-primary-dark !important;
   opacity: 1 !important;
-  -webkit-text-fill-color: $fieldset-header-color !important;
+  -webkit-text-fill-color: $yasmine-primary-dark !important;
   float: none !important;
   display: block !important;
 }
 
 .settings-list .x-fieldset {
   overflow: visible;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .settings-list .x-fieldset-header {
   overflow: visible;
+}
+
+.settings-list .settings-col {
+  max-width: 100%;
+  box-sizing: border-box;
+  padding-bottom: 28px;
+}
+
+.settings-list .x-scroller {
+  box-sizing: border-box;
+  padding-bottom: 20px;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+}
+
+.yasmine-settings-intro {
+  padding: $yasmine-space-4 $yasmine-space-5 $yasmine-space-2;
+  background: $yasmine-surface;
+}
+
+.yasmine-settings-subtitle {
+  margin-top: $yasmine-space-1;
+  color: $yasmine-text-muted;
+  line-height: 1.45;
+}
+
+.yasmine-vp-xs .settings-list .settings-col,
+.yasmine-vp-sm .settings-list .settings-col,
+.yasmine-compact-height .settings-list .settings-col {
+  width: 100% !important;
+  float: none !important;
+  clear: both;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+}
+
+.yasmine-vp-xs .yasmine-settings-intro,
+.yasmine-vp-sm .yasmine-settings-intro,
+.yasmine-compact-height .yasmine-settings-intro {
+  padding: $yasmine-space-3 $yasmine-space-3 $yasmine-space-2;
+}
+
+.yasmine-vp-xs .yasmine-inline-field-row,
+.yasmine-vp-sm .yasmine-inline-field-row,
+.yasmine-compact-height .yasmine-inline-field-row {
+  overflow: visible !important;
+  margin-bottom: 12px !important;
+}
+
+/* Import ZIP: keep browse + refresh on one row; no side-error squeeze. */
+.settings-list .yasmine-import-zip-row {
+  overflow: visible;
+}
+
+.settings-list .yasmine-import-zip-row .x-form-error-wrap {
+  display: none !important;
+}
+
+.settings-list .yasmine-import-zip-row .x-form-file-wrap .x-form-trigger-wrap {
+  align-items: stretch;
+}
+
+.settings-list .yasmine-import-zip-row .x-form-file-wrap .x-btn {
+  height: 100%;
+  min-height: 32px;
 }

@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -46,39 +47,34 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditor', {
   },
   bodyPadding: 4,
   modal: true,
-  frame: true,
+  frame: false,
+  cls: 'yasmine-window yasmine-parameter-window',
   resizable: true,
-  minWidth: 800,
-  minHeight: 500,
+  constrain: true,
+  minWidth: 280,
+  minHeight: 200,
   closable: false,
   scrollable: true,
   defaultFocus: 'focusItem',
   defaultButton: 'saveButton',
-  layout: 'fit',
+  layout: {
+    type: 'vbox',
+    align: 'stretch'
+  },
   listeners: {
     show: function () {
       if (!this._initialSizeApplied) {
-        var viewSize = Ext.getBody().getViewSize();
-        this.setSize(
-          Math.min(1000, Math.floor(viewSize.width * 0.85)),
-          Math.min(700, Math.floor(viewSize.height * 0.8))
-        );
+        yasmine.utils.ResponsiveUtil.fitWindow(this, {
+          minWidth: 800,
+          minHeight: 500,
+          width: 1000,
+          height: 700
+        });
         this._initialSizeApplied = true;
-        this.center();
       }
     },
     afterlayout: function () {
-      if (this.maximized) {
-        return;
-      }
-      var viewSize = Ext.getBody().getViewSize();
-      if (this.getHeight() > viewSize.height) {
-        this.setHeight(viewSize.height);
-      }
-      if (this.getWidth() > viewSize.width) {
-        this.setWidth(viewSize.width);
-      }
-      this.center();
+      yasmine.utils.ResponsiveUtil.clampWindow(this);
     }
   },
   tools: [
@@ -97,33 +93,116 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditor', {
   ],
   dockedItems: [
     {
-      xtype: 'toolbar',
+      xtype: 'container',
       dock: 'bottom',
-      ui: 'footer',
+      cls: 'parameter-editor-footer-wrap',
+      layout: {
+        type: 'vbox',
+        align: 'stretch'
+      },
       items: [
         {
-          xtype: 'container',
-          reference: 'action-buttons-container',
+          xtype: 'toolbar',
+          ui: 'footer',
+          cls: 'parameter-editor-footer parameter-editor-actions',
+          reference: 'response-actions-toolbar',
+          hidden: true,
+          bind: {
+            hidden: '{!showResponseActions}'
+          },
           defaults: {
             margin: '0 5 0 0'
           },
-          items: []
+          items: [
+            {
+              xtype: 'button',
+              iconCls: 'x-fa fa-pencil',
+              tooltip: 'Edit Response',
+              hidden: true,
+              bind: {
+                hidden: '{!showEditResponse}',
+                text: '{responseEditText}'
+              },
+              handler: 'onEditResponseClick'
+            },
+            {
+              xtype: 'button',
+              iconCls: 'x-fa fa-pencil',
+              tooltip: 'Select a new Response',
+              hidden: true,
+              bind: {
+                hidden: '{!showSelectResponse}',
+                text: '{responseSelectText}'
+              },
+              handler: 'onSelectResponseClick'
+            },
+            {
+              xtype: 'button',
+              iconCls: 'x-fa fa-upload',
+              tooltip: 'Import RESP',
+              hidden: true,
+              bind: {
+                hidden: '{!showImportResp}',
+                text: '{responseImportText}'
+              },
+              handler: 'onImportRespClick'
+            },
+            {
+              xtype: 'button',
+              iconCls: 'x-fa fa-calculator',
+              tooltip: 'Recalculate Sensitivity',
+              hidden: true,
+              bind: {
+                hidden: '{!showRecalculateSensitivity}',
+                text: '{responseRecalculateText}'
+              },
+              handler: 'onRecalculateSensitivityClick'
+            },
+            {
+              xtype: 'container',
+              reference: 'action-buttons-container',
+              cls: 'yasmine-wrap-toolbar yasmine-action-buttons',
+              flex: 1,
+              minWidth: 0,
+              layout: {
+                type: 'hbox',
+                align: 'middle'
+              },
+              defaults: {
+                margin: '0 5 0 0',
+                minWidth: 0
+              },
+              items: []
+            }
+          ]
         },
-        '->',
         {
-          text: 'Save',
-          iconCls: 'x-fa fa-floppy-o',
-          disabled: false,
-          bind: {
-            disabled: '{!canSave}'
+          xtype: 'toolbar',
+          ui: 'footer',
+          cls: 'parameter-editor-footer',
+          defaults: {
+            minWidth: 0
           },
-          handler: 'onSaveClick'
-        },
-        {
-          text: 'Cancel',
-          iconCls: 'x-fa fa-ban',
-          handler: 'onCancelClick'
-        },
+          items: [
+            '->',
+            {
+              text: 'Save',
+              iconCls: 'x-fa fa-floppy-o',
+              cls: 'yasmine-primary-action',
+              reference: 'saveButton',
+              disabled: false,
+              bind: {
+                disabled: '{!canSave}'
+              },
+              handler: 'onSaveClick'
+            },
+            {
+              text: 'Cancel',
+              iconCls: 'x-fa fa-ban',
+              handler: 'onCancelClick'
+            }
+          ]
+        }
       ]
     }
   ]

@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -54,6 +55,7 @@ class XmlNodeAttrEnum(object):
     DIP = 'dip'
     SAMPLE_RATE = 'sample_rate'
     COMMENTS = 'comments'
+    DATA_AVAILABILITY = 'data_availability'
     ELEVATION = 'elevation'
     EXTERNAL_REFERENCES = 'external_references'
     RESTRICTED_STATUS = 'restricted_status'
@@ -68,7 +70,7 @@ class XmlNodeAttrEnum(object):
     TYPES = 'types'
     SAMPLE_RATE_RATIO_NUMBER_SAMPLES = 'sample_rate_ratio_number_samples'
     SAMPLE_RATE_RATIO_NUMBER_SECONDS = 'sample_rate_ratio_number_seconds'
-    STORAGE_FORMAT = 'storage_format'
+    WATER_LEVEL = 'water_level'
     CLOCK_DRIFT_IN_SECONDS_PER_SAMPLE = 'clock_drift_in_seconds_per_sample'
     CALIBRATION_UNITS = 'calibration_units'
     CALIBRATION_UNITS_DESCRIPTION = 'calibration_units_description'
@@ -85,4 +87,5 @@ class XmlNodeAttrWindetsEnum(object):
     LATITUDE = 'yasmine-latitude-field'
     LONGITUDE = 'yasmine-longitude-field'
     DATE = 'yasmine-date-field'
+    DATA_AVAILABILITY = 'yasmine-data-availability-field'
     SITE = 'yasmine-site-field'

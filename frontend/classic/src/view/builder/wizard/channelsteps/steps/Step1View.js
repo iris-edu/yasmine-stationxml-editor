@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-22, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -51,7 +52,9 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step1View', {
         });
 
         let stationAttributes = this.getViewModel().get('stationAttributes');
-        if (stationAttributes.length > 0 && item.getItemId() === 'latitude') {
+        if (stationAttributes.length > 0 && item.getItemId() === 'start_date') {
+          record.set('value', this.getStationAttributeValue('start_date'));
+        } else if (stationAttributes.length > 0 && item.getItemId() === 'latitude') {
           record.set('value', this.getStationAttributeValue('latitude'));
         } else if (stationAttributes.length > 0 && item.getItemId() === 'longitude') {
           record.set('value', this.getStationAttributeValue('longitude'));
@@ -98,7 +101,8 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.Step1View', {
     align: 'stretch',
     pack: 'start'
   },
-  width: 300,
+  maxWidth: 420,
+  minWidth: 0,
   items: [
     {
       xtype: 'yasmine-text-field',

@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -39,6 +40,10 @@ from yasmine.app.helpers.library_helper_factory import LibraryHelperFactory
 from yasmine.app.settings import NRL_ROOT
 
 
+from yasmine.app.tests.common import skip_unless_network
+
+
+@skip_unless_network
 class NrlIoTest(unittest.TestCase):
     _helper = None
 

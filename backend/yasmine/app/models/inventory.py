@@ -27,13 +27,14 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 
 import pickle
 
-from sqlalchemy import Column, Text, ForeignKey, DateTime, Integer
+from sqlalchemy import Column, DateTime, ForeignKey, Index, Integer, Text
 from sqlalchemy.orm import relationship, backref
 from sqlalchemy.sql.functions import func
 
@@ -84,6 +85,7 @@ class XmlModel(Base, BaseMixin):
     module = Column(Text, nullable=True)
     uri = Column(Text, nullable=True)
     sender = Column(Text, nullable=True)
+    extension_sidecar = Column(Text, nullable=True)
     created_at = Column(DateTime(), default=func.now(), nullable=False)
     updated_at = Column(DateTime(), nullable=False, default=func.now(), onupdate=func.now())
 
@@ -100,6 +102,7 @@ class XmlNodeInstModel(Base, BaseMixin):
     node_id = Column(ForeignKey(XmlNodeModel.id, ondelete='CASCADE'), nullable=False)
     parent_id = Column(ForeignKey('xml_node_instance.id', ondelete='CASCADE'), nullable=True)
     user_library_id = Column(ForeignKey(UserLibraryModel.id, ondelete='CASCADE'), nullable=True)
+    extension_sidecar = Column(Text, nullable=True)
 
     parent = relationship('XmlNodeInstModel', backref=backref('children', lazy='dynamic'), remote_side=[id, xml_id])
     node = relationship(XmlNodeModel)
@@ -107,6 +110,14 @@ class XmlNodeInstModel(Base, BaseMixin):
     attr_vals = relationship('XmlNodeAttrValModel', lazy="dynamic", back_populates='node_inst')
 
     __tablename__ = 'xml_node_instance'
+    __table_args__ = (
+        Index(
+            'ix_xml_node_instance_library_type_parent',
+            'user_library_id', 'node_id', 'parent_id',
+        ),
+        Index('ix_xml_node_instance_xml_parent', 'xml_id', 'parent_id'),
+        Index('ix_xml_node_instance_parent_id', 'parent_id'),
+    )
 
 
 class XmlNodeAttrValModel(Base, BaseMixin):
@@ -120,6 +131,10 @@ class XmlNodeAttrValModel(Base, BaseMixin):
     node_inst = relationship(XmlNodeInstModel, back_populates='attr_vals', overlaps='attr_vals')
 
     __tablename__ = 'xml_node_attr_value'
+    __table_args__ = (
+        Index('ix_xml_node_attr_value_node_inst_id', 'node_inst_id'),
+        Index('ix_xml_node_attr_value_node_inst_attr', 'node_inst_id', 'attr_id'),
+    )
 
     @property
     def attr_class(self):
@@ -140,6 +155,13 @@ class XmlNodeAttrValModel(Base, BaseMixin):
     @value_obj.setter
     def value_obj(self, data):
         self.value = pickle.dumps(data)
+
+    @property
+    def value_meta(self):
+        from yasmine.app.utils.stationxml_codec import (
+            measured_metadata_payload,
+        )
+        return measured_metadata_payload(self.value_obj)
 
     @property
     def node_type_id(self):

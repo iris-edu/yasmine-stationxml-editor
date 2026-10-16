@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -43,12 +44,11 @@ Ext.define('yasmine.view.xml.builder.children.tree.ChildrenTreeController', {
   },
 
   init: function () {
-    yasmine.Globals.LocationColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-    Ext.ux.Mediator.on('epoch-selected', this.onEpochSelected, this);
-    Ext.ux.Mediator.on('node-updated', this.onNodeUpdated, this);
-    Ext.ux.Mediator.on('node-created', this.onNodeCreated, this);
-    Ext.ux.Mediator.on('node-deleted', this.onNodeDeleted, this);
-    Ext.ux.Mediator.on('children-reload', this.onChildrenReload, this);
+    this.mon(Ext.ux.Mediator, 'epoch-selected', this.onEpochSelected, this);
+    this.mon(Ext.ux.Mediator, 'node-updated', this.onNodeUpdated, this);
+    this.mon(Ext.ux.Mediator, 'node-created', this.onNodeCreated, this);
+    this.mon(Ext.ux.Mediator, 'node-deleted', this.onNodeDeleted, this);
+    this.mon(Ext.ux.Mediator, 'children-reload', this.onChildrenReload, this);
   },
   onBeforeExpand: function (node) {
     let viewModel = this.getViewModel();
@@ -57,6 +57,9 @@ Ext.define('yasmine.view.xml.builder.children.tree.ChildrenTreeController', {
   },
   onTreeNodeSelect: function () {
     let selectedItem = this._getSelectedRecord();
+    if (!selectedItem) {
+      return;
+    }
     Ext.ux.Mediator.fireEvent('node-selected', selectedItem.getData());
   },
   onEpochSelected: function (epoch) {
@@ -83,13 +86,21 @@ Ext.define('yasmine.view.xml.builder.children.tree.ChildrenTreeController', {
   },
   onNodeDeleted: function (nodeId) {
     let node = this._getNode(nodeId);
+    if (!node) {
+      return;
+    }
     let parentNode = this._getNode(node.get('parentId'));
-    this.getViewModel().set('selectedItem', parentNode);
-    Ext.ux.Mediator.fireEvent('node-selected', parentNode.getData());
+    if (parentNode) {
+      this.getViewModel().set('selectedItem', parentNode);
+      Ext.ux.Mediator.fireEvent('node-selected', parentNode.getData());
+    }
     node.remove();
   },
   _reloadCurrentNode: function () {
     let node = this._getSelectedRecord();
+    if (!node) {
+      return;
+    }
     let viewModel = this.getViewModel();
     viewModel.set('storeNodeType', yasmine.utils.NodeTypeConverter.getChild(node.get('nodeType')));
     viewModel.notify();
@@ -104,7 +115,13 @@ Ext.define('yasmine.view.xml.builder.children.tree.ChildrenTreeController', {
   },
   _reloadParentNode: function () {
     let node = this._getSelectedRecord();
+    if (!node) {
+      return;
+    }
     let parentNode = this._getNode(node.get('parentId'));
+    if (!parentNode) {
+      return;
+    }
     let viewModel = this.getViewModel();
     viewModel.set('storeNodeType', node.get('nodeType'));
     viewModel.notify();

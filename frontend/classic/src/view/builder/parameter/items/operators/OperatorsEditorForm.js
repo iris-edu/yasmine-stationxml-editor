@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -40,21 +41,41 @@ Ext.define('yasmine.view.xml.builder.parameter.items.operators.OperatorsEditorFo
   ],
   controller: 'operators-editor-form',
   viewModel: 'operators-editor-form',
-  title: 'Operators',
+  title: 'Operator',
   modal: true,
-  frame: true,
-  width: 600,
+  frame: false,
+  cls: 'yasmine-window yasmine-collection-window',
+  layout: 'fit',
+  minWidth: 280,
+  tools: [{
+    type: 'help',
+    handler: 'onHelpClick'
+  }],
   bodyPadding: 10,
+  listeners: {
+    show: function () {
+      yasmine.utils.ResponsiveUtil.fitWindow(this, {
+        minWidth: 400,
+        minHeight: 360,
+        width: 600,
+        height: 560
+      });
+    },
+    resize: function () {
+      yasmine.utils.ResponsiveUtil.clampWindow(this);
+    }
+  },
   items: {
     xtype: 'form',
-    layout: 'anchor',
-    defaults: {
-      anchor: '100%'
+    layout: {
+      type: 'vbox',
+      align: 'stretch'
     },
     items: [
       {
         xtype: 'combobox',
-        fieldLabel: '<b>GATITO</b>',
+        fieldLabel: '<b>GATITO templates</b>',
+        labelAttrTpl: 'data-qtip="Generic ATomic lIbrary of Tiny Objects — pick a reusable Operator template"',
         bind: {
           store: '{helpStore}'
         },
@@ -71,42 +92,38 @@ Ext.define('yasmine.view.xml.builder.parameter.items.operators.OperatorsEditorFo
         },
       },
       {
-        flex: 1,
         xtype: 'textfield',
         itemId: 'focusItem',
         labelAlign: 'top',
         fieldLabel: 'Website',
+        stationXmlRelativePath: 'WebSite',
         bind: '{website}'
       },
       {
-        flex: 1,
         xtype: 'textfield',
         labelAlign: 'top',
         fieldLabel: 'Agency',
-        bind: '{agency}'
+        stationXmlRelativePath: 'Agency',
+        bind: '{agency}',
+        allowBlank: false,
+        allowOnlyWhitespace: false
       },
       {
-        layout: {
-          type: 'accordion'
-        },
-        margin: '-10 -5 10 -5',
-        height: 400,
-        items: [
-          {
-            xtype: 'person-list',
-            title: 'Contacts',
-            reference: 'operatorcontactgrid',
-            margin: '20 0 0 0',
-            flex: 1
-          }
-        ]
+        xtype: 'person-list',
+        title: 'Contacts',
+        reference: 'operatorcontactgrid',
+        flex: 1,
+        minHeight: 160
       }
     ],
     buttons: [{
       text: 'Save',
+      iconCls: 'x-fa fa-floppy-o',
+      cls: 'yasmine-primary-action',
       handler: 'onSaveClick'
     }, {
       text: 'Cancel',
+      iconCls: 'x-fa fa-ban',
       handler: 'onCancelClick'
     }]
   }

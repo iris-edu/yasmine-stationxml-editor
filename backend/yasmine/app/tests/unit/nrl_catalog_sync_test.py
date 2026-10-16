@@ -1,3 +1,4 @@
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # Unit tests for NRL Offline catalog-based update check.
@@ -20,7 +21,11 @@ from yasmine.app.helpers.nrl.nrl_catalog_update import (
     NrlCatalogUpdateError,
     NrlCatalogUpdateHelper,
 )
-from yasmine.app.helpers.nrl.nrl_helper import NrlHelper
+from yasmine.app.helpers.nrl.nrl_helper import (
+    NRL_MAX_UNCOMPRESSED_BYTES,
+    NrlHelper,
+)
+from yasmine.app.utils.zip_safe import safe_extractall
 
 
 CATALOG_HEADER = (
@@ -241,6 +246,24 @@ class NrlHelperCatalogSyncTest(unittest.TestCase):
         )
         self.assertEqual(len(session.calls), 1)
         self.assertIn('nrl.zip', session.calls[0]['url'])
+
+    def test_prepare_staging_uses_300_gib_limit(self):
+        helper = self._helper(FakeSession([]))
+        zip_bytes = _make_zip_bytes('size-limit')
+        with patch(
+            'yasmine.app.helpers.nrl.nrl_helper.safe_extractall',
+            wraps=safe_extractall,
+        ) as extract:
+            with self._patch_prepare():
+                helper._prepare_staging(zip_bytes)
+        self.assertEqual(
+            extract.call_args.kwargs['max_bytes'],
+            NRL_MAX_UNCOMPRESSED_BYTES,
+        )
+        self.assertEqual(
+            NRL_MAX_UNCOMPRESSED_BYTES,
+            300 * 1024 * 1024 * 1024,
+        )
 
     def test_no_updates_header_only_skips_download(self):
         self._seed_existing_library()

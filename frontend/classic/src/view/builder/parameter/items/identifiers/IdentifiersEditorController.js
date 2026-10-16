@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -38,12 +39,19 @@ Ext.define('yasmine.view.xml.builder.parameter.items.identifiers.IdentifiersEdit
     let record = this.getViewModel().get('record');
     if (record.get('value')) {
       let store = this.getViewModel().getStore('identifierStore');
-      record.get('value').forEach(function (value) {
-        let date = new yasmine.view.xml.builder.parameter.items.identifiers.Identifier();
-        date.set('value', value);
-        date.phantom = false;
-        date.modified = {};
-        store.add(date);
+      let values = Ext.isArray(record.get('value')) ?
+        record.get('value') : [record.get('value')];
+      values.forEach(function (value) {
+        let identifier = new yasmine.view.xml.builder.parameter.items.identifiers.Identifier();
+        let structured = value && typeof value === 'object';
+        identifier.set({
+          type: structured ? (value.type || '') : '',
+          value: structured ? value.value : value,
+          legacy: !structured
+        });
+        identifier.phantom = false;
+        identifier.modified = {};
+        store.add(identifier);
       })
     }
   },
@@ -51,10 +59,31 @@ Ext.define('yasmine.view.xml.builder.parameter.items.identifiers.IdentifiersEdit
     let record = this.getViewModel().get('record');
     let store = this.getViewModel().getStore('identifierStore');
     let values = store.getData().items.map(function (item) {
-      return item.getData().value;
+      let type = item.get('type');
+      let value = item.get('value');
+      if (item.get('legacy') && !type) {
+        return value;
+      }
+      return {
+        type: type || null,
+        value: value
+      };
     });
 
     record.set('value', values);
+  },
+  validate: function () {
+    let errors = [];
+    this.getViewModel().getStore('identifierStore').each(function (identifier, index) {
+      if (!Ext.String.trim(identifier.get('value') || '')) {
+        errors.push('Identifier ' + (index + 1) + ' requires a value.');
+      }
+    });
+    this.getViewModel().set('validation.activeErrors', errors);
+    if (errors.length) {
+      return false;
+    }
+    return this.callParent(arguments);
   },
   onAddClick: function () {
     let record = new yasmine.view.xml.builder.parameter.items.identifiers.Identifier();

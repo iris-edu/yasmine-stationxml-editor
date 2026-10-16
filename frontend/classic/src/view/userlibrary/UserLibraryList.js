@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.3-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -41,7 +42,11 @@ Ext.define('yasmine.view.userlibrary.UserLibrary', {
   controller: 'userlibrary-list',
   viewModel: 'userlibrary-list',
   title: 'User Libraries',
-  frame: true,
+  frame: false,
+  cls: 'yasmine-screen yasmine-data-screen',
+  // Small admin list: buffering + rowediting races cause
+  // BufferedRenderer#scrollTo("Unknown record") on Open Library.
+  bufferedRenderer: false,
   bind: {
     selection: '{selectedUserLibrary}',
     store: '{userLibraryStore}'
@@ -57,6 +62,10 @@ Ext.define('yasmine.view.userlibrary.UserLibrary', {
     }
   }],
   selModel: 'rowmodel',
+  viewConfig: {
+    deferEmptyText: false,
+    emptyText: '<div class="yasmine-empty-state">No reusable libraries yet.<br>Create one to store network, station, and channel templates.</div>'
+  },
   columns: [
     {
       text: 'Name',
@@ -74,28 +83,36 @@ Ext.define('yasmine.view.userlibrary.UserLibrary', {
       text: 'Created at',
       dataIndex: 'created_at',
       xtype: 'datecolumn',
-      filter: { type: 'date', dateFormat: yasmine.Globals.DatePrintShortFormat },
+      yasmineGuiDate: 'short',
+      filter: { type: 'date', yasmineGuiDate: 'short' },
       format: yasmine.Globals.DatePrintShortFormat
     },
     {
       text: 'Updated at',
       dataIndex: 'updated_at',
       xtype: 'datecolumn',
-      filter: { type: 'date', dateFormat: yasmine.Globals.DatePrintShortFormat },
+      yasmineGuiDate: 'short',
+      filter: { type: 'date', yasmineGuiDate: 'short' },
       format: yasmine.Globals.DatePrintShortFormat
     }
   ],
   listeners: {
     itemdblclick: 'onConfigureLibraryClick'
   },
-  tbar: [
+  tbar: {
+    cls: 'yasmine-wrap-toolbar yasmine-user-library-toolbar',
+    items: [
     {
+      itemId: 'createLibrary',
       tooltip: 'Create a new library',
+      text: 'New Library',
       iconCls: 'x-fa fa-plus',
+      cls: 'yasmine-primary-action',
       handler: 'onCreateLibraryClick'
     },
     {
       tooltip: 'Delete a selected library',
+      text: 'Delete',
       iconCls: 'x-fa fa-minus',
       handler: 'onDeleteLibraryClick',
       disabled: true,
@@ -105,6 +122,7 @@ Ext.define('yasmine.view.userlibrary.UserLibrary', {
     },
     {
       tooltip: 'Rename a selected library',
+      text: 'Rename',
       iconCls: 'x-fa fa-pencil',
       handler: 'onEditLibraryClick',
       disabled: true,
@@ -114,7 +132,26 @@ Ext.define('yasmine.view.userlibrary.UserLibrary', {
     },
     '-',
     {
+      tooltip: 'Import a library from StationXML',
+      text: 'Import',
+      iconCls: 'x-fa fa-download',
+      handler: 'onImportLibraryClick'
+    },
+    {
+      tooltip: 'Export the selected library as StationXML',
+      text: 'Export',
+      iconCls: 'x-fa fa-upload',
+      handler: 'onExportLibraryClick',
+      disabled: true,
+      bind: {
+        disabled: '{!selectedUserLibrary}'
+      }
+    },
+    '-',
+    {
+      itemId: 'openLibrary',
       tooltip: 'Configure a selected library',
+      text: 'Open Library',
       iconCls: 'x-fa fa-wrench',
       handler: 'onConfigureLibraryClick',
       disabled: true,
@@ -122,5 +159,6 @@ Ext.define('yasmine.view.userlibrary.UserLibrary', {
         disabled: '{!selectedUserLibrary}'
       }
     }
-  ]
+    ]
+  }
 });

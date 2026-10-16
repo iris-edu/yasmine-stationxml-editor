@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-24, version 4.3.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -68,5 +69,35 @@ class XmlChannelRespHandler(AsyncThreadMixin, LibraryHandler):
             self.get_arguments('sensorKeys'),
             self.get_arguments('dataloggerKeys'),
             self.get_argument('min'),
-            self.get_argument('max')
+            self.get_argument('max'),
+            start_stage=self.get_argument('start_stage', None),
+            end_stage=self.get_argument('end_stage', None),
+        )
+
+
+class XmlElementKeysHandler(AsyncThreadMixin, LibraryHandler):
+    """GET /api/nrl/integrated/ or /api/nrl/soh/ — offline RESP tree."""
+
+    def async_get(self, element, **__):
+        return self.helper.get_element_keys(element)
+
+
+class XmlElementRespHandler(AsyncThreadMixin, LibraryHandler):
+    """GET /api/nrl/<element>/response/?keys= — RESP text for one instrument."""
+
+    def async_get(self, element, **__):
+        return self.helper.get_element_response_str(element, self.get_arguments('keys'))
+
+
+class XmlElementPreviewHandler(AsyncThreadMixin, LibraryHandler):
+    """GET /api/nrl/<element>/response/preview/ — plot for one RESP file."""
+
+    def async_get(self, element, **__):
+        return self.helper.get_element_response_and_plot(
+            element,
+            self.get_arguments('keys'),
+            self.get_argument('min', None),
+            self.get_argument('max', None),
+            start_stage=self.get_argument('start_stage', None),
+            end_stage=self.get_argument('end_stage', None),
         )

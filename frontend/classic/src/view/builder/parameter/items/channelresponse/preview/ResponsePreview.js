@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -44,6 +45,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
       }
     }
   },
+  cls: 'response-preview',
+  flex: 1,
+  minHeight: 240,
   bind: {
     userCls: '{wizardPreviewCls}'
   },
@@ -55,10 +59,25 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
   items: [
     {
       xtype: 'container',
+      // 44px matches .x-segmented-button height in all.scss (was 32 and too short).
+      height: 44,
+      layout: {
+        type: 'hbox',
+        pack: 'start'
+      },
       items: {
         xtype: 'segmentedbutton',
+        flex: 1,
+        height: 44,
+        layout: {
+          type: 'hbox',
+          pack: 'start',
+          align: 'stretch'
+        },
         defaults: {
-          width: 100
+          flex: 1,
+          minWidth: 0,
+          height: 44
         },
         items: [
           {
@@ -86,6 +105,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
     {
       xtype: 'container',
       flex: 1,
+      minHeight: 0,
       layout: 'fit',
       hidden: true,
       padding: '5 0 0 0',
@@ -110,6 +130,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.preview.Res
     {
       xtype: 'response-chart',
       flex: 1,
+      minHeight: 0,
       margin: '5 0 0 0',
       hidden: false,
       bind: {

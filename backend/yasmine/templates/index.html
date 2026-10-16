@@ -31,6 +31,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -39,9 +40,182 @@
 {% extends "base.html" %}
 {%block extraheader%}
     <link rel="stylesheet" type="text/css" href="{{static_url("css/settings-fix.css")}}">
-    <script src="{{static_url("js/d3.min.js")}}"></script>
+    <style>
+        #yasmine-splash {
+            position: fixed !important;
+            top: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            z-index: 2147483647 !important;
+            display: flex !important;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            background: #f4f7f9 !important;
+            color: #123b5d;
+            font-family: Helvetica, Arial, sans-serif;
+            transition: opacity 0.25s ease;
+        }
+        #yasmine-splash.yasmine-splash-hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .yasmine-splash-inner {
+            text-align: center;
+        }
+        .yasmine-splash-logo {
+            display: block;
+            width: 96px;
+            height: 96px;
+            margin: 0 auto 16px;
+            border-radius: 22px;
+            box-shadow: 0 12px 30px rgba(18, 59, 93, 0.18);
+        }
+        .yasmine-splash-name {
+            font-size: 32px;
+            line-height: 1;
+            font-weight: 600;
+            letter-spacing: -0.5px;
+        }
+        .yasmine-splash-tag {
+            margin-top: 8px;
+            color: #607483;
+            font-size: 12px;
+            font-weight: 600;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+        }
+        .yasmine-splash-version {
+            margin-top: 6px;
+            color: #607483;
+            font-size: 13px;
+            font-weight: 500;
+        }
+        .yasmine-splash-spinner {
+            width: 28px;
+            height: 28px;
+            margin: 22px auto 0;
+            border: 3px solid #ced9e0;
+            border-top-color: #176f9f;
+            border-radius: 50%;
+            animation: yasmine-splash-spin 0.8s linear infinite;
+        }
+        @keyframes yasmine-splash-spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
     <script type="text/javascript">
         var Ext = Ext || {}; // Ext namespace won't be defined yet...
+        var buildTimestamp = {% raw build_timestamp_json %};
+        var commitRevision = {% raw commit_revision_json %};
+
+        (function () {
+            var splash = document.getElementById('yasmine-splash');
+            if (!splash) {
+                splash = document.createElement('div');
+                splash.id = 'yasmine-splash';
+                splash.setAttribute('aria-live', 'polite');
+                splash.setAttribute('aria-busy', 'true');
+                splash.innerHTML =
+                    '<div class="yasmine-splash-inner">' +
+                        '<img class="yasmine-splash-logo" src="{{static_url("images/logo-mark.svg")}}" alt="Yasmine">' +
+                        '<div class="yasmine-splash-name">Yasmine</div>' +
+                        '<div class="yasmine-splash-tag">StationXML Editor</div>' +
+                        '<div class="yasmine-splash-version">4.4.0-beta</div>' +
+                        '<div class="yasmine-splash-spinner" aria-hidden="true"></div>' +
+                    '</div>';
+            }
+            document.documentElement.appendChild(splash);
+        })();
+
+        window.yasmineHideSplash = function () {
+            var el = document.getElementById('yasmine-splash');
+            if (!el || el.getAttribute('data-hidden')) {
+                return;
+            }
+            el.setAttribute('data-hidden', '1');
+            el.className += (el.className ? ' ' : '') + 'yasmine-splash-hidden';
+            setTimeout(function () {
+                if (el.parentNode) {
+                    el.parentNode.removeChild(el);
+                }
+            }, 300);
+        };
+
+        function yasmineLoadScript(src, attrs, onload) {
+            var script = document.createElement('script');
+            script.src = src;
+            script.async = false;
+            if (attrs) {
+                Object.keys(attrs).forEach(function (key) {
+                    script.setAttribute(key, attrs[key]);
+                });
+            }
+            if (onload) {
+                script.onload = onload;
+            }
+            (document.body || document.documentElement).appendChild(script);
+        }
+
+        window.yasmineLeaflet = {
+            js: '{{static_url("js/leaflet.js")}}',
+            css: '{{static_url("css/leaflet.css")}}'
+        };
+
+        function yasmineClearManifestCache() {
+            var remove = [];
+            var i;
+            var key;
+            try {
+                for (i = 0; i < localStorage.length; i++) {
+                    key = localStorage.key(i);
+                    if (key && key.indexOf('725e6013-dc7c-4620-bf8c-64803da1f8ec') !== -1) {
+                        remove.push(key);
+                    }
+                }
+                remove.forEach(function (storedKey) {
+                    localStorage.removeItem(storedKey);
+                });
+            } catch (ignore) {}
+        }
+
+        function yasmineStartApp() {
+            if (window._yasmineAppStarted) {
+                return;
+            }
+            window._yasmineAppStarted = true;
+            yasmineClearManifestCache();
+            yasmineLoadScript('{{static_url("js/yasmine/microloader.js")}}', {
+                id: 'microloader',
+                'data-app': '725e6013-dc7c-4620-bf8c-64803da1f8ec'
+            });
+        }
+
+        function yasmineStartAfterPaint() {
+            var started = false;
+            var start = function () {
+                if (started) {
+                    return;
+                }
+                started = true;
+                yasmineStartApp();
+            };
+            if (window.requestAnimationFrame) {
+                requestAnimationFrame(function () {
+                    requestAnimationFrame(function () {
+                        setTimeout(start, 0);
+                    });
+                });
+            }
+            setTimeout(start, 80);
+        }
+
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', yasmineStartAfterPaint);
+        } else {
+            yasmineStartAfterPaint();
+        }
 
         // This function is called by the Microloader after it has performed basic
         // device detection. The results are provided in the "tags" object. You can
@@ -53,7 +227,38 @@
         
         Ext.beforeLoad = function (tags) {
             var s = location.search,  // the query string (ex "?foo=1&bar")
-                profile;
+                profile,
+                Boot = Ext.Boot,
+                ua = navigator.userAgent || '',
+                proto,
+                needsSequential;
+
+            // Safari/iOS WebKit ignore async=false on injected scripts, so theme
+            // files can run before Ext.define exists. Load one file at a time.
+            needsSequential = (tags && (tags.safari || tags.ios || tags.chromeiOS)) ||
+                /iPhone|iPad|iPod/.test(ua) ||
+                (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
+                (/Safari\//.test(ua) && !/Chrome\/|Chromium\/|Edg\//.test(ua));
+            if (needsSequential && Boot && Boot.Entry) {
+                proto = Boot.Entry.prototype;
+                if (proto && !proto._yasmineSeqLoad && typeof proto.loadCrossDomain === 'function') {
+                    proto._yasmineSeqLoad = true;
+                    proto.load = function (sync) {
+                        var me = this;
+                        if (!me.loaded) {
+                            if (me.loading) {
+                                return false;
+                            }
+                            me.loading = true;
+                            if (!sync) {
+                                return me.loadCrossDomain();
+                            }
+                            me.loadSync();
+                        }
+                        return true;
+                    };
+                }
+            }
 
             // For testing look for "?classic" or "?modern" in the URL to override
             // device detection default.
@@ -65,8 +270,8 @@
                 profile = 'modern';
             }
             else {
-                profile = tags.desktop ? 'classic' : 'modern';
-                //profile = tags.phone ? 'modern' : 'classic';
+                // Classic-only app: modern toolkit build is disabled.
+                profile = 'classic';
             }
 
             Ext.manifest = ExtAbsoluteBasePath + profile; // this name must match a build profile name
@@ -78,8 +283,7 @@
                 // peek at / modify the manifest object
             //};
         };
-    </script>   
-    <script  id="microloader" data-app="725e6013-dc7c-4620-bf8c-64803da1f8ec" src="{{static_url("js/yasmine/microloader.js")}}"></script>
+    </script>
 {% end %}
 {%block body%}
 {% end %}

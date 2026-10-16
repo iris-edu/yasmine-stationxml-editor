@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -33,24 +34,68 @@
 Ext.define('yasmine.view.xml.builder.comparison.ComparisonController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.comparison',
+  requires: ['yasmine.utils.ResponseRecalculateUtil'],
   init: function () {
-    Ext.ux.Mediator.on('node-selected', this.onXml1NodeSelected, this);
+    this.mon(Ext.ux.Mediator, 'node-selected', this.onXml1NodeSelected, this);
+    this.mon(Ext.GlobalEvents, 'resize', this.syncComparisonSplit, this, {buffer: 200});
+    this.configureComparisonCharts();
+  },
+  configureComparisonCharts: function () {
+    var names = ['xml1Chart', 'xml2Chart', 'xml3Chart'];
+    var i, chart, chartModel;
+    for (i = 0; i < names.length; i++) {
+      chart = this.lookup(names[i]);
+      chartModel = chart && chart.getViewModel && chart.getViewModel();
+      if (!chartModel) {
+        continue;
+      }
+      chartModel.set('showChartControls', false);
+      chartModel.set('showDownloadButtons', false);
+      // chartImageHtml does not publish until every get() dependency has a
+      // value. plotLoading is set by the response editor, not by Compare.
+      chartModel.set('plotLoading', false);
+      chartModel.set('channelResponsePlotMessage', null);
+      if (chartModel.notify) {
+        chartModel.notify();
+      }
+    }
+  },
+  syncComparisonSplit: function () {
+    var view = this.getView();
+    yasmine.utils.ResponsiveUtil.applyComparisonSplit(this.lookup('comparisonSplit'));
+    if (this.isAlive() && view.rendered && view.updateLayout) {
+      view.updateLayout();
+    }
+  },
+  _getNodeData: function (node) {
+    if (!node) {
+      return null;
+    }
+    return (typeof node.getData === 'function') ? node.getData() : node;
   },
   initData: function (node) {
-    if (node.getData().nodeType !== yasmine.NodeTypeEnum.channel) {
-      return;
-    }
-    this.onXml1NodeSelected(node);
+    this.onXml1NodeSelected(this._getNodeData(node));
+  },
+  isAlive: function () {
+    var view = this.getView();
+    return !!(view && !view.destroyed && this.getViewModel());
   },
   onXml2Select: function (cmp, record) {
+    if (!this.isAlive()) {
+      return;
+    }
     this.getViewModel().set('xml2Id', record.get('id'));
     this.loadXml2ChannelResponsePlotIfPossible();
   },
   onXml1NodeSelected: function (item) {
-    if (item.nodeType !== yasmine.NodeTypeEnum.channel) {
+    item = this._getNodeData(item);
+    if (!item || item.nodeType !== yasmine.NodeTypeEnum.channel) {
       return;
     }
     yasmine.services.NodeService.findNodePath(item.id).then(x => {
+      if (!this.isAlive()) {
+        return;
+      }
       let stationCode = x.path[1].code;
       let channelCode = item.code;
       let channelLocationCode = item.location_code;
@@ -67,12 +112,18 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonController', {
     this.loadXml2ChannelResponsePlotIfPossible();
   },
   loadXml1ChannelResponsePlotIfPossible: function () {
+    if (!this.isAlive()) {
+      return;
+    }
     let xml1NodeInstanceId = this.getViewModel().get('xml1NodeInstanceId');
     if (!xml1NodeInstanceId) {
       return;
     }
     this.setLoading('xml1Chart', true);
     yasmine.services.NodeService.loadNodeAttributes(xml1NodeInstanceId).then((attributes) => {
+      if (!this.isAlive()) {
+        return;
+      }
       this.setLoading('xml1Chart', false);
       if (attributes.findIndex(x => x['attr_name'] === 'response') > -1) {
         this.loadChannelResponsePlot(xml1NodeInstanceId, 'xml1Chart');
@@ -80,6 +131,9 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonController', {
     })
   },
   loadXml2ChannelResponsePlotIfPossible: function () {
+    if (!this.isAlive()) {
+      return;
+    }
     let xml2Id = this.getViewModel().get('xml2Id');
     if (!xml2Id) {
       return;
@@ -92,6 +146,9 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonController', {
 
     this.setLoading('xml2Chart', true);
     yasmine.services.NodeService.findSimilarChannel(xml2Id, xml2NodeInstanceId).then((data) => {
+      if (!this.isAlive()) {
+        return;
+      }
       this.setLoading('xml2Chart', false);
       this.setPlotsUrl('xml2Chart', null);
       this.getViewModel().set('xml2NodeInstanceId', null);
@@ -113,6 +170,9 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonController', {
     let xml1NodeId = this.getViewModel().get('xml1NodeInstanceId');
     let xml2NodeId = this.getViewModel().get('xml2NodeInstanceId');
     yasmine.services.ChannelPlotService.loadPlotDifference(xml1NodeId, xml2NodeId, max, min).then((url) => {
+      if (!this.isAlive()) {
+        return;
+      }
       this.setLoading('xml3Chart', false);
       this.setPlotsUrl('xml3Chart', url);
     });
@@ -132,22 +192,44 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonController', {
     let min = this.getViewModel().get('minFrequency');
     this.setLoading(chartCmpName, true);
     yasmine.services.ChannelPlotService.loadPlot(nodeInstanceId, max, min).then((result) => {
+      if (!this.isAlive()) {
+        return;
+      }
       this.setLoading(chartCmpName, false);
       this.setPlotsUrl(chartCmpName, result.plot_url);
       this.setPlotsCsv(chartCmpName, result.csv_url);
+      yasmine.utils.ResponseRecalculateUtil.applyPlotMaxFrequency(this.getViewModel(), result);
     });
   },
   setPlotsUrl: function (cmpName, url) {
-    let chartModel = this.lookup(cmpName).getViewModel();
+    let chart = this.lookup(cmpName);
+    let chartModel = chart && chart.getViewModel && chart.getViewModel();
+    if (!this.isAlive() || !chartModel) {
+      return;
+    }
     chartModel.set('channelResponseImageUrl', url);
+    if (chartModel.notify) {
+      chartModel.notify();
+    }
     this.getViewModel().set(`${cmpName}ChannelResponseImageUrl`, url);
+    if (this.getViewModel().notify) {
+      this.getViewModel().notify();
+    }
+    this.syncComparisonSplit();
   },
   setPlotsCsv: function (cmpName, csv) {
-    let chartModel = this.lookup(cmpName).getViewModel();
+    let chart = this.lookup(cmpName);
+    let chartModel = chart && chart.getViewModel && chart.getViewModel();
+    if (!this.isAlive() || !chartModel) {
+      return;
+    }
     chartModel.set('channelResponseCsvUrl', csv);
     this.getViewModel().set(`${cmpName}ChannelResponseCsvUrl`, csv);
   },
   setLoading: function (cmpName, value) {
+    if (!this.isAlive()) {
+      return;
+    }
     this.getViewModel().set(`${cmpName}IsLoading`, value);
   }
 });

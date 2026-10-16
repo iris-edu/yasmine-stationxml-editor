@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -34,6 +35,7 @@
 Ext.define('yasmine.view.xml.edit.XmlEditController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.xml-edit',
+  id: 'xmlEdit-controller',
   onSaveClick: function () {
     let model = this.getViewModel().get('model');
     if (!model.isValid()) {
@@ -41,13 +43,14 @@ Ext.define('yasmine.view.xml.edit.XmlEditController', {
     }
 
     let that = this;
-    if (model.crudState === 'C') {
-      model.set('id', -1);
-    }
     model.save({
       success: function (record) {
+        that.fireEvent('xmlSaved', record);
         that.closeView();
         that.redirectTo(`xml-builder/${record.id}`);
+      },
+      failure: function (record, operation) {
+        Ext.Msg.alert('Error', 'Unable to save XML file.');
       }
     });
   },

@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -34,6 +35,10 @@
 Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.ChannelResponseTreeEditorController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.channel-response-tree-editor',
+  requires: [
+    'yasmine.utils.StationXmlHelpContext',
+    'yasmine.utils.ResponseRecalculateUtil'
+  ],
   listen: {
     controller: {
       '#channel-response-tree-controller': {
@@ -44,15 +49,84 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
       }
     }
   },
-  initViewModel: function () {
-    this.loadChannelResponseForEditing();
+  init: function () {
+    this.getView().on('boxready', this.bootstrapEditor, this, {single: true});
+  },
+  bootstrapEditor: function () {
+    let me = this;
+    yasmine.utils.ResponseSchemaUtil.load(function (descriptor) {
+      if (!descriptor) {
+        Ext.MessageBox.alert('Response schema unavailable', 'Cannot load the StationXML 1.2 response descriptor.');
+        return;
+      }
+      if (!me.getView() || me.getView().destroyed) {
+        return;
+      }
+      me.loadChannelResponseForEditing();
+    }, me);
+  },
+  resolveRecord: function () {
+    let vm = this.getViewModel();
+    let record = vm && vm.get('record');
+    if (record) {
+      return record;
+    }
+    let parent = this.getView() && this.getView().up('yasmine-channel-response-field');
+    let parentVm = parent && parent.getViewModel();
+    record = parentVm && parentVm.get('record');
+    if (record && vm) {
+      vm.set('record', record);
+    }
+    return record;
   },
   fillRecord: function () {
-    let store = this.lookup('channelresponsetree').getStore();
-    let rootNode = store.getRoot();
-    let record = this.getViewModel().get('record');
+    let tree = this.lookup('channelresponsetree');
+    let store = tree && tree.getStore && tree.getStore();
+    let rootNode = store && store.getRoot && store.getRoot();
+    let record = this.resolveRecord();
+    if (!record || !rootNode) {
+      return;
+    }
     let nodeId = record.get('nodeId');
-    record.set('value', { nodeId, response: this.prepareResponse(rootNode.data.children) });
+    record.set('value', {nodeId: nodeId, response: this.prepareResponse(rootNode)});
+  },
+  validate: function () {
+    let tree = this.lookup('channelresponsetree');
+    let rootNode = tree && tree.getStore ? tree.getStore().getRoot() : null;
+    if (!rootNode) {
+      return false;
+    }
+
+    let valid = false;
+    let issues = [];
+    Ext.Ajax.request({
+      method: 'POST',
+      async: false,
+      url: '/api/channel/response/validate/',
+      jsonData: {response: this.prepareResponse(rootNode)},
+      success: function (response) {
+        let payload = Ext.decode(response.responseText);
+        issues = payload.issues || payload.data || [];
+        valid = payload.valid === true;
+      }
+    });
+
+    if (!valid) {
+      let errors = Ext.Array.filter(issues, function (issue) {
+        return issue.severity === 'error';
+      });
+      let message = Ext.Array.map(errors, function (issue) {
+        return '<code>' + Ext.String.htmlEncode(issue.path || '/Response') +
+          '</code>: ' + Ext.String.htmlEncode(issue.message || 'Invalid response');
+      }).join('<br>');
+      Ext.MessageBox.show({
+        title: 'Invalid StationXML 1.2 response',
+        msg: message || 'The response could not be validated.',
+        buttons: Ext.MessageBox.OK,
+        icon: Ext.MessageBox.ERROR
+      });
+    }
+    return valid;
   },
   onSaveRecordError: function (message) {
     Ext.MessageBox.show({
@@ -63,14 +137,20 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
     });
   },
   loadChannelResponseForEditing: function () {
-    let record = this.getViewModel().get('record');
+    let record = this.resolveRecord();
+    if (!record) {
+      return;
+    }
     let pendingValue = record.get('value');
     if (pendingValue && pendingValue.response) {
       this.applyTreeData(pendingValue.response);
       return;
     }
 
-    let nodeInstanceId = record.get('node_inst_id');
+    let nodeInstanceId = yasmine.utils.ResponseRecalculateUtil.nodeInstanceId(record);
+    if (nodeInstanceId == null || nodeInstanceId === '') {
+      return;
+    }
     let that = this;
 
     Ext.Ajax.request({
@@ -89,150 +169,240 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
         } else {
           that.applyTreeData(result.data);
         }
+      },
+      failure: function () {
+        Ext.MessageBox.show({
+          title: 'An error occurred',
+          msg: 'Cannot load the response.',
+          buttons: Ext.MessageBox.OK,
+          icon: Ext.MessageBox['ERROR']
+        });
       }
     });
   },
-  reloadTree: function (channelResponseData, reselectKey) {
-    this.applyTreeData(channelResponseData, reselectKey);
-  },
-  applyTreeData: function (channelResponseData, reselectKey) {
-    this.getViewModel().set('channelResponse', channelResponseData);
-    let response = channelResponseData;
-    let responseChildren = response.Response.children;
-    for (let child of responseChildren) {
-      this.convertResponseTreeStore(child);
+  buildNodeIdentityPath: function (node) {
+    let path = [];
+    while (node && node.parentNode) {
+      let key = node.get('key');
+      let ordinal = 0;
+      Ext.Array.each(node.parentNode.childNodes, function (sibling) {
+        if (sibling === node) {
+          return false;
+        }
+        if (sibling.get('key') === key) {
+          ordinal += 1;
+        }
+      });
+      path.unshift({key: key, ordinal: ordinal});
+      node = node.parentNode;
     }
+    return path;
+  },
+  findNodeByIdentityPath: function (root, path) {
+    let node = root;
+    let found = true;
+    Ext.Array.each(path || [], function (part) {
+      let ordinal = 0;
+      let next = null;
+      Ext.Array.each(node.childNodes || [], function (child) {
+        if (child.get('key') === part.key) {
+          if (ordinal === part.ordinal) {
+            next = child;
+            return false;
+          }
+          ordinal += 1;
+        }
+      });
+      if (!next) {
+        found = false;
+        return false;
+      }
+      node = next;
+    });
+    return found ? node : null;
+  },
+  reloadTree: function (channelResponseData, reselectPath) {
+    this.applyTreeData(channelResponseData, reselectPath);
+  },
+  applyTreeData: function (channelResponseData, reselectPath) {
+    channelResponseData = channelResponseData || {Response: {}};
+    if (!channelResponseData.hasOwnProperty('Response')) {
+      channelResponseData = {Response: channelResponseData};
+    }
+    this.getViewModel().set('channelResponse', channelResponseData);
+    let responseRoot = Ext.clone(channelResponseData);
+    this.convertResponseTreeStore(responseRoot, null);
+    responseRoot.expanded = true;
+    responseRoot.iconCls = 'fa-code';
+
     let responseTree = this.lookupReference('channelresponsetree');
-    let selectedKey = reselectKey;
+    if (!responseTree) {
+      return;
+    }
     let selection = responseTree.getSelection()[0];
-    if (!selectedKey && selection && selection.get('key')) {
-      selectedKey = selection.get('key');
+    if (reselectPath == null && selection) {
+      reselectPath = this.buildNodeIdentityPath(selection);
     }
     let responseTreeStore = Ext.create('Ext.data.TreeStore', {
-      root: {
-        iconCls: 'fa-code',
-        expanded: true,
-        text: 'Response',
-        children: responseChildren
-      }
+      root: responseRoot
     });
     responseTree.setStore(responseTreeStore);
-    if (selectedKey) {
-      let node = responseTree.getStore().findNode('key', selectedKey, responseTree.getRoot(), true, false, true);
-      if (node) {
-        responseTree.setSelection(node);
-        this.onNodeSelected(node);
-      }
-    }
+    let selectedNode = reselectPath == null ? null :
+      this.findNodeByIdentityPath(responseTreeStore.getRoot(), reselectPath);
+    selectedNode = selectedNode || responseTreeStore.getRoot();
+    responseTree.setSelection(selectedNode);
+    this.onNodeSelected(selectedNode);
   },
-  prepareResponse: function(responseNodes) {
-    let children = [];
-    for (let child of responseNodes) {
-      if (child) {
-        children.push(this.prepareResponseNode(child));
-      }
-    }
-
-    return { "Response": { "children": children }};
+  prepareResponse: function (rootNode) {
+    return this.prepareResponseNode(rootNode);
   },
-  prepareResponseNode: function(responseNode) {
-    if (!responseNode.key) {
-      if (responseNode !== Object(responseNode)) {
-        return responseNode;
-      }
-
-      return null;
+  prepareResponseNode: function (responseNode) {
+    let nodeData = responseNode.data || responseNode;
+    if (nodeData._opaqueValue) {
+      return Ext.clone(nodeData._opaqueValue);
     }
-
+    let nodeName = nodeData.key;
     let result = {};
-    result[responseNode.key] = {};
-    let children = [];
+    let originalValue = nodeData[nodeName];
+    let definition = yasmine.utils.ResponseSchemaUtil.getType(nodeData.schemaType);
+    if (!definition || definition.kind === 'simple') {
+      result[nodeName] = Ext.clone(originalValue);
+      return result;
+    }
 
-    if (responseNode[responseNode.key]['children']) {
-      for (let child of responseNode[responseNode.key]['children']) {
-        children.push(this.prepareResponseNode(child));
+    let value = {};
+    if (originalValue && Ext.isObject(originalValue)) {
+      if (originalValue.attributes && Ext.Object.getSize(originalValue.attributes)) {
+        value.attributes = Ext.clone(originalValue.attributes);
       }
-    } else {
-      result[responseNode.key] = responseNode[responseNode.key];
+      if (originalValue.namespaces && Ext.Object.getSize(originalValue.namespaces)) {
+        value.namespaces = Ext.clone(originalValue.namespaces);
+      }
+      if (originalValue.$namespaces && Ext.Object.getSize(originalValue.$namespaces)) {
+        value.$namespaces = Ext.clone(originalValue.$namespaces);
+      }
     }
-
+    let children = [];
+    Ext.Array.each(responseNode.childNodes || [], function (child) {
+      children.push(this.prepareResponseNode(child));
+    }, this);
     if (children.length) {
-      result[responseNode.key]['children'] = children;
+      value.children = children;
     }
-
-    if (responseNode[responseNode.key]['attributes']) {
-      result[responseNode.key]['attributes'] = responseNode[responseNode.key]['attributes'];
-    }
-
+    result[nodeName] = value;
     return result;
   },
-  convertResponseTreeStore: function (responseNode) {
+  convertResponseTreeStore: function (responseNode, parentType) {
     responseNode.iconCls = 'fa-code';
-    let nodeName = Object.keys(responseNode)[0];
+    let nodeName = Ext.Array.findBy(Object.keys(responseNode), function (key) {
+      return ['attributes', 'children', 'namespaces', '$namespaces'].indexOf(key) < 0;
+    });
     if (nodeName) {
-      if (responseNode[nodeName] !== Object(responseNode[nodeName])) {
-        responseNode.text = '<span>' + nodeName + '</span>:&nbsp;' + '<span style="font-weight: bold;">' + responseNode[nodeName] + '</span>';
-      } else if (responseNode[nodeName].children &&
-        Array.isArray(responseNode[nodeName].children) &&
-        responseNode[nodeName].children.length === 1 &&
-        responseNode[nodeName].children[0] !== Object(responseNode[nodeName].children[0])) {
-        responseNode.text = '<span>' + nodeName + '</span>:&nbsp;' + '<span style="font-weight: bold;">' + responseNode[nodeName].children[0] + '</span>';
-      } else {
-        responseNode.text = nodeName;
-      }
       responseNode.key = nodeName;
+      let schemaType = parentType
+        ? yasmine.utils.ResponseSchemaUtil.typeForChild(parentType, nodeName)
+        : (nodeName === 'Response' ? 'Response' : null);
+      let isForeign = yasmine.utils.ResponseSchemaUtil.isForeignName(nodeName);
+      responseNode.schemaType = schemaType;
+      responseNode.foreign = isForeign;
+      responseNode.readOnly = isForeign || !schemaType;
 
-      if (responseNode[nodeName].children) {
-        responseNode.children = responseNode[nodeName].children;
-        for (let child of responseNode[nodeName].children) {
-          let hasChild = this.convertResponseTreeStore(child);
-
-          if (!hasChild) {
-            responseNode.leaf = true;
-          }
-        }
-      } else {
+      if (responseNode.readOnly) {
+        responseNode._opaqueValue = Ext.clone((function () {
+          let opaque = {};
+          opaque[nodeName] = responseNode[nodeName];
+          return opaque;
+        })());
+        responseNode.text = '<span class="x-fa fa-lock"></span>&nbsp;' +
+          yasmine.utils.ResponseSchemaUtil.displayName(Ext.htmlEncode(nodeName));
         responseNode.leaf = true;
+        return true;
       }
 
+      let value = responseNode[nodeName];
+      let nodeValue = null;
+      if (value !== Object(value)) {
+        nodeValue = value;
+      } else if (value && Ext.isArray(value.children) && value.children.length === 1 && value.children[0] !== Object(value.children[0])) {
+        nodeValue = value.children[0];
+      }
+      responseNode.text = '<span>' + Ext.htmlEncode(nodeName) + '</span>';
+      if (nodeValue !== null && nodeValue !== undefined && nodeValue !== '') {
+        responseNode.text += ':&nbsp;<span style="font-weight:bold;">' + Ext.htmlEncode(String(nodeValue)) + '</span>';
+      }
+
+      let definition = yasmine.utils.ResponseSchemaUtil.getType(schemaType);
+      let elementChildren = [];
+      if (value && Ext.isArray(value.children)) {
+        Ext.Array.each(value.children, function (child) {
+          if (Ext.isObject(child) && this.convertResponseTreeStore(child, schemaType)) {
+            elementChildren.push(child);
+          }
+        }, this);
+      }
+      responseNode.children = elementChildren;
+      responseNode.leaf = !!definition && definition.kind === 'simple';
       return true;
     } else {
-      return false
+      return false;
     }
   },
   onNodeSelected: function (node) {
-    let valuePanel = this.lookupReference('channel-response-value-editor');
-    valuePanel.getStore().removeAll();
-    valuePanel.getController().setNodeName(null);
-
-    let attributePanel = this.lookupReference('channel-response-attribute-editor');
-    attributePanel.getStore().removeAll();
-    attributePanel.getController().setNodeName(null);
-
-    this.getViewModel().set('canAddNewNode', yasmine.utils.XmlNodeUtil.canAddNode(node));
-    this.getViewModel().set('selectedResponseNode', null);
-
-    if (node.isRoot()) {
+    if (!node) {
       return;
     }
+    let parameterEditor = this.getView().up('parameter-editor');
+    if (parameterEditor) {
+      parameterEditor.stationXmlHelpContext =
+        yasmine.utils.StationXmlHelpContext.buildResponsePath(
+          node,
+          '/FDSNStationXML/Network/Station/Channel/Response'
+        );
+    }
+    let valuePanel = this.lookupReference('channel-response-value-editor');
+    let attributePanel = this.lookupReference('channel-response-attribute-editor');
+    if (!valuePanel || !attributePanel) {
+      return;
+    }
+    let valueStore = valuePanel.getStore();
+    if (valueStore && !valueStore.isEmptyStore) {
+      valueStore.removeAll();
+    }
+    valuePanel.getController().setNodeName(null);
 
-    attributePanel.getController().setNodeName(node.get('key'));
-    valuePanel.getController().setNodeName(node.get('key'));
+    let attributeStore = attributePanel.getStore();
+    if (attributeStore && !attributeStore.isEmptyStore) {
+      attributeStore.removeAll();
+    }
+    attributePanel.getController().setNode(null, null, true);
+
+    let readOnly = !!(node.get('readOnly') || node.get('foreign'));
+    let definition = yasmine.utils.ResponseSchemaUtil.definitionForNode(node);
+    this.getViewModel().set('canAddNewNode', yasmine.utils.ResponseSchemaUtil.canAddNode(node));
+    this.getViewModel().set('selectedNodeReadOnly', readOnly);
+    this.getViewModel().set('canDeleteResponseNode', yasmine.utils.ResponseSchemaUtil.canDeleteNode(node));
     this.getViewModel().set('selectedResponseNode', node);
+    attributePanel.getController().setNode(node, definition, readOnly);
+    valuePanel.getController().setNodeName(node.get('key'));
 
     let nodeData = node.data;
     let nodeName = nodeData.key;
     let nodeValue = yasmine.utils.XmlNodeUtil.getValue(node);
-    let canNodeHaveValue = yasmine.utils.XmlNodeUtil.canHaveValue(node);
-    valuePanel.getController().setRecord(nodeName, nodeValue, canNodeHaveValue);
+    let canNodeHaveValue = !!definition && definition.kind === 'simple';
+    valuePanel.getController().setRecord(nodeName, nodeValue, canNodeHaveValue, definition, readOnly);
 
     if (!nodeData[nodeData.key]) {
       return;
     }
 
-    for (let attr in nodeData[nodeData.key]['attributes']) {
-      let attrVal = nodeData[nodeData.key]['attributes'][attr].toString();
-      attributePanel.getController().addRecord(attr, attrVal);
+    let attributes = nodeData[nodeData.key].attributes || {};
+    for (let attr in attributes) {
+      if (attributes.hasOwnProperty(attr)) {
+        let attrVal = attributes[attr].toString();
+        let attrDefinition = yasmine.utils.ResponseSchemaUtil.attributeDefinition(node, attr);
+        let attrReadOnly = readOnly || !attrDefinition || yasmine.utils.ResponseSchemaUtil.isForeignAttribute(attr);
+        attributePanel.getController().addRecord(attr, attrVal, attrDefinition, attrReadOnly);
+      }
     }
   }
 

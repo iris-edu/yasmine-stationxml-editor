@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -40,6 +41,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditor', {
   ],
   viewModel: 'comments-editor',
   controller: 'comments-editor',
+  layout: {
+    type: 'vbox',
+    align: 'stretch'
+  },
   items: [{
     bind: {
       html: '{validationErrors}',
@@ -51,14 +56,19 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditor', {
   }, {
     xtype: 'grid',
     flex: 1,
-    width: 800,
-    height: 400,
+    minWidth: 0,
     style: 'border: solid #d0d0d0 1px',
     bind: {
       store: '{commentStore}',
       selection: '{selectedCommentRow}'
     },
     columns: [
+      {
+        header: 'ID',
+        dataIndex: 'id',
+        emptyCellText: yasmine.Globals.NotApplicable,
+        width: 70
+      },
       {
         header: 'Subject',
         dataIndex: 'subject',
@@ -75,6 +85,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditor', {
         header: 'Effective Start Date',
         dataIndex: 'beginEffectiveTime',
         xtype: 'datecolumn',
+        yasmineGuiDate: 'long',
         format: yasmine.Globals.DatePrintLongFormat,
         emptyCellText: yasmine.Globals.NotApplicable,
         flex: 1
@@ -83,6 +94,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditor', {
         header: 'Effective End Date',
         dataIndex: 'endEffectiveTime',
         xtype: 'datecolumn',
+        yasmineGuiDate: 'long',
         format: yasmine.Globals.DatePrintLongFormat,
         emptyCellText: yasmine.Globals.NotApplicable,
         flex: 1
@@ -119,7 +131,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditor', {
     listeners: {
       itemdblclick: 'onEditClick'
     },
-    tbar: [{
+    tbar: {
+      cls: 'yasmine-wrap-toolbar',
+      items: [{
       iconCls: 'x-fa fa-plus',
       tooltip: 'Add Comment',
       handler: 'onAddClick'
@@ -140,5 +154,6 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditor', {
         disabled: '{!selectedCommentRow}'
       }
     }]
+    }
   }]
 });

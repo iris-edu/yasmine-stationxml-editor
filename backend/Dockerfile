@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -43,7 +44,7 @@ RUN apt-get update && \
     apt-get install -y --no-install-recommends gcc && \
     rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt .
+COPY backend/requirements.txt requirements.txt
 RUN pip install --no-cache-dir --upgrade pip setuptools && \
     pip install --no-cache-dir -r requirements.txt
 
@@ -54,5 +55,10 @@ RUN pip install --no-cache-dir --upgrade pip setuptools
 
 COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
 COPY --from=builder /usr/local/bin /usr/local/bin
-COPY . .
-CMD python yasmineapp.py syncdb upgrade heads ; python yasmineapp.py runserver --debug
+COPY backend/ .
+COPY .git /tmp/yasmine-git
+RUN python -c "from yasmine.app.utils.build_info import write_image_build_info; write_image_build_info('/tmp/yasmine-git', '/opt/yasmine/build-info.json')" \
+    && rm -rf /tmp/yasmine-git
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1/healthz')"
+CMD python yasmineapp.py syncdb upgrade heads ; python yasmineapp.py runserver

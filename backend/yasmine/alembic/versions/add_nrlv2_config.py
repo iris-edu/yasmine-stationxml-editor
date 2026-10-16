@@ -1,3 +1,4 @@
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # This file is part of the yasmine editing tool.
@@ -32,16 +33,15 @@ depends_on = None
 def upgrade():
     bind = op.get_bind()
     session = Session(bind=bind)
-    session.add(ConfigModel(
-        group='nrlv2',
-        name='nrlv2_online_enabled',
-        value=pickle.dumps(False)
-    ))
-    session.add(ConfigModel(
-        group='nrlv2',
-        name='nrlv2_base_url',
-        value=pickle.dumps('https://service.earthscope.org/irisws/nrl/1/')
-    ))
+    for group, name, value in (
+        ('nrlv2', 'nrlv2_online_enabled', pickle.dumps(False)),
+        ('nrlv2', 'nrlv2_base_url', pickle.dumps('https://service.earthscope.org/irisws/nrl/1/')),
+    ):
+        existing = session.query(ConfigModel).filter(
+            ConfigModel.group == group, ConfigModel.name == name
+        ).first()
+        if existing is None:
+            session.add(ConfigModel(group=group, name=name, value=value))
     session.commit()
 
 

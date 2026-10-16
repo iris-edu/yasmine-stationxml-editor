@@ -29,13 +29,16 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 
 from yasmine.app.enums.library import LibraryTypeEnum
+from yasmine.app.exceptions.exceptions import BusinessException
 from yasmine.app.enums.xml_node import XmlNodeAttrEnum
 from yasmine.app.helpers.library_helper_factory import LibraryHelperFactory
+from yasmine.app.helpers.nrl.nrlv2_online import nrlv2_equipment_flags
 from yasmine.app.models.inventory import XmlNodeAttrModel, XmlNodeAttrValModel
 
 
@@ -46,6 +49,8 @@ class EquipmentMixin(object):
             attr_model = self.db.query(XmlNodeAttrModel).filter(
                 XmlNodeAttrModel.name == attr_name
             ).first()
+            if attr_model is None:
+                raise ValueError('Unknown attribute: %s' % attr_name)
             if node_inst.id:
                 self.db.query(XmlNodeAttrValModel) \
                     .filter(XmlNodeAttrValModel.attr_id == attr_model.id) \
@@ -57,13 +62,29 @@ class EquipmentMixin(object):
             attr=attr_model,
         )
 
-    def manage_equipment(self, node_inst, sensor_keys, datalogger_keys, library_type, response_attr=None, nrlv2_source=None):
+    def manage_equipment(self, node_inst, sensor_keys, datalogger_keys, library_type, response_attr=None, nrlv2_source=None, nrl_response_type=None):
+        # The channel wizard sends libraryType "none" for "I don't need a response".
+        if library_type in (None, '', 'none'):
+            return None, None, None, None
+
         if library_type == LibraryTypeEnum.NRLV2_ONLINE:
-            # NRLv2 uses instconfig from sensor_keys (single) or (sensor_keys, datalogger_keys) tuple
-            instconfig = sensor_keys if isinstance(sensor_keys, str) else (
-                f'{sensor_keys}:{datalogger_keys}' if datalogger_keys else sensor_keys
-            )
+            config = getattr(self, 'config', None)
+            if config is not None and not config.get('nrlv2', 'nrlv2_online_enabled'):
+                raise BusinessException('NRL Online is disabled')
+            if isinstance(sensor_keys, (list, tuple)):
+                parts = [str(item) for item in sensor_keys if item]
+                if len(parts) != 1:
+                    raise BusinessException('NRL Online needs one instrument configuration')
+                instconfig = parts[0]
+            else:
+                instconfig = sensor_keys
             return self.manage_equipment_nrlv2(node_inst, instconfig, response_attr, source=nrlv2_source)
+
+        if library_type == LibraryTypeEnum.NRL and nrl_response_type in ('integrated', 'soh'):
+            helper = LibraryHelperFactory().get_helper(library_type)
+            return self.manage_equipment_nrl_element(
+                node_inst, helper, nrl_response_type, sensor_keys, response_attr
+            )
 
         helper = LibraryHelperFactory().get_helper(library_type)
 
@@ -99,8 +120,7 @@ class EquipmentMixin(object):
         """Manage equipment for NRLv2 online (instconfig-based)."""
         app = getattr(self, 'application', None)
         helper = LibraryHelperFactory().get_helper(LibraryTypeEnum.NRLV2_ONLINE, application=app)
-        has_sensor = instconfig.startswith('sensor_')
-        has_datalogger = 'datalogger_' in instconfig
+        has_sensor, has_datalogger = nrlv2_equipment_flags(instconfig)
 
         with self.db.no_autoflush:
             sensor_attr = None
@@ -119,6 +139,35 @@ class EquipmentMixin(object):
             response_attr.value_obj = helper.get_channel_response_obj(
                 instconfig, source=source
             )
+
+            sample_rate_attr = None
+            sample_rate = self._sample_rate_from_response(response_attr.value_obj)
+            if sample_rate is not None:
+                sample_rate_attr = self.recreate_attr(
+                    node_inst, XmlNodeAttrEnum.SAMPLE_RATE
+                )
+                sample_rate_attr.value_obj = sample_rate
+
+        return sensor_attr, datalogger_attr, sample_rate_attr, response_attr
+
+    def manage_equipment_nrl_element(self, node_inst, helper, element, keys, response_attr=None):
+        """One RESP file from the offline integrated or SOH catalog."""
+        with self.db.no_autoflush:
+            sensor_attr = None
+            datalogger_attr = None
+            if element == 'integrated':
+                sensor_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.SENSOR)
+                sensor_attr.value_obj = helper.get_element_equipment(element, keys)
+                datalogger_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.DATA_LOGGER)
+                datalogger_attr.value_obj = helper.get_element_equipment(element, keys)
+            elif element == 'soh':
+                datalogger_attr = self.recreate_attr(node_inst, XmlNodeAttrEnum.DATA_LOGGER)
+                datalogger_attr.value_obj = helper.get_element_equipment(element, keys)
+
+            response_attr = response_attr or self.recreate_attr(
+                node_inst, XmlNodeAttrEnum.RESPONSE
+            )
+            response_attr.value_obj = helper.get_element_response_obj(element, keys)
 
             sample_rate_attr = None
             sample_rate = self._sample_rate_from_response(response_attr.value_obj)

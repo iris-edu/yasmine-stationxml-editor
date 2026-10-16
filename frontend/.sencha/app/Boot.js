@@ -1,5 +1,6 @@
 // @tag core
 // @define Ext.Boot
+/* 2026-09-19, version 4.2.0-beta: ASGSR, Alexey Emanov */
 
 var Ext = Ext || {};
 
@@ -564,6 +565,17 @@ Ext.Boot = Ext.Boot || (function (emptyFn) {
                 
                 // IE11 does not support conditional compilation so we detect it by exclusion
                 Boot.isIE11 = Boot.isIE10p && !Boot.isIE10;
+
+                // Safari / iOS WebKit execute dynamically inserted <script> tags as soon
+                // as they download, ignoring async=false. Theme/app files then run before
+                // Ext.define exists ("Ext.define is not a function").
+                Boot.needsSequentialScripts = (function () {
+                    var ua = navigator.userAgent || '';
+                    var isIOS = /iPhone|iPad|iPod/.test(ua) ||
+                        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+                    var isSafari = /Safari\//.test(ua) && !/Chrome\/|Chromium\/|Edg\//.test(ua);
+                    return !!(isIOS || isSafari);
+                }());
 
                 // Since we are loading after other scripts, and we needed to gather them
                 // anyway, we track them in _scripts so we don't have to ask for them all
@@ -1572,7 +1584,8 @@ Ext.Boot = Ext.Boot || (function (emptyFn) {
                     // IE10 also needs sequential loading because of a bug that makes it
                     // fire readystate event prematurely:
                     // https://connect.microsoft.com/IE/feedback/details/729164/ie10-dynamic-script-element-fires-loaded-readystate-prematurely
-                    if (Boot.isIE10 || me.isCrossDomain()) {
+                    // Safari/iOS WebKit has the same requirement (see Boot.needsSequentialScripts).
+                    if (Boot.isIE10 || Boot.needsSequentialScripts || me.isCrossDomain()) {
                         return me.loadCrossDomain();
                     }
                     // for IE, use the readyStateChange allows us to load scripts in parallel

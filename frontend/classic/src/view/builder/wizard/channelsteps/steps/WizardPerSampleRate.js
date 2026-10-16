@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -39,81 +40,170 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.steps.WizardPerSampleRa
     'yasmine.view.xml.builder.wizard.channelsteps.steps.WizardCreateChannelModel',
     'yasmine.view.xml.builder.wizard.channelsteps.steps.Step1View',
     'yasmine.view.xml.builder.wizard.channelsteps.steps.Step2View',
+    'yasmine.view.xml.builder.wizard.channelsteps.steps.StepNrlTypeView',
     'yasmine.view.xml.builder.wizard.channelsteps.steps.Step3View',
     'yasmine.view.xml.builder.wizard.channelsteps.steps.Step4View',
     'yasmine.view.xml.builder.wizard.channelsteps.steps.Step5View'
   ],
   controller: 'wizard-create-channel-item',
   viewModel: 'wizard-create-channel-item',
-  layout: 'card',
+  layout: {
+    type: 'card',
+    deferredRender: true
+  },
   bind: {
     activeItem: '{activeIndex}',
-    title: '{completionStatusLabel} Sample Rate #{sampleRateNumber}'
+    title: '{panelTitle}'
+  },
+  // Centered vbox + flex spacers never finishes on a narrow window: Ext's box
+  // layout leaves the inner element at height 0 and clips the form.
+  defaults: {
+    border: false,
+    bodyBorder: false,
+    scrollable: true,
+    layout: 'center'
   },
   items: [
     {
-      layout: {type: 'vbox', align: 'center'},
+      itemId: 'wizard-card-1',
       items: [
         {
-          flex: 1,
-          bind: {
-            html: '<div style="width: 100%; text-align: center; font-size: 14px; font-weight: bold; padding-top: 15px;">Sample Rate #{sampleRateNumber} / Step 1 of 5</div>'
-          }
-        },
-        {xtype: 'channel-step-1', reference: 'channel-step-1'},
-        {flex: 1}
+          xtype: 'container',
+          width: '100%',
+          maxWidth: 420,
+          minWidth: 0,
+          layout: {type: 'vbox', align: 'stretch'},
+          items: [
+            {
+              xtype: 'component',
+              margin: '12 8 8 8',
+              cls: 'yasmine-wizard-step-heading',
+              bind: {
+                html: '<div class="yasmine-wizard-step-heading-text">{locationStepHeading}</div>'
+              }
+            },
+            {xtype: 'channel-step-1', reference: 'channel-step-1'}
+          ]
+        }
       ]
     },
     {
-      layout: {type: 'vbox', align: 'center'},
+      itemId: 'wizard-card-2',
       items: [
         {
-          flex: 1,
-          bind: {
-            html: '<div style="width: 100%; text-align: center; font-size: 14px; font-weight: bold; padding-top: 15px;">Sample Rate #{sampleRateNumber} / Step 2 of 5</div>'
-          }
-        },
-        {xtype: 'channel-step-2', reference: 'channel-step-2'},
-        {flex: 1}
+          xtype: 'container',
+          width: '100%',
+          maxWidth: 420,
+          minWidth: 0,
+          layout: {type: 'vbox', align: 'stretch'},
+          items: [
+            {
+              xtype: 'component',
+              margin: '12 8 8 8',
+              cls: 'yasmine-wizard-step-heading',
+              bind: {
+                html: '<div class="yasmine-wizard-step-heading-text">{libraryStepHeading}</div>'
+              }
+            },
+            {xtype: 'channel-step-2', reference: 'channel-step-2'}
+          ]
+        }
       ]
     },
     {
-      layout: {type: 'vbox', align: 'stretch', pack: ''},
+      itemId: 'wizard-card-type',
       items: [
         {
-          height: 50,
-          bind: {
-            html: '<div style="width: 100%; text-align: center; font-size: 14px; font-weight: bold; padding-top: 15px;">Sample Rate #{sampleRateNumber} / Step 3 of 5</div>'
-          }
-        },
-        {xtype: 'channel-step-3', reference: 'channel-step-3', flex: 1, layout: 'fit'},
+          xtype: 'container',
+          width: '100%',
+          maxWidth: 420,
+          minWidth: 0,
+          layout: {type: 'vbox', align: 'stretch'},
+          items: [
+            {
+              xtype: 'component',
+              margin: '12 8 8 8',
+              cls: 'yasmine-wizard-step-heading',
+              bind: {
+                html: '<div class="yasmine-wizard-step-heading-text">{typeStepHeading}</div>'
+              }
+            },
+            {xtype: 'channel-nrl-response-type', reference: 'channel-nrl-response-type'}
+          ]
+        }
       ]
     },
     {
-      layout: {type: 'vbox', align: 'center'},
+      itemId: 'wizard-card-3',
+      scrollable: false,
+      layout: 'fit',
       items: [
         {
-          flex: 1,
-          bind: {
-            html: '<div style="width: 100%; text-align: center; font-size: 14px; font-weight: bold; padding-top: 15px;">Sample Rate #{sampleRateNumber} / Step 4 of 5</div>'
-          }
-        },
-        {xtype: 'channel-step-4', reference: 'channel-step-4'},
-        {flex: 1}
+          xtype: 'panel',
+          border: false,
+          layout: 'fit',
+          dockedItems: [
+            {
+              xtype: 'component',
+              dock: 'top',
+              margin: '12 8 4 8',
+              cls: 'yasmine-wizard-step-heading',
+              bind: {
+                html: '<div class="yasmine-wizard-step-heading-text">{selectorStepHeading}</div>'
+              }
+            }
+          ],
+          items: [
+            {xtype: 'channel-step-3', reference: 'channel-step-3', layout: 'fit', minHeight: 0}
+          ]
+        }
       ]
     },
     {
-      layout: {type: 'vbox', align: 'center'},
+      itemId: 'wizard-card-4',
       items: [
         {
-          flex: 1,
-          bind: {
-            html: '<div style="width: 100%; text-align: center; font-size: 14px; font-weight: bold; padding-top: 15px;">Sample Rate #{sampleRateNumber} / Step 5 of 5</div>'
-          }
-        },
-        {xtype: 'channel-step-5', reference: 'channel-step-5'},
-        {flex: 1}
+          xtype: 'container',
+          width: '100%',
+          maxWidth: 420,
+          minWidth: 0,
+          layout: {type: 'vbox', align: 'stretch'},
+          items: [
+            {
+              xtype: 'component',
+              margin: '12 8 8 8',
+              cls: 'yasmine-wizard-step-heading',
+              bind: {
+                html: '<div class="yasmine-wizard-step-heading-text">{codeStepHeading}</div>'
+              }
+            },
+            {xtype: 'channel-step-4', reference: 'channel-step-4'}
+          ]
+        }
       ]
     },
-  ],
+    {
+      itemId: 'wizard-card-5',
+      items: [
+        {
+          xtype: 'container',
+          width: '100%',
+          maxWidth: 420,
+          minWidth: 0,
+          layout: {type: 'vbox', align: 'stretch'},
+          items: [
+            {
+              xtype: 'component',
+              margin: '12 8 8 8',
+              cls: 'yasmine-wizard-step-heading',
+              bind: {
+                html: '<div class="yasmine-wizard-step-heading-text">{detailStepHeading}</div>'
+              }
+            },
+            {xtype: 'channel-step-5', reference: 'channel-step-5'}
+          ]
+        }
+      ]
+    }
+  ]
 });

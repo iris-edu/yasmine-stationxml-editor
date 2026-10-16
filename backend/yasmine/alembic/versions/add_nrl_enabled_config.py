@@ -1,3 +1,4 @@
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # This file is part of the yasmine editing tool.
@@ -28,11 +29,16 @@ depends_on = None
 def upgrade():
     bind = op.get_bind()
     session = Session(bind=bind)
-    session.add(ConfigModel(
-        group='nrl',
-        name='nrl_enabled',
-        value=pickle.dumps(False)
-    ))
+    existing = session.query(ConfigModel).filter(
+        ConfigModel.group == 'nrl',
+        ConfigModel.name == 'nrl_enabled'
+    ).first()
+    if existing is None:
+        session.add(ConfigModel(
+            group='nrl',
+            name='nrl_enabled',
+            value=pickle.dumps(False)
+        ))
     session.commit()
 
 

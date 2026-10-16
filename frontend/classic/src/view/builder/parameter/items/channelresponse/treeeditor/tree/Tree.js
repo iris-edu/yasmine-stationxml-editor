@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -48,33 +49,17 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
         tooltip: '{titleAddNew}',
         disabled: '{!canAddNewNode}'
       },
-      menu: [
-        {
-          iconCls: 'x-fa fa-circle',
-          xtype: 'container',
-          padding: 5,
-          layout: 'hbox',
-          items: [
-            {
-              xtype: 'textfield',
-              fieldLabel: 'Node Name',
-              bind: {
-                value: '{newNodeName}'
-              }
-            },
-            {
-              xtype: 'button',
-              iconCls: 'x-fa fa-plus',
-              margin: '0 0 0 5',
-              bind: {
-                tooltip: '{titleAddNew}',
-                disabled: '{!newNodeName}'
-              },
-              handler: 'onAddNewNodeClick'
-            }
-          ]
-        }
-      ]
+      menu: {
+        listeners: {
+          beforeshow: 'onAddMenuBeforeShow'
+        },
+        items: [
+          {
+            text: 'Loading schema choices...',
+            disabled: true
+          }
+        ]
+      }
     },
     {
       xtype: 'button',
@@ -109,7 +94,14 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   listeners: {
     select: 'onResponseNodeSelect',
     afterrender: function() {
-      this.getSelectionModel().select(this.getStore().getRootNode());
+      let store = this.getStore();
+      if (!store || store.isEmptyStore) {
+        return;
+      }
+      let root = store.getRootNode && store.getRootNode();
+      if (root && root.get && root.get('key')) {
+        this.getSelectionModel().select(root);
+      }
     }
   }
 });

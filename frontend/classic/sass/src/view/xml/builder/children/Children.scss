@@ -1,54 +1,95 @@
-#phones {
-    background-color: #fff;
-    text-shadow: #fff 0 1px 0;
-    position: relative;
-    display: block;
-    height: auto;
+/* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
+ * Items are direct children of the dataview scroller (.yasmine-node-cards).
+   Sencha Fashion turns a bare 1fr unit into "1 fr", which browsers drop. */
+
+.yasmine-node-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, unquote("1fr")));
+    align-content: start;
+    box-sizing: border-box;
+    gap: $yasmine-space-3;
+    padding: $yasmine-space-3;
+    background: $yasmine-canvas;
 }
 
-#phones div.phone img {
-    margin-bottom: 1px;
-}
-
-#phones div.phone {
-    float: left;
-    padding: 8px 11px;
-    margin: 5px;
-    line-height: 14px;
-    color: #333;
-    font-size: 10px;
-    font-family: "Helvetica Neue",sans-serif;
-    height: 130px;
-    width: 140px;
+.yasmine-node-cards .yasmine-node-card {
+    box-sizing: border-box;
+    min-width: 0;
+    min-height: 146px;
+    padding: $yasmine-space-3;
     overflow: hidden;
-    border: #cecece;
-    border-style: solid;
-    border-width: thin;
-    border-radius: 5px;
+    border: 1px solid $yasmine-border;
+    border-left-width: 4px;
+    border-radius: $yasmine-radius-md;
+    background: $yasmine-surface;
+    color: $yasmine-text;
     cursor: pointer;
+    font-family: $yasmine-font-family;
+    font-size: 12px;
+    line-height: 1.45;
 }
 
-.x-ie6 #phones div.phone,
-.x-ie7 #phones div.phone,
-.x-ie8 #phones div.phone {
-    border-top: none;
-    padding: 3px 2px;
-    margin: 2px;
+.yasmine-node-cards .yasmine-node-card-back-item {
+    min-height: 72px;
 }
 
-#phones div.phone-hover {
-    background-color: #eee;
+.yasmine-node-cards .yasmine-node-card > div:not(.yasmine-node-card-title):not(.yasmine-node-card-hint) {
+    display: flex;
+    gap: $yasmine-space-2;
 }
 
-#phones .x-item-selected {
-    background-color: #D3E1F1 !important;
+.yasmine-node-cards .yasmine-node-card b {
+    flex: 0 0 78px;
+    color: $yasmine-text-muted;
+    font-weight: 600;
 }
 
-#phones div.phone strong {
-    color: #000;
+.yasmine-node-cards .yasmine-node-card span {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    color: $yasmine-text;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.yasmine-node-card-title {
+    margin-bottom: $yasmine-space-2;
+    overflow: hidden;
+    color: $yasmine-primary-dark;
+    font-size: 16px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.yasmine-node-card-hint {
+    margin-top: $yasmine-space-2;
+    color: $yasmine-primary;
+    font-weight: 600;
+}
+
+.yasmine-node-card-back {
     display: block;
+    margin: 8px auto;
+    color: $yasmine-primary;
+    font-size: 28px;
+    text-align: center;
 }
 
-#phones div.phone span {
-    color: #999;
+.yasmine-node-cards .phone-hover {
+    border-color: $yasmine-primary !important;
+    background: $yasmine-surface-raised;
+}
+
+.yasmine-node-cards .x-item-selected {
+    border-color: $yasmine-primary !important;
+    background: $yasmine-primary-soft !important;
+}
+
+.yasmine-vp-xs .yasmine-node-cards,
+.yasmine-vp-sm .yasmine-node-cards {
+    grid-template-columns: unquote("1fr");
+    gap: $yasmine-space-2;
+    padding: $yasmine-space-2;
 }

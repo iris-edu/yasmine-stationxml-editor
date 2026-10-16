@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -37,9 +38,13 @@ Ext.define('yasmine.view.settings.SettingsListController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.settings',
   requires: [
-    'Ext.window.Toast'
+    'Ext.window.Toast',
+    'yasmine.utils.StationXmlHelpContext'
   ],
   init: function () {
+    var view = this.getView();
+    view.on('afterrender', this.syncSettingsColumns, this);
+    this.mon(Ext.GlobalEvents, 'resize', this.syncSettingsColumns, this, {buffer: 150});
     yasmine.view.settings.Settings.load(0, {
       scope: this,
       success: function (record) {
@@ -47,6 +52,70 @@ Ext.define('yasmine.view.settings.SettingsListController', {
         this.getView().loadRecord(record);
       }
     });
+  },
+  syncSettingsColumns: function () {
+    var view = this.getView();
+    if (!view || view.destroyed || !view.rendered) {
+      return;
+    }
+    var stack = yasmine.utils.ResponsiveUtil.useStackLayout();
+    var columns = view.down('#settingsColumns');
+    var left = view.down('#settingsColLeft');
+    var right = view.down('#settingsColRight');
+    var changed = false;
+    if (columns && !columns.destroyed) {
+      changed = yasmine.utils.ResponsiveUtil.applyBoxOrientation(columns, stack, {
+        align: stack ? 'stretch' : 'begin'
+      }) || changed;
+    }
+    Ext.Array.each([left, right], function (col) {
+      if (!col || col.destroyed) {
+        return;
+      }
+      var nextFlex = stack ? null : 1;
+      if (col.flex !== nextFlex || col._yasmineStack !== stack) {
+        col._yasmineStack = stack;
+        if (col.setFlex) {
+          col.setFlex(nextFlex);
+        } else {
+          col.flex = nextFlex;
+        }
+        if (col.setWidth) {
+          col.setWidth(stack ? '100%' : null);
+        }
+        changed = true;
+      }
+    });
+    Ext.Array.each([
+      view.down('#gatitoRow'),
+      view.lookupReference('importZipForm'),
+      view.down('#nrlv2UrlRow')
+    ], function (row) {
+      if (!row || row.destroyed) {
+        return;
+      }
+      if (row._yasmineStack === stack) {
+        return;
+      }
+      row._yasmineStack = stack;
+      yasmine.utils.ResponsiveUtil.applyBoxOrientation(row, stack, {
+        align: stack ? 'stretch' : 'bottom'
+      });
+      if (row.setMinHeight) {
+        row.setMinHeight(stack ? 88 : 0);
+      }
+      if (row.items && row.items.each) {
+        row.items.each(function (item) {
+          if (item && item.isButton && item.setMargin) {
+            item.setMargin(stack ? '8 0 0 0' : '0 0 0 10');
+          }
+        });
+      }
+      changed = true;
+    });
+    if (changed) {
+      view.updateLayout();
+    }
   },
   onSaveClick: function () {
     this.getView().updateRecord();
@@ -58,6 +127,9 @@ Ext.define('yasmine.view.settings.SettingsListController', {
           this.getViewModel().set('settings', record);
           Ext.toast({ html: 'Settings saved', align: 't' });
           yasmine.services.SettingsService.initSettings();
+        },
+        failure: function () {
+          Ext.Msg.alert('Settings', 'Cannot save settings.');
         }
       });
     } else {
@@ -70,13 +142,19 @@ Ext.define('yasmine.view.settings.SettingsListController', {
   },
   importUserLibraryFromZip: function () {
     let form = this.lookupReference('importZipForm').getForm();
-    if (form.isValid()) {
-      yasmine.utils.UserLibraryUtil.importFromFile(form);
+    let field = form.findField('zip-path');
+    if (!field || Ext.isEmpty(field.getValue())) {
+      Ext.MessageBox.alert(
+        'Import User Library',
+        'Please choose a ZIP file to import.'
+      );
+      return;
     }
+    yasmine.utils.UserLibraryUtil.importFromFile(form);
   },
   onRequiredFieldDeselect: function (cmp, value) {
     if (value.get('is_critical')) {
-      Ext.MessageBox.alert('Error', `The "${value.get('id')}" field cannot be removed. It's mandatory for StationXML`);
+      Ext.MessageBox.alert('Error', `The "${yasmine.utils.StationXmlHelpContext.labelForRecord(value)}" field cannot be removed. It's mandatory for StationXML`);
       return false;
     }
 

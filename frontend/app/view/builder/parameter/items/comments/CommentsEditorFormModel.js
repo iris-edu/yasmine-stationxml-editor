@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -38,7 +39,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorForm
     record: null,
     value: null,
     subject: null,
-    id: 0,
+    id: null,
     beginEffectiveTime: null,
     endEffectiveTime: null,
     parameterId: null,

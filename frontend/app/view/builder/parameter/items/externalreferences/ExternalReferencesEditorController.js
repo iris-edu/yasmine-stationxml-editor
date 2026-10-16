@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -57,6 +58,21 @@ Ext.define('yasmine.view.xml.builder.parameter.items.externalreferences.External
 
         record.set('value', references);
     },
+    validate: function () {
+        var errors = [];
+        this.getViewModel().getStore('dataStore').each(function (reference, index) {
+            if (!Ext.String.trim(reference.get('uri') || '') ||
+                !Ext.String.trim(reference.get('description') || '')) {
+                errors.push('External reference ' + (index + 1) +
+                    ' requires both URI and description.');
+            }
+        });
+        this.getViewModel().set('validation.activeErrors', errors);
+        if (errors.length) {
+            return false;
+        }
+        return this.callParent(arguments);
+    },
     onAddClick: function () {
         var record = new yasmine.view.xml.builder.parameter.items.externalreferences.ExternalReference();
         var store = this.getViewModel().getStore('dataStore');
@@ -64,6 +80,11 @@ Ext.define('yasmine.view.xml.builder.parameter.items.externalreferences.External
 
         var grid = this.lookupReference('referencegrid');
         grid.findPlugin('rowediting').startEdit(record, 0);
+    },
+    onCancelEditing: function (editor, context) {
+        if (context.record.phantom) {
+            this.getViewModel().getStore('dataStore').remove(context.record);
+        }
     },
     onDeleteClick: function () {
         Ext.MessageBox.confirm('Confirm', `Are you sure you want to delete?`, function (btn) {

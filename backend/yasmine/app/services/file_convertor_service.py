@@ -27,10 +27,12 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 
+import datetime
 import glob
 import json
 import os
@@ -43,6 +45,22 @@ import logging
 import yaml
 
 from yasmine.app.settings import TMP_ROOT
+from yasmine.app.utils.url_guard import UrlGuardError, validate_url
+from yasmine.app.utils.zip_safe import safe_extract_flat, safe_extractall
+
+DOWNLOAD_TIMEOUT = 30
+DOWNLOAD_MAX_BYTES = 50 * 1024 * 1024
+
+
+def _json_default(value):
+    # PyYAML SafeLoader turns unquoted dates (AROL start_time/end_time) into
+    # datetime objects. Serialize them before writing so a failed dump cannot
+    # leave a truncated JSON file.
+    if isinstance(value, datetime.datetime):
+        return value.isoformat()
+    if isinstance(value, datetime.date):
+        return value.isoformat()
+    raise TypeError('Object of type %s is not JSON serializable' % type(value).__name__)
 
 
 class FileConvertorService:
@@ -68,35 +86,40 @@ class FileConvertorService:
                 file_out = os.path.join(file_path, file_out)
                 os.makedirs(file_abs_path, exist_ok=True)
             with open(file, 'rb') as fl:
-                data_loaded = yaml.load(fl, Loader=yaml.FullLoader if self.is_full_loader else yaml.BaseLoader)
+                data_loaded = yaml.load(fl, Loader=yaml.SafeLoader)
                 self._traverse(data_loaded, rename_extensions)
-                with open(os.path.join(temp_folder, file_out), 'wt') as fo:
-                    try:
-                        json.dump(data_loaded, fo)
-                    except Exception as error:
-                        self.logger.error(f'cannot convert: "{file}": {error}')
+                out_path = os.path.join(temp_folder, file_out)
+                try:
+                    payload = json.dumps(data_loaded, default=_json_default)
+                except (TypeError, ValueError) as error:
+                    self.logger.error(f'cannot convert: "{file}": {error}')
+                    continue
+                with open(out_path, 'wt') as fo:
+                    fo.write(payload)
         return temp_folder
 
     def convert_from_zip(self, zip_file):
         temp_unzip_folder = tempfile.mkdtemp(dir=TMP_ROOT)
-        if self.flattern:
-            for member in zip_file.namelist():
-                filename = os.path.basename(member)
-                if not filename:
-                    continue
-
-                target = open(os.path.join(temp_unzip_folder, filename), "wb")
-                source = zip_file.open(member)
-                with source, target:
-                    shutil.copyfileobj(source, target)
-        else:
-            zip_file.extractall(temp_unzip_folder)
-        return self.convert_from_folder(temp_unzip_folder)
+        try:
+            if self.flattern:
+                safe_extract_flat(zip_file, temp_unzip_folder)
+            else:
+                safe_extractall(zip_file, temp_unzip_folder)
+            return self.convert_from_folder(temp_unzip_folder)
+        finally:
+            shutil.rmtree(temp_unzip_folder, ignore_errors=True)
 
     def convert_from_url(self, url):
+        try:
+            validate_url(url)
+        except UrlGuardError as err:
+            raise ValueError(str(err))
         request = Request(url, headers={"User-Agent": "Mozilla/5.0"})
-        with urlopen(request) as zip_response:
-            with ZipFile(BytesIO(zip_response.read())) as zip_file:
+        with urlopen(request, timeout=DOWNLOAD_TIMEOUT) as zip_response:
+            data = zip_response.read(DOWNLOAD_MAX_BYTES + 1)
+            if len(data) > DOWNLOAD_MAX_BYTES:
+                raise ValueError('Download exceeds size limit')
+            with ZipFile(BytesIO(data)) as zip_file:
                 return self.convert_from_zip(zip_file)
 
     def _traverse(self, data, callback):

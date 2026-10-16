@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -42,13 +43,39 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEdit', {
   ],
   controller: 'person-edit',
   viewModel: 'person-edit',
-  title: 'Person',
+  bind: {
+    title: '{personLabel}'
+  },
   modal: true,
-  frame: true,
+  frame: false,
+  cls: 'yasmine-window yasmine-collection-window',
+  layout: 'fit',
+  minWidth: 280,
+  tools: [{
+    type: 'help',
+    handler: 'onHelpClick'
+  }],
+  listeners: {
+    show: function () {
+      var viewModel = this.getViewModel();
+      viewModel.notify();
+      this.setTitle(viewModel.get('personLabel'));
+      yasmine.utils.ResponsiveUtil.fitWindow(this, {
+        minWidth: 700,
+        minHeight: 400,
+        width: 720,
+        height: 480
+      });
+    },
+    resize: function () {
+      yasmine.utils.ResponsiveUtil.clampWindow(this);
+    }
+  },
   items: {
     xtype: 'tabpanel',
-    height: 400,
-    width: 700,
+    tabBar: {
+      ui: 'sheet'
+    },
     defaults: {
       xtype: 'grid',
       plugins: [{
@@ -151,8 +178,9 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEdit', {
             flex: 1,
             editor: {
               xtype: 'textfield',
-              vtype: 'email',
-              allowBlank: false
+              allowBlank: false,
+              regex: /^[A-Za-z0-9_.-]+@[A-Za-z0-9_.-]+$/,
+              regexText: 'Email must match the StationXML email pattern.'
             }
           }
         ],
@@ -170,23 +198,23 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEdit', {
           {
             text: 'Country Code',
             dataIndex: '_country_code',
-            width: 110,
+            flex: 1,
+            minWidth: 72,
             editor: {
               xtype: 'textfield',
               vtype: 'countryCode',
-              allowBlank: true,
-              maxLength: 2
+              allowBlank: true
             }
           },
           {
             text: 'Area Code',
             dataIndex: '_area_code',
-            width: 90,
+            flex: 1,
+            minWidth: 72,
             editor: {
               xtype: 'textfield',
               vtype: 'areaCode',
-              allowBlank: true,
-              maxLength: 4
+              allowBlank: false
             }
           },
           {
@@ -198,33 +226,28 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEdit', {
               allowBlank: false,
               vtype: 'phoneNumber',
               listeners: {
-                afterrender: function (field) {
-                  var formatPhone = function () {
-                    var v = field.getValue();
-                    if (!v || typeof v !== 'string') return;
-                    var digits = v.replace(/\D/g, '');
-                    if (digits.length >= 3) {
-                      var formatted = digits.substring(0, 3) + '-' + digits.substring(3);
-                      if (formatted !== v) {
-                        field.setValue(formatted);
-                      }
+                change: function (field, newValue) {
+                  if (field.phoneFormatting) {
+                    return;
+                  }
+                  var formatted = Ext.form.field.VTypes.phoneNumberFormat(newValue);
+                  if (formatted === newValue) {
+                    return;
+                  }
+                  var input = field.inputEl && field.inputEl.dom;
+                  var caret = input ? input.selectionStart : null;
+                  field.phoneFormatting = true;
+                  field.setValue(formatted);
+                  field.phoneFormatting = false;
+                  if (input && caret != null) {
+                    var next = caret + (String(formatted).length - String(newValue).length);
+                    if (next < 0) {
+                      next = 0;
                     }
-                  };
-                  field.inputEl.on('input', formatPhone);
-                  Ext.defer(formatPhone, 10);
-                },
-                keydown: function (field, e) {
-                  var key = e.getKey();
-                  if (key !== e.BACKSPACE && key !== e.DELETE) return;
-                  var v = field.getValue();
-                  if (!v || v.length < 4) return;
-                  var inputEl = field.inputEl;
-                  if (!inputEl || !inputEl.dom) return;
-                  var pos = inputEl.dom.selectionStart;
-                  if (key === e.BACKSPACE && pos === 4 && v.charAt(3) === '-') {
-                    e.preventDefault();
-                  } else if (key === e.DELETE && pos === 3 && v.charAt(3) === '-') {
-                    e.preventDefault();
+                    if (next > formatted.length) {
+                      next = formatted.length;
+                    }
+                    input.setSelectionRange(next, next);
                   }
                 }
               }
@@ -236,7 +259,7 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEdit', {
             flex: 1,
             editor: {
               xtype: 'textfield',
-              allowBlank: false
+              allowBlank: true
             }
           }
         ],
@@ -249,9 +272,12 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEdit', {
     ],
     buttons: [{
       text: 'Save',
+      iconCls: 'x-fa fa-floppy-o',
+      cls: 'yasmine-primary-action',
       handler: 'onSaveClick'
     }, {
       text: 'Cancel',
+      iconCls: 'x-fa fa-ban',
       handler: 'onCancelClick'
     }]
   }

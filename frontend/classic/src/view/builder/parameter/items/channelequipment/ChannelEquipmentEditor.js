@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -40,6 +41,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelequipment.ChannelEqu
   ],
   viewModel: 'channel-equipment-editor',
   controller: 'channel-equipment-editor',
+  cls: 'channel-equipment-editor',
   items: [{
     bind: {
       html: '{validationErrors}',
@@ -87,12 +89,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelequipment.ChannelEqu
         xtype: 'datefield',
         fieldLabel: 'Installation Date',
         bind: '{installationDate}',
-        format: yasmine.Globals.DatePrintLongFormat
+        yasmineGuiDate: 'long'
       }, {
         xtype: 'datefield',
         fieldLabel: 'Removal Date',
         bind: '{removalDate}',
-        format: yasmine.Globals.DatePrintLongFormat
+        yasmineGuiDate: 'long'
       }, {
         xtype: 'textfield',
         fieldLabel: 'Resource Id',
@@ -126,9 +128,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelequipment.ChannelEqu
           flex: 1,
           editor: {
             xtype: 'datefield',
-            format: yasmine.Globals.DatePrintLongFormat
+            yasmineGuiDate: 'long'
           },
-          format: yasmine.Globals.DatePrintLongFormat,
+          yasmineGuiDate: 'long',
           dataIndex: 'value'
         }],
         listeners: {

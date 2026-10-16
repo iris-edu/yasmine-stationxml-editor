@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -31,6 +32,7 @@
 Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrl.NrlResponseSelector', {
   extend: 'Ext.tab.Panel',
   xtype: 'nrl-response-selector',
+  minWidth: 0,
   requires: [
     'Ext.toolbar.Breadcrumb',
     'yasmine.view.xml.builder.parameter.items.channelresponse.nrlselector.NrlResponseSelectorController',
@@ -39,8 +41,15 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrl.NrlResp
   ],
   controller: 'nrl-response-selector',
   viewModel: 'nrl-response-selector',
+  config: {
+    responseElement: null
+  },
   reference: 'nrl-response-selector',
-  style: 'border: solid #d0d0d0 1px;',
+  tabBar: {
+    ui: 'sheet',
+    overflowHandler: 'scroller'
+  },
+  cls: 'yasmine-panel-outline yasmine-response-selector',
   listeners: {
     tabchange: 'onSelectorTabChange'
   },
@@ -48,7 +57,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrl.NrlResp
     // Datalogger
     {
       bind: {
-        title: '{dataloggerStatus} Datalogger'
+        title: '{instrumentTabTitle}'
       },
       flex: 1,
       layout: {

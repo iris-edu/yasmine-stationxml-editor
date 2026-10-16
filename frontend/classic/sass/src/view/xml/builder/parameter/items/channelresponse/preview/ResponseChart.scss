@@ -1,3 +1,10 @@
+/* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
+ * Response editor must fill the parameter window. A vbox+flex child with
+   min-height 0 collapses to a blank body. */
+.yasmine-channel-response-field {
+  min-height: 240px;
+}
+
 /* Response chart image layout - NRLv2 online support (2026): ASGSR, Alexey Emanov. */
 
 /* Container for chart image - fit layout sizes this, we need relative for absolute child */
@@ -5,9 +12,18 @@
   position: relative;
   width: 100%;
   height: 100%;
+  overflow: hidden;
+  background: $yasmine-surface;
 }
 
-/* Chart image fills its container exactly, no overflow */
+.response-chart-body {
+  min-height: 0;
+}
+
+/* Chart image fills its container. width/height 100% + object-fit is
+   required on iOS Safari: max-height:100% on an auto-sized img is ignored
+   when the parent is absolutely positioned, which left a blank band and
+   pinned the PNG to the bottom of the editor. */
 .response-chart-img-wrap {
   position: absolute;
   top: 0;
@@ -16,41 +32,53 @@
   bottom: 0;
   overflow: hidden;
   box-sizing: border-box;
+}
+
+.response-chart-loading {
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 10px;
+  color: $yasmine-text-muted;
+  font-size: 14px;
+  background: $yasmine-surface;
+}
+
+.response-chart-loading .fa {
+  font-size: 28px;
+  color: $yasmine-primary;
 }
 
 .response-chart-img {
+  width: 100%;
+  height: 100%;
   max-width: 100%;
   max-height: 100%;
-  width: auto;
-  height: auto;
   object-fit: contain;
-  object-position: center;
+  object-position: center center;
   display: block;
 }
 
-.response-preview-wizard.response-preview {
-  max-width: 960px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  align-self: center;
-  align-items: center;
+.response-chart-toolbar {
+  min-width: 0;
+  overflow: visible;
+  border-bottom: 1px solid $yasmine-border;
+  background: $yasmine-surface-muted;
 }
 
-.response-preview-wizard .response-chart {
-  max-width: 960px;
-  width: 100%;
-  margin-left: auto;
-  margin-right: auto;
-  align-self: center;
+.response-chart-toolbar-row {
+  min-width: 0;
 }
 
+.response-preview-wizard.response-preview,
+.response-preview-wizard .response-chart,
 .response-preview-wizard .response-chart-img {
-  max-width: 960px;
-  width: auto;
+  max-width: none;
+  width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  align-self: stretch;
 }
 
 .response-preview-wizard .response-chart-img-wrap {
@@ -58,7 +86,80 @@
 }
 
 .response-preview-wizard .response-chart-text-wrap {
-  max-width: 960px;
+  max-width: none;
   width: 100%;
-  margin: 0 auto;
+  margin: 0;
+}
+
+/* Library picker cards (NRL Offline / AROL / NRL Online, and NRL type
+   choices). Ext default button text is near-white (#f0f0f0) for dark
+   base-color themes; these cards use light fills, so labels must be
+   restyled to the navy palette used elsewhere in the UI. */
+.yasmine-response-library-card.x-btn,
+.yasmine-response-library-card .x-btn-wrap {
+  border-color: $yasmine-primary !important;
+  border-width: 2px !important;
+  border-radius: $yasmine-radius-md !important;
+  background: $yasmine-primary-soft !important;
+  background-image: none !important;
+}
+
+.yasmine-response-library-card .x-btn-inner {
+  color: $yasmine-primary-dark !important;
+  font-weight: 700;
+}
+
+.yasmine-response-library-card.x-btn-over,
+.yasmine-response-library-card.x-btn-over .x-btn-wrap {
+  border-color: $yasmine-primary-strong !important;
+  background: #dcecf2 !important;
+  background-image: none !important;
+}
+
+.yasmine-response-library-card.x-btn-pressed,
+.yasmine-response-library-card.x-btn-pressed .x-btn-wrap {
+  border-color: $yasmine-primary-dark !important;
+  background: #c5dde8 !important;
+  background-image: none !important;
+}
+
+.yasmine-response-library-card.x-btn-focus {
+  outline: 2px solid $yasmine-focus !important;
+  outline-offset: 2px;
+}
+
+.yasmine-response-library-card.x-btn-disabled,
+.yasmine-response-library-card.x-btn-disabled .x-btn-wrap {
+  border-color: $yasmine-border-strong !important;
+  background: $yasmine-surface-muted !important;
+  opacity: 1 !important;
+}
+
+.yasmine-response-library-card.x-btn-disabled .x-btn-inner {
+  color: $yasmine-text-muted !important;
+  font-weight: 600;
+}
+
+.yasmine-response-tree {
+  border-right: 1px solid $yasmine-border;
+}
+
+.nrlv2-config-list {
+  border-color: $yasmine-border;
+  border-radius: $yasmine-radius-sm;
+  background: $yasmine-surface-raised;
+}
+
+.yasmine-vp-xs .yasmine-response-tree,
+.yasmine-vp-sm .yasmine-response-tree,
+.yasmine-compact-height .yasmine-response-tree {
+  border-right: 0;
+  border-bottom: 1px solid $yasmine-border;
+}
+
+.yasmine-vp-xs .parameter-editor-footer .x-btn-inner,
+.yasmine-vp-sm .parameter-editor-footer .x-btn-inner,
+.yasmine-compact-height .parameter-editor-footer .x-btn-inner {
+  font-size: 12px;
+  padding: 0 6px;
 }

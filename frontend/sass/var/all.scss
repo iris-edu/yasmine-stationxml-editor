@@ -1,10 +1,33 @@
 /*
+ * 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
  * This is is imported by virtue of "sass.var" in "app.json".
  */
+
+@import 'tokens';
 
 $enable-font-awesome: dynamic(true);
 
 // Disable Open Sans to avoid Firefox "kern: Too large subtable" console warnings.
 // Firefox has a known bug (WONTFIX) with Open Sans kerning tables.
-// Fallback: Helvetica Neue, helvetica, arial.
+// Use a native system stack for a consistent, crisp application UI.
 $enable-font-open-sans: dynamic(false);
+$font-family: dynamic($yasmine-font-family);
+$font-size: dynamic(14px);
+$color: dynamic($yasmine-text);
+$base-color: dynamic($yasmine-primary);
+$neutral-color: dynamic($yasmine-border);
+$body-background-color: dynamic($yasmine-canvas);
+$panel-body-background-color: dynamic($yasmine-surface);
+$panel-body-color: dynamic($yasmine-text);
+$panel-header-background-color: dynamic($yasmine-primary-dark);
+$panel-header-color: dynamic(#ffffff);
+$window-header-background-color: dynamic($yasmine-primary-dark);
+$window-header-color: dynamic(#ffffff);
+$grid-row-cell-color: dynamic($yasmine-text);
+$grid-row-cell-background-color: dynamic($yasmine-surface);
+$grid-row-cell-alt-background-color: dynamic($yasmine-surface-raised);
+$grid-row-cell-selected-background-color: dynamic($yasmine-primary-soft);
+$grid-row-cell-over-background-color: dynamic(#f0f6f8);
+$form-field-background-color: dynamic($yasmine-surface);
+$form-field-color: dynamic($yasmine-text);
+$form-field-border-color: dynamic($yasmine-border-strong);

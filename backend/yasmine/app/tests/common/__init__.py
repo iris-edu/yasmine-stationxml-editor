@@ -27,20 +27,69 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 
 # -*- coding: utf-8 -*-
 
-import requests
+import os
+import unittest
+
 from yasmine.app.settings import TORNADO_HOST, TORNADO_PORT
+
+NETWORK_ENV = 'YASMINE_TEST_NETWORK'
+GUI_ENV = 'YASMINE_TEST_GUI'
+GUI_HOST_ENV = 'YASMINE_TEST_HOST'
+GUI_PORT_ENV = 'YASMINE_TEST_PORT'
+
+
+def gui_test_host():
+    host = os.environ.get(GUI_HOST_ENV)
+    if host:
+        return host
+    return TORNADO_HOST if TORNADO_HOST else '127.0.0.1'
+
+
+def gui_test_port():
+    port = os.environ.get(GUI_PORT_ENV)
+    if port:
+        return int(port)
+    return TORNADO_PORT
+
+
+def network_tests_enabled():
+    return os.environ.get(NETWORK_ENV, '').lower() in ('1', 'true', 'yes')
+
+
+def gui_tests_enabled():
+    return os.environ.get(GUI_ENV, '').lower() in ('1', 'true', 'yes')
+
+
+def skip_unless_network(test_item):
+    """Skip unless YASMINE_TEST_NETWORK is set (evaluated at decoration time)."""
+    return unittest.skipUnless(
+        network_tests_enabled(),
+        'Set %s=1 to run tests that download NRL/AROL' % NETWORK_ENV,
+    )(test_item)
+
+
+def skip_unless_gui(test_item):
+    """Skip unless YASMINE_TEST_GUI is set (evaluated at decoration time)."""
+    return unittest.skipUnless(
+        gui_tests_enabled(),
+        'Set %s=1 and start the app to run Selenium GUI tests' % GUI_ENV,
+    )(test_item)
 
 
 def check_web_app_is_down():
     try:
-        host = TORNADO_HOST if TORNADO_HOST else '127.0.0.1'
-        r = requests.get("http://%s:%s/" % (host, TORNADO_PORT))
+        import requests
+        r = requests.get(
+            "http://%s:%s/" % (gui_test_host(), gui_test_port()),
+            timeout=2,
+        )
         r.text
         return False
     except Exception:

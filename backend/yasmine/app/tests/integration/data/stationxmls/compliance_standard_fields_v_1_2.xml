@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<FDSNStationXML xmlns="http://www.fdsn.org/xml/station/1" schemaVersion="1.2">
+  <Source>Yasmine compliance</Source>
+  <Created>2020-01-01T00:00:00Z</Created>
+  <Network code="XX">
+    <Identifier type="DOI">10.1000/network</Identifier>
+    <Identifier>local-identifier</Identifier>
+    <Station code="AAA">
+      <Latitude datum="LOCAL" plusError="0.1" minusError="0.2" measurementMethod="GNSS">10.0</Latitude>
+      <Longitude>2.0</Longitude>
+      <Elevation>3.0</Elevation>
+      <Site>
+        <Name>Compliance</Name>
+      </Site>
+      <ExternalReference>
+        <URI>https://example.org/station</URI>
+        <Description>Station report</Description>
+      </ExternalReference>
+      <Channel code="BHZ" locationCode="00">
+        <Latitude>10.0</Latitude>
+        <Longitude>2.0</Longitude>
+        <Elevation>3.0</Elevation>
+        <Depth>0.0</Depth>
+      </Channel>
+    </Station>
+  </Network>
+</FDSNStationXML>

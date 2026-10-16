@@ -1,4 +1,5 @@
 /* ****************************************************************************
+ * 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
  * Override: Dom event publisher
  *
  * 1. Use passive: false for wheel events - fixes Chrome "[Intervention] Unable
@@ -62,7 +63,7 @@ Ext.define('overrides.event.publisher.Dom', {
             handler = capture ? me.onDirectCaptureEvent : me.onDirectEvent,
             options, wrapper, key;
 
-        if (me.unloadToPagehide[eventName]) {
+        if (me.unloadToPagehide[eventName] && !(Ext.os && Ext.os.is && Ext.os.is.iOS)) {
             wrapper = function(e) {
                 if (!e.persisted) {
                     handler.call(me, e);
@@ -86,7 +87,7 @@ Ext.define('overrides.event.publisher.Dom', {
             handler = capture ? me.onDirectCaptureEvent : me.onDirectEvent,
             options, wrapper, key;
 
-        if (me.unloadToPagehide[eventName]) {
+        if (me.unloadToPagehide[eventName] && !(Ext.os && Ext.os.is && Ext.os.is.iOS)) {
             key = (element.id || dom.id || (dom === window ? 'win' : 'el')) + '-' + eventName + '-' + capture;
             wrapper = me._pagehideWrappers && me._pagehideWrappers[key];
             if (wrapper) {
@@ -112,13 +113,19 @@ Ext.define('overrides.event.publisher.Dom', {
             }
         }
 
-        // Use pagehide instead of deprecated unload. Only destroy when persisted
-        // is false (page is actually being unloaded, not cached in bfcache).
-        // Use native addEventListener - pagehide is not in Ext's handledDomEvents.
-        window.addEventListener('pagehide', function(e) {
-            if (!e.persisted) {
+        // Chrome/Firefox: pagehide replaces deprecated unload (skip bfcache).
+        // iOS Safari fires pagehide during history.replaceState / hash updates
+        // on first load; destroying the publisher then leaves a blank screen.
+        if (Ext.os && Ext.os.is && Ext.os.is.iOS) {
+            window.addEventListener('unload', function() {
                 me.destroy();
-            }
-        });
+            });
+        } else {
+            window.addEventListener('pagehide', function(e) {
+                if (!e.persisted) {
+                    me.destroy();
+                }
+            });
+        }
     }
 });

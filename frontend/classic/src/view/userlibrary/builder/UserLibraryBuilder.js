@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -43,57 +44,99 @@ Ext.define('yasmine.view.userlibrary.builder.UserLibraryBuilder', {
   bind: {
     title: 'User Library Builder | {selectedLibrary.name}'
   },
-  frame: true,
+  frame: false,
+  cls: 'yasmine-workspace yasmine-library-workspace',
   layout: 'border',
   items: [
     {
       region: 'north',
-      items: {
-        xtype: 'segmentedbutton',
-        padding: '5 5 5 5',
-        items: [{
-          itemId: `type_${yasmine.NodeTypeEnum.network}`,
-          text: 'Networks Library',
-          iconCls: 'x-fa fa-connectdevelop',
-          pressed: true
-        }, {
-          itemId: `type_${yasmine.NodeTypeEnum.station}`,
-          text: 'Stations Library',
-          iconCls: 'x-fa fa-building-o',
-        }, {
-          itemId: `type_${yasmine.NodeTypeEnum.channel}`,
-          text: 'Channels Library',
-          iconCls: 'x-fa fa-rss',
-        }],
-        listeners: {
-          toggle: 'onNodeTypeSelected'
+      border: false,
+      layout: {
+        type: 'vbox',
+        align: 'stretch'
+      },
+      items: [
+        {
+          xtype: 'toolbar',
+          itemId: 'libraryTypeBar',
+          cls: 'yasmine-wrap-toolbar',
+          padding: '5 5 5 5',
+          items: [{
+            xtype: 'segmentedbutton',
+            reference: 'libraryTypeSwitcher',
+          cls: 'yasmine-library-type-switcher',
+            items: [{
+              itemId: `type_${yasmine.NodeTypeEnum.network}`,
+            text: 'Networks',
+            tooltip: 'Network templates',
+              iconCls: 'x-fa fa-connectdevelop',
+              pressed: true
+            }, {
+              itemId: `type_${yasmine.NodeTypeEnum.station}`,
+            text: 'Stations',
+            tooltip: 'Station templates',
+              iconCls: 'x-fa fa-building-o',
+            }, {
+              itemId: `type_${yasmine.NodeTypeEnum.channel}`,
+            text: 'Channels',
+            tooltip: 'Channel templates',
+              iconCls: 'x-fa fa-rss',
+            }],
+            listeners: {
+              toggle: 'onNodeTypeSelected'
+            }
+          }]
+        },
+        {
+          xtype: 'toolbar',
+          itemId: 'libraryPaneBar',
+          hidden: true,
+          padding: '0 5 5 5',
+          items: [{
+            xtype: 'segmentedbutton',
+            reference: 'libraryPaneSwitcher',
+            allowMultiple: false,
+            items: [
+              {text: 'Hierarchy', itemId: 'hierarchy', pressed: true},
+              {text: 'Parameters', itemId: 'detail'}
+            ],
+            listeners: {
+              toggle: 'onLibraryPaneToggle'
+            }
+          }]
         }
-      }
+      ]
     },
     {
       region: 'center',
-      layout: 'hbox',
+      reference: 'libraryWorkspace',
+      layout: {
+        type: 'hbox',
+        align: 'stretch'
+      },
       items: [
         {
           xtype: 'userlibrary-children',
+          reference: 'libraryChildren',
           flex: 2,
-          margin: '0 5 5 5',
-          style: {
-            'border': '2px solid #d0d0d0;'
-          },
-          width: '100%',
-          height: '100%'
+          minWidth: 200,
+          margin: '0 0 5 5',
+          cls: 'yasmine-panel-outline'
         },
         {
           reference: 'parameter-editor',
           xtype: 'parameter-list',
           margin: '0 5 5 0',
-          style: {
-            'border': '2px solid #d0d0d0;'
-          },
+          cls: 'yasmine-panel-outline',
           hideTitle: true,
           flex: 1,
-          height: '100%',
+          minWidth: 220,
+          // Splitter sits immediately before Parameters and drags horizontally.
+          split: {
+            side: 'before',
+            collapseOnDblClick: false,
+            collapsible: false
+          }
         }
       ]
     }]

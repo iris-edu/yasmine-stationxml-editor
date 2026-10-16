@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -42,8 +43,9 @@ class OperatorLookup:
             contacts.append(self._create_person(contact))
 
         contacts = list(filter(None, contacts))
+        agencies = Utils.parse_string_list(dictionary.get('Agency'))
         return {
-            'agency': Utils.parse_string_list(dictionary.get('Agency'))[0],
+            'agency': agencies[0] if agencies else None,
             'website': dictionary.get('WebSite'),
             'help': dictionary.get('Help'),
             'contacts': contacts if len(contacts) > 0 else None,
@@ -90,3 +92,4 @@ class Utils:
             return value
         if isinstance(value, str):
             return [value]
+        return []

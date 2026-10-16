@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-19, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -33,11 +34,31 @@
 
 Ext.define('yasmine.services.SettingsService', {
   statics: {
-    initSettings: function () {
-      let settingsRequest = Ext.Ajax.request({scope: this, async: false, url: '/api/cfg/0', method: 'GET'});
-      let settings = JSON.parse(settingsRequest.responseText);
-      yasmine.utils.SettingsUtil.applySettings(settings);
-      Ext.GlobalEvents.fireEvent('nrlv2SettingsChanged');
+    initSettings: function (options) {
+      options = options || {};
+      return Ext.Ajax.request({
+        scope: options.scope || this,
+        url: '/api/cfg/0',
+        method: 'GET',
+        success: function (response) {
+          var settings = {};
+          try {
+            settings = JSON.parse((response && response.responseText) || '{}');
+          } catch (e) {
+            settings = {};
+          }
+          yasmine.utils.SettingsUtil.applySettings(settings);
+          Ext.GlobalEvents.fireEvent('nrlv2SettingsChanged');
+          if (options.success) {
+            options.success.call(options.scope || this, settings);
+          }
+        },
+        failure: function (response) {
+          if (options.failure) {
+            options.failure.call(options.scope || this, response);
+          }
+        }
+      });
     }
   }
 });

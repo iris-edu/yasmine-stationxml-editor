@@ -29,8 +29,42 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 #}
-<b>Settings Help</b>
+<p><b>Settings</b></p>
+<p>
+These values are defaults for new inventories and for how Yasmine talks to
+response libraries. They apply after you click <b>Save</b>.
+</p>
+
+<p><b>General</b></p>
+<ul>
+<li><b>GUI Date Format</b> &mdash; how dates appear in the interface. The exported StationXML still uses UTC.</li>
+<li><b>XML Module, Source, URI</b> &mdash; default FDSNStationXML root fields for new documents.</li>
+<li><b>XML View Mode</b> &mdash; Tree is the inventory tree. Card is a one-level card view of children.</li>
+<li><b>NRL Offline</b> &mdash; keep a local Nominal Response Library ZIP and refresh it from the catalog <code>updatedsince</code> check.</li>
+<li><b>GATITO</b> &mdash; URL of the Generic Atomic Library of Tiny Objects used for comment, agency and similar helper lists. Refresh imports it. This is not StationXML schema help.</li>
+<li><b>Import a ZIP</b> &mdash; load a user library archive from disk.</li>
+</ul>
+
+<p><b>NRL Online</b></p>
+<p>
+When enabled, the response wizard can fetch instrument responses from the
+IRIS/EarthScope NRL web service without a local archive. <b>Test</b> checks
+the URL. The default host is <code>service.earthscope.org</code>.
+</p>
+
+<p><b>Network, Station, Channel</b></p>
+<ul>
+<li><b>Code</b> and counts are wizard defaults for new nodes.</li>
+<li><b>Required Fields</b> must be present before Yasmine will save that node. You cannot remove fields that StationXML itself requires.</li>
+<li><b>Spread to Channels</b> copies a station coordinate or similar edit down to its channels when you save.</li>
+</ul>
+
+<p>
+Field-level StationXML meanings are in the builder <b>?</b> (schema help),
+not in this Settings panel.
+</p>

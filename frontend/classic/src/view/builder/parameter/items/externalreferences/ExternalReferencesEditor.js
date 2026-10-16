@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -39,6 +40,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.externalreferences.External
   viewModel: 'external-references-editor',
   controller: 'external-references-editor',
   border: true,
+  layout: {
+    type: 'vbox',
+    align: 'stretch'
+  },
   items: [{
     bind: {
       html: '{validationErrors}',
@@ -51,11 +56,13 @@ Ext.define('yasmine.view.xml.builder.parameter.items.externalreferences.External
     xtype: 'grid',
     flex: 1,
     reference: 'referencegrid',
-    width: 700,
-    height: 400,
+    minWidth: 0,
     plugins: [{
       ptype: 'rowediting',
-      clicksToMoveEditor: 1
+      clicksToMoveEditor: 1,
+      listeners: {
+        canceledit: 'onCancelEditing'
+      }
     }],
     selModel: 'rowmodel',
     bind: {
@@ -66,12 +73,20 @@ Ext.define('yasmine.view.xml.builder.parameter.items.externalreferences.External
       header: 'Uri',
       dataIndex: 'uri',
       width: 250,
-      editor: 'textfield'
+      editor: {
+        xtype: 'textfield',
+        allowBlank: false,
+        allowOnlyWhitespace: false
+      }
     }, {
       header: 'Description',
       dataIndex: 'description',
       flex: 1,
-      editor: 'textfield'
+      editor: {
+        xtype: 'textfield',
+        allowBlank: false,
+        allowOnlyWhitespace: false
+      }
     }],
     tbar: [{
       xtype: 'button',

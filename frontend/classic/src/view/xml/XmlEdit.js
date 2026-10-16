@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -47,34 +48,119 @@ Ext.define('yasmine.view.xml.XmlEdit', {
         title: '{title}'
     },
     modal: true,
-    frame: true,
+    frame: false,
+    cls: 'yasmine-window',
+    constrain: true,
+    layout: {
+        type: 'vbox',
+        align: 'stretch'
+    },
+    minWidth: 280,
     defaultFocus: 'name',
+    listeners: {
+        show: function () {
+            yasmine.utils.ResponsiveUtil.fitWindow(this, {
+                minWidth: 400,
+                minHeight: 400,
+                width: 480,
+                height: 480
+            });
+        },
+        afterlayout: function () {
+            yasmine.utils.ResponsiveUtil.clampWindow(this);
+        }
+    },
     items: {
         xtype: 'form',
         bodyPadding: 10,
         modelValidation: true,
         defaultType: 'textfield',
+        defaults: {
+            anchor: '100%',
+            listeners: {
+                focus: function (field) {
+                    var window = field.up('xml-edit');
+                    window.stationXmlHelpContext = field.stationXmlRootField ?
+                        {rootField: field.stationXmlRootField} :
+                        '/FDSNStationXML';
+                }
+            }
+        },
         items: [
-            { fieldLabel: 'Name', bind: '{model.name}', name: 'name' },
-            { fieldLabel: 'Source', bind: '{model.source}', name: 'source'  },
-            { fieldLabel: 'Module', bind: '{model.module}', name: 'module' },
-            { fieldLabel: 'Uri', bind: '{model.uri}', vtype: 'url', name: 'url' },
-            { fieldLabel: 'Sender', bind: '{model.sender}', name: 'sender' }
+            {
+                fieldLabel: 'Name',
+                bind: '{model.name}',
+                name: 'name',
+                allowBlank: false,
+                allowOnlyWhitespace: false
+            },
+            {
+                xtype: 'displayfield',
+                fieldLabel: 'Schema Version',
+                bind: '{model.schemaVersion}',
+                stationXmlRootField: 'schema_version'
+            },
+            {
+                fieldLabel: 'Source',
+                bind: '{model.source}',
+                name: 'source',
+                allowBlank: true,
+                stationXmlRootField: 'source'
+            },
+            {
+                fieldLabel: 'Sender',
+                bind: '{model.sender}',
+                name: 'sender',
+                allowBlank: true,
+                stationXmlRootField: 'sender'
+            },
+            {
+                fieldLabel: 'Module',
+                bind: '{model.module}',
+                name: 'module',
+                allowBlank: true,
+                stationXmlRootField: 'module'
+            },
+            {
+                fieldLabel: 'Module URI',
+                bind: '{model.uri}',
+                name: 'uri',
+                allowBlank: true,
+                stationXmlRootField: 'uri'
+            },
+            {
+                xtype: 'datefield',
+                fieldLabel: 'Created (UTC)',
+                bind: '{model.created_at}',
+                name: 'created_at',
+                yasmineGuiDate: 'long',
+                allowBlank: false,
+                stationXmlRootField: 'created'
+            }
         ],
         buttons: [{
             text: 'Save',
+            iconCls: 'x-fa fa-floppy-o',
+            cls: 'yasmine-primary-action',
             disabled: true,
             formBind: true,
             handler: 'onSaveClick'
         }, {
             text: 'Cancel',
+            iconCls: 'x-fa fa-ban',
             handler: 'onCancelClick'
         }]
     },
     tools:[
         {
             type:'help',
-            handler: function() { yasmine.utils.HelpUtil.helpMe('xml_edit', 'Edit XML') }
+            handler: function (event, tool, header) {
+                var window = header.up('xml-edit');
+                yasmine.utils.HelpUtil.stationXmlHelpMe(
+                    window.stationXmlHelpContext || '/FDSNStationXML',
+                    'StationXML document'
+                );
+            }
         }
     ]
 });

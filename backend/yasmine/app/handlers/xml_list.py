@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-24, version 4.3.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -34,24 +35,38 @@
 import io
 import os
 
+import tornado.gen
+
 from yasmine.app.handlers.base import ExtJsHandler, AsyncThreadMixin, BaseHandler
 from yasmine.app.models import XmlModel
 from yasmine.app.utils.imp_exp import ImportStationXml, ExportStationXml
+from yasmine.app.utils.stationxml_migration import build_import_migration_report
 
 
 class XmlGridHandler(ExtJsHandler):
     model = XmlModel
+    exclude_fields = ['extension_sidecar']
 
 
 class XmlImpExpHandler(AsyncThreadMixin, BaseHandler):
     def async_post(self, *_, **__):
-        body = self.request.files['xml-path'][0]['body']
-        filename = self.request.files['xml-path'][0]['filename']
+        files = self.request.files.get('xml-path')
+        if not files:
+            return {'success': False, 'message': 'xml-path file is required'}
+        body = files[0]['body']
+        filename = files[0]['filename']
         name = self.get_argument('name') or os.path.splitext(filename)[0]
-        ImportStationXml(name, io.BytesIO(body), self).run()
-        return {'success': True}
+        migration = build_import_migration_report(body)
+        try:
+            ImportStationXml(name, io.BytesIO(body), self).run()
+        except ValueError as error:
+            return {'success': False, 'message': str(error)}
+        return {'success': True, 'migration': migration}
 
+    def _export(self, db_id):
+        return ExportStationXml(db_id, self).run()
+
+    @tornado.gen.coroutine
     def get(self, db_id, *_, **__):
-
-        file_name, file_data = ExportStationXml(db_id, self).run()
+        file_name, file_data = yield self.async_call(self._export, db_id)
         self.write_file_data(file_name, file_data.getvalue())

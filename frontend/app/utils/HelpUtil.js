@@ -29,12 +29,16 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
 
 Ext.define("yasmine.utils.HelpUtil", {
     singleton: true,
+    requires: [
+        'yasmine.view.help.stationxml.StationXmlHelp'
+    ],
     helpMe: function (helpId, helpTitle = 'Help panel') {
         var title = `Help: '${helpTitle}'`;
     	yasmine.help.HelpModel.load(helpId, {
@@ -56,44 +60,21 @@ Ext.define("yasmine.utils.HelpUtil", {
 				}
 			}
 		})
+    },
+    stationXmlHelpMe: function (context, helpTitle = 'Schema help') {
+        var windows = Ext.ComponentQuery.query('stationxml-help');
+        var helpWindow = windows.length ? windows[0] : Ext.create({
+            xtype: 'stationxml-help'
+        });
+        helpWindow.showContext(context, helpTitle);
     }
 });
 
 
-Ext.define('yasmine.help.HTMLEditor',{
-	extend: 'Ext.form.field.HtmlEditor',
-	alias: 'widget.help_html_editor',
-	getToolbarCfg: function(){
-        var cfg = this.callParent(arguments);
-        if (this.readOnly){
-        	cfg['hidden'] = true
-        }
-        return cfg
-    },
-    getDocMarkup: function() {
-        var me = this,
-            h = me.iframeEl.getHeight() - me.iframePad * 2;
-
-        // - IE9+ require a strict doctype otherwise text outside visible area can't be selected.
-        // - Opera inserts <P> tags on Return key, so P margins must be removed to avoid double line-height.
-        // - On browsers other than IE, the font is not inherited by the IFRAME so it must be specified.
-        return Ext.String.format(
-               '<!DOCTYPE html>'
-               + '<html><head><style type="text/css">'
-               + (Ext.isOpera ? 'p{margin:0;}' : '')
-               + 'body{border:0;margin:0;padding:{0}px;direction:' + (me.rtl ? 'rtl;' : 'ltr;')
-               + (Ext.isIE8 ? Ext.emptyString : 'min-')
-               + 'height:{1}px;box-sizing:border-box;-moz-box-sizing:border-box;-webkit-box-sizing:border-box;cursor:text;background-color:white;'
-               + (Ext.isIE ? '' : 'font-size:12px;font-family:{2}')
-               + '}</style></head><body></body></html>'
-            , me.iframePad, h, me.defaultFont);
-    }    
-})
-
 Ext.define('yasmine.help.HelpModel', {
     extend: 'Ext.data.Model',
     fields: ['key', 'content'],
-    idProperty: 'id',
+    idProperty: 'key',
     proxy: {
         type: 'rest',
         url : '/api/help/',
@@ -118,20 +99,36 @@ Ext.define('yasmine.help.Help', {
     alias: 'widget.main_help',
     viewModel: 'main_help',
     controller: 'main_help',
+    cls: 'yasmine-window yasmine-context-help',
     modal: false,
     alignOffset: [-10, 0],
     defaultAlign: 'r-r',
     alwaysOnTop: true,
-    width: "30%",
+    width: 480,
+    maxWidth: 480,
     height: "80%",
     maximizable: true,
     border: false,
     layout: 'fit',
+    listeners: {
+        show: function () {
+            yasmine.utils.ResponsiveUtil.fitHelpWindow(this);
+        }
+    },
     items:[{
-    	xtype: 'help_html_editor',
-    	readOnly: true,
+    	xtype: 'panel',
+    	scrollable: true,
+    	bodyPadding: 12,
+        bodyCls: 'x-selectable yasmine-help-content',
     	bind: {
-    		value: '{record.content}'
+    		html: '{record.content}'
+    	},
+    	listeners: {
+    		afterrender: function (panel) {
+    			if (panel.body && panel.body.selectable) {
+    				panel.body.selectable();
+    			}
+    		}
     	}
     }] 
 })
@@ -139,6 +136,10 @@ Ext.define('yasmine.help.Help', {
 Ext.on('resize', function() { 
 	var main_help = Ext.ComponentQuery.query('main_help');
 	if (main_help.length>0){
-		main_help[0].close()
+		yasmine.utils.ResponsiveUtil.fitHelpWindow(main_help[0]);
 	}
+    var stationxmlHelp = Ext.ComponentQuery.query('stationxml-help');
+    if (stationxmlHelp.length > 0 && stationxmlHelp[0].isVisible()) {
+        yasmine.utils.ResponsiveUtil.fitStationXmlHelpWindow(stationxmlHelp[0]);
+    }
 });

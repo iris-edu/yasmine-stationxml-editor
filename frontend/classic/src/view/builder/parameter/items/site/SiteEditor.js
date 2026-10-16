@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -57,7 +58,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.site.SiteEditor', {
     },
     {
       xtype: 'combobox',
-      fieldLabel: '<b>GATITO</b>',
+      fieldLabel: '<b>GATITO templates</b>',
+      labelAttrTpl: 'data-qtip="Generic ATomic lIbrary of Tiny Objects — pick a reusable Site template"',
       bind: {
         store: '{helpStore}'
       },
@@ -73,7 +75,14 @@ Ext.define('yasmine.view.xml.builder.parameter.items.site.SiteEditor', {
         anchor: '100%'
       },
       items: [
-        {xtype: 'textfield', fieldLabel: 'Name', bind: '{name}', itemId: 'focusItem'},
+        {
+          xtype: 'textfield',
+          fieldLabel: 'Name',
+          bind: '{name}',
+          itemId: 'focusItem',
+          allowBlank: false,
+          allowOnlyWhitespace: false
+        },
         {xtype: 'textarea', fieldLabel: 'Description', bind: '{description}'},
         {xtype: 'textfield', fieldLabel: 'Town', bind: '{town}'},
         {xtype: 'textfield', fieldLabel: 'County', bind: '{county}'},

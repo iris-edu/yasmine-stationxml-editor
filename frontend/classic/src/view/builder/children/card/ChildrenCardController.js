@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -42,13 +43,12 @@ Ext.define('yasmine.view.xml.builder.children.card.ChildrenCardController', {
     }
   },
   init: function () {
-    yasmine.Globals.LocationColorScale = d3.scaleOrdinal(d3.schemeCategory10);
-    Ext.ux.Mediator.on('epoch-selected', this.onEpochSelected, this);
-    Ext.ux.Mediator.on('node-updated', this.onNodeUpdated, this);
-    Ext.ux.Mediator.on('node-created', this.onNodeCreated, this);
-    Ext.ux.Mediator.on('node-deleted', this.onNodeDeleted, this);
+    this.mon(Ext.ux.Mediator, 'epoch-selected', this.onEpochSelected, this);
+    this.mon(Ext.ux.Mediator, 'node-updated', this.onNodeUpdated, this);
+    this.mon(Ext.ux.Mediator, 'node-created', this.onNodeCreated, this);
+    this.mon(Ext.ux.Mediator, 'node-deleted', this.onNodeDeleted, this);
     Ext.ux.Mediator.fireEvent('node-selected', this._getRoot());
-    Ext.ux.Mediator.on('children-reload', this.onChildrenReload, this);
+    this.mon(Ext.ux.Mediator, 'children-reload', this.onChildrenReload, this);
   },
   onNodeUpdated: function () {
     this._reloadSelectedNode();
@@ -129,13 +129,18 @@ Ext.define('yasmine.view.xml.builder.children.card.ChildrenCardController', {
     this._reloadStore();
   },
   _reloadSelectedNode: function () {
+    let selectedItem = this.getViewModel().get('selectedItem');
+    if (!selectedItem) {
+      this._reloadStore();
+      return;
+    }
     let store = this.getViewModel().getStore('childrenStore');
-    let selectedNodeId = this.getViewModel().get('selectedItem').id;
+    let selectedNodeId = selectedItem.id;
     store.removeAll();
     store.load({
       addRecords: true,
       callback: (children) => {
-        let node = children.find(x => x.id === selectedNodeId);
+        let node = (children || []).find(x => x.id === selectedNodeId);
         this.getViewModel().set('selectedItem', node);
       }
     });

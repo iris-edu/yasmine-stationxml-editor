@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -46,15 +47,18 @@ RESOURCES_SCHEMA_GATITO = os.path.join(ROOT_DIR, 'resources', 'schemas', 'gatito
 
 TEMPLATES_DIR = os.path.join(ROOT_DIR, 'templates')
 
+DEBUG = os.environ.get('YASMINE_DEBUG', '').lower() in ('1', 'true', 'yes')
+COOKIE_SECRET = os.environ.get('YASMINE_COOKIE_SECRET') or os.urandom(32)
+
 TORNADO_SETTINGS = {  # @UnusedVariable
-    'debug': True,
-    'autoreload': True,
-    'compiled_template_cache': False,
-    'static_hash_cache': False,
-    'serve_traceback': True,
+    'debug': DEBUG,
+    'autoreload': DEBUG,
+    'compiled_template_cache': not DEBUG,
+    'static_hash_cache': not DEBUG,
+    'serve_traceback': DEBUG,
     'static_path': os.path.join(ROOT_DIR, 'static'),
     'template_path': TEMPLATES_DIR,
-    'cookie_secret': 'AC<rz+K.t_[.]z-MH!e99SH'
+    'cookie_secret': COOKIE_SECRET,
 }
 
 DB_NAME = 'db.sqlite'
@@ -63,8 +67,11 @@ DB_CONNECTION = ('sqlite:///%s' % DB_FILE)  # @UnusedVariable
 
 TORNADO_HOST = ''  # @UnusedVariable
 TORNADO_PORT = 80  # @UnusedVariable
+# Tornado's default is 100MB. A network-level EarthScope response file is larger.
+STATIONXML_UPLOAD_MAX_BYTES = 1024 * 1024 * 1024
 
-DATE_FORMAT_SYSTEM = '%d/%m/%Y %H:%M:%S'  # @UnusedVariable
+# ISO-8601 form accepted by obspy.core.utcdatetime.UTCDateTime.
+DATE_FORMAT_SYSTEM = '%Y-%m-%dT%H:%M:%S'  # @UnusedVariable
 
 try:
     from yasmine.settings.dev import *

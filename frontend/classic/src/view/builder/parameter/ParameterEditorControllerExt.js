@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -40,21 +41,65 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditorControllerExt', {
     'yasmine.view.xml.builder.parameter.items.float.FloatEditor',
     'yasmine.view.xml.builder.parameter.items.latitude.LatitudeEditor',
     'yasmine.view.xml.builder.parameter.items.longitude.LongitudeEditor',
-    'yasmine.view.xml.builder.parameter.items.date.DateEditor'
+    'yasmine.view.xml.builder.parameter.items.date.DateEditor',
+    'yasmine.utils.StationXmlHelpContext'
   ],
   createFrom: function () {
     var record = this.getViewModel().get('record');
     var content = Ext.create({
-      fieldLabel: Ext.String.capitalize(record.get('name')),
+      fieldLabel: yasmine.utils.StationXmlHelpContext.labelForRecord(record),
       xtype: record.get('class'),
       reference: 'contentView',
       value: record.get('value')
     });
     this.getView().down('form').insert(0, content);
-    content.getViewModel().set('record', record);
+    this.bindHelpFields(content, record);
+    if (content.getViewModel()) {
+      content.getViewModel().set('record', record);
+      content.getViewModel().set('nodeType', this.getViewModel().get('nodeType'));
+    }
 
-    this.getViewModel().set('station__spread_to_channels', yasmine.Globals.Settings.station__spread_to_channels)
-    content.getViewModel().set('nodeType', this.getViewModel().get('nodeType'));
+    var settings = yasmine.Globals.Settings || {};
+    this.getViewModel().set('station__spread_to_channels', settings.station__spread_to_channels)
+  },
+  bindHelpFields: function (content, record) {
+    var me = this;
+    var parameterName = record.get('name');
+    var nodeType = me.getViewModel().get('nodeType');
+    var setContext = function (field) {
+      me.getView().stationXmlHelpContext = {
+        nodeType: nodeType,
+        parameterName: parameterName,
+        relativePath: yasmine.utils.StationXmlHelpContext.relativePathForField(
+          parameterName,
+          field
+        )
+      };
+    };
+    var bindFields = function () {
+      var fields = content.isFormField ? [content] : (
+        content.query ? content.query('field') : []
+      );
+      Ext.Array.each(fields, function (field) {
+        if (field.stationXmlHelpBound) {
+          return;
+        }
+        field.stationXmlHelpBound = true;
+        field.on('focus', function () {
+          setContext(field);
+        });
+      });
+    };
+    me.getView().stationXmlHelpContext = {
+      nodeType: nodeType,
+      parameterName: parameterName
+    };
+    bindFields();
+    content.on('focus', function () {
+      if (content.isFormField) {
+        setContext(content);
+      }
+    });
   },
   onSaveClick: function () {
     var contentView = this.lookupReference('contentView');
@@ -88,7 +133,12 @@ Ext.define('yasmine.view.xml.builder.parameter.ParameterEditorControllerExt', {
   onHelpClick: function () {
     var record = this.getViewModel().get('record');
     var nodeTypeString = yasmine.utils.NodeTypeConverter.toString(this.getViewModel().get('nodeType'));
-    var nodeTypeId = nodeTypeString.toLowerCase();
-    yasmine.utils.HelpUtil.helpMe(`parameter_${nodeTypeId}_${record.get('name')}`, `${nodeTypeString} ${record.get('name')}`);
+    yasmine.utils.HelpUtil.stationXmlHelpMe(
+      this.getView().stationXmlHelpContext || {
+        nodeType: this.getViewModel().get('nodeType'),
+        parameterName: record.get('name')
+      },
+      `${nodeTypeString} ${yasmine.utils.StationXmlHelpContext.labelForRecord(record)}`
+    );
   }
 });

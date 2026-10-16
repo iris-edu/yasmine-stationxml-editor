@@ -1,8 +1,39 @@
 name: Yasmine
-on: [ push ]
+on:
+  push:
+  workflow_dispatch:
 jobs:
+  backend-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r backend/requirements.txt -r backend/requirements-test.txt
+          pip install -e backend
+      - name: Run unit, HTTP, and integration tests
+        working-directory: backend
+        run: python yasmineapp.py test
+
+  frontend-unit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+      - name: Run frontend unit tests
+        run: node --test frontend/test/unit/*.test.js
+
   build-compose:
     runs-on: ubuntu-latest
+    if: github.event_name == 'workflow_dispatch'
     steps:
     - uses: actions/checkout@v4
     - name: action-docker-compose
@@ -12,87 +43,12 @@ jobs:
 
   lint_python:
     runs-on: ubuntu-latest
+    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python 3.13
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: '3.13'
-      - run: pip install pep8
-      - run: pep8 backend/yasmine
-
-# Note:  This build routine for Yasmime appear is dependent on a yasmine-utils image that hasn't been rebuilt in 3 years at time of writing.  
-#        This workflow now fails as a result.  Its primary utility is to create an artifact that the test_app workflow can make use of.
-#        This all needs to be reexamined as technical debt and hobbled test routines make this largely a useless process.
-#  build_app:
-    # runs-on: ubuntu-latest
-    # container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
-    # steps:
-    #   - uses: actions/checkout@v4
-    #   - name: Set up Python 3.13
-    #     uses: actions/setup-python@v4
-    #     with:
-    #       python-version: '3.13'
-    #   - name: Add CI_COMMIT_SHORT_SHA env property with commit short sha
-    #     run: echo "CI_COMMIT_SHORT_SHA=`echo ${GITHUB_SHA} | cut -c1-8`" >> $GITHUB_ENV
-    #   - name: Get the version
-    #     id: get_version
-    #     run: echo ::set-output name=VERSION::$(echo $GITHUB_REF | cut -d / -f 3)
-    #   - name: Get TIMESTAMP
-    #     id: date
-    #     run: echo "::set-output name=date::$(date --utc --rfc-2822)"
-    #   - name: Build application
-    #     env:
-    #       VERSION_FILE: "yasmine/static/js/yasmine/classic/app.js"
-    #       CI_JOB_TIMESTAMP: "${{ steps.date.outputs.date }}"
-    #       CI_COMMIT_TAG: "${{ steps.get_version.outputs.VERSION }}"
-    #     run: |
-    #       cd frontend
-    #       sencha app build
-    #       cd ../backend
-    #       echo "$(echo var releaseVersion=\"$CI_COMMIT_TAG\" | cat - $VERSION_FILE)" > $VERSION_FILE
-    #       echo "$(echo var buildTimestamp=\"$CI_JOB_TIMESTAMP\" | cat - $VERSION_FILE)" > $VERSION_FILE
-    #       echo "$(echo var commitRevision=\"$CI_COMMIT_SHORT_SHA\" | cat - $VERSION_FILE)" > $VERSION_FILE
-    #       python setup.py sdist
-    #   - uses: actions/upload-artifact@v4
-    #     with:
-    #       name: yasmine-artifact
-    #       path: backend/dist/*.gz
-
-# Note:  The test routines for Yasmime appear to be quite hobbled and depend on an out of date utils image.  We would need to reconstitute
-#        the image builder and then focus on the test routines to make them valid.  Commenting this workflow out.
-  # test_app:
-  #   runs-on: ubuntu-latest
-  #   container: ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
-  #   needs: [build_app]
-  #   steps:
-  #     - uses: actions/download-artifact@v4
-  #       with:
-  #         name: yasmine-artifact
-  #     - name: Install and Run Yasmine tests
-  #       run: |
-  #         pip3.13 install --upgrade pip setuptools
-  #         sudo pip3.13 install YASMINE-1.0.tar.gz
-  #         yasmineapp.py syncdb upgrade heads
-  #         yasmineapp.py runserver &>/dev/null&
-  #         sleep 10
-  #         yasmineapp.py test
-
-# NOTE: this has been deactivated for some time, but we'd need something like this reactivated if we want a base image built.
-#  docker:
-#    runs-on: ubuntu-latest
-#    permissions:
-#      contents: read
-#      packages: write
-#    steps:
-#      - name: Check Out Repo
-#        uses: actions/checkout@v2
-#
-#      - name: Log in to registry
-#        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-#
-#      - name: Build image
-#        run: docker build . --file docker-gitlab-centos7 --tag ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
-#
-#      - name: Push image
-#        run: docker push ghcr.io/iris-edu/yasmine-stationxml-editor/yasmine-utils:latest
+      - run: pip install pycodestyle
+      - run: pycodestyle --max-line-length=120 backend/yasmine

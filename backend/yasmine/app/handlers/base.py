@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -36,6 +37,7 @@ from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
 import mmap
 import os
+from typing import Any
 
 from humanize.filesize import naturalsize
 from sqlalchemy import DateTime
@@ -48,8 +50,7 @@ from tornado.concurrent import run_on_executor
 from tornado.web import addslash
 import tornado
 
-from yasmine.app.settings import DATE_FORMAT_SYSTEM
-from yasmine.app.utils.date import datetime_to_utc, strptime
+from yasmine.app.utils.date import datetime_to_utc, parse_naive_datetime
 from yasmine.app.utils.db import db_transaction
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.utils.ujson import json_dump, json_load
@@ -67,16 +68,16 @@ class AsyncThreadMixin(object):
             if hasattr(self, 'application') and hasattr(self.application, 'db'):
                 self.application.db.remove()
 
-    def async_get(self, *args, **kwargs):
+    def async_get(self, *args, **kwargs) -> Any:
         raise Exception("Not implemented")
 
-    def async_post(self, *args, **kwargs):
+    def async_post(self, *args, **kwargs) -> Any:
         raise Exception("Not implemented")
 
-    def async_put(self, *args, **kwargs):
+    def async_put(self, *args, **kwargs) -> Any:
         raise Exception("Not implemented")
 
-    def async_delete(self, *args, **kwargs):
+    def async_delete(self, *args, **kwargs) -> Any:
         raise Exception("Not implemented")
 
     @tornado.gen.coroutine
@@ -120,7 +121,13 @@ class BaseHandler(tornado.web.RequestHandler, HandlerMixin):
     def request_params(self):
         if not hasattr(self, 'json_body_cache'):
             if self.request.method in ['POST', 'PUT']:
-                self.json_body_cache = json_load(self.request.body)
+                if not self.request.body:
+                    self.json_body_cache = {}
+                else:
+                    try:
+                        self.json_body_cache = json_load(self.request.body)
+                    except (ValueError, TypeError):
+                        raise tornado.web.HTTPError(400, reason='Invalid JSON')
             else:
                 tmp = {}
                 for p_name, p_value in self.request.arguments.items():
@@ -137,21 +144,42 @@ class BaseHandler(tornado.web.RequestHandler, HandlerMixin):
         return None
 
     def write_error(self, *_, **__):
-        if self.is_ajax:
-            self.write({'success': False, 'data': self._reason})
+        if self._wants_json_error():
+            self.set_header("Content-Type", "application/json; charset=UTF-8")
+            self.write({'success': False, 'message': self._reason, 'data': self._reason})
         else:
             self.render("500.html", message=self._reason)
 
+    def _wants_json_error(self):
+        path = getattr(self.request, 'path', '') or ''
+        return path.startswith('/api/') or self.is_ajax
+
     def write_file_data(self, file_name, data):
+        safe_name = os.path.basename(file_name or 'download').replace('"', '')
+        if not safe_name or safe_name in ('.', '..'):
+            raise tornado.web.HTTPError(400, reason='Invalid file name')
         self.set_header('Content-Type', 'application/octet-stream')
-        self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
+        self.set_header(
+            'Content-Disposition',
+            'attachment; filename="%s"' % safe_name,
+        )
         super(BaseHandler, self).write(data)
 
     def write_file(self, folder, file_name):
         buf_size = 4096
+        safe_name = os.path.basename(file_name or '')
+        if not safe_name or safe_name in ('.', '..'):
+            raise tornado.web.HTTPError(400, reason='Invalid file name')
+        folder_real = os.path.realpath(folder)
+        path = os.path.realpath(os.path.join(folder_real, safe_name))
+        if path != folder_real and not path.startswith(folder_real + os.sep):
+            raise tornado.web.HTTPError(400, reason='Invalid file path')
         self.set_header('Content-Type', 'application/octet-stream')
-        self.set_header('Content-Disposition', 'attachment; filename=' + file_name)
-        with open(os.path.join(folder, file_name), 'rb') as f:
+        self.set_header(
+            'Content-Disposition',
+            'attachment; filename="%s"' % safe_name.replace('\\', '\\\\'),
+        )
+        with open(path, 'rb') as f:
             while True:
                 data = f.read(buf_size)
                 if not data:
@@ -185,8 +213,9 @@ class SuperuserRequiredHandler(LoginRequiredHandler):
 class ErrorHandler(BaseHandler):
 
     def write_error(self, *_, **__):
-        if self.is_ajax:
-            self.write({'success': False, 'data': self._reason})
+        if self._wants_json_error():
+            self.set_header("Content-Type", "application/json; charset=UTF-8")
+            self.write({'success': False, 'message': self._reason, 'data': self._reason})
         else:
             self.render("403.html", message=self._reason)
 
@@ -238,7 +267,7 @@ class ExtJsHandler(AsyncThreadMixin, BaseHandler):
         # convert if required
         if isinstance(field.type, DateTime):
             if isinstance(value, str):
-                value = strptime(value, DATE_FORMAT_SYSTEM)
+                value = parse_naive_datetime(value)
         return value
 
     def process_criteria(self, query, *_, **__):
@@ -260,7 +289,7 @@ class ExtJsHandler(AsyncThreadMixin, BaseHandler):
                     case_sensitive = filter_criteria['caseSensitive']
                     if any_match:
                         if case_sensitive:
-                            query = query.filter(field.like("%%s%%" % value))
+                            query = query.filter(field.like("%%%s%%" % value))
                         else:
                             query = query.filter(func.upper(field).like("%%%s%%" % value.upper()))
                     else:
@@ -341,6 +370,8 @@ class ExtJsHandler(AsyncThreadMixin, BaseHandler):
     def get_obj(self, db_id):
         fields = self.determine_fields(self.model)
         obj = self.db.get(self.model, db_id)
+        if obj is None:
+            raise tornado.web.HTTPError(404)
         return {'success': True,  'data': self.serialize(obj, fields)}
 
     def serialize(self, q_object, fields):
@@ -380,13 +411,14 @@ class ExtJsHandler(AsyncThreadMixin, BaseHandler):
     def async_put(self, db_id, **__):
         fields = self.determine_fields(self.model)
         self.obj = None
-        with db_transaction(self.db):
-            self.obj = self.db.get(self.model, db_id)
-            # updates object
-            try:
+        try:
+            with db_transaction(self.db):
+                self.obj = self.db.get(self.model, db_id)
+                if self.obj is None:
+                    return {'success': False, 'message': 'Not found'}
                 self.update_obj(self.obj)
-            except ResponseEditException as response_err:
-                return {'success': False, 'data': f'{response_err}'}
+        except ResponseEditException as response_err:
+            return {'success': False, 'data': f'{response_err}'}
         return {'success': True, 'data': self.serialize(self.obj, fields)}
 
     def async_post(self, *_, **__):
@@ -429,7 +461,7 @@ class FileHangler(AsyncThreadMixin, BaseHandler):
         for filter_criteria in self.request_params['filter']:
             filer_property = filter_criteria['property']
             if filer_property == 'date':
-                filter_value = strptime(filter_criteria['value'], DATE_FORMAT_SYSTEM)
+                filter_value = parse_naive_datetime(filter_criteria['value'])
             else:
                 filter_value = filter_criteria['value']
             if filer_property == 'content':
@@ -491,7 +523,7 @@ class FileHangler(AsyncThreadMixin, BaseHandler):
             del self.request_params['property']
         else:
             prop = 'name'
-        for _, value in self.request_params.iteritems():
+        for _, value in self.request_params.items():
             file_apth = os.path.join(folder, value[prop])
             if os.path.isfile(file_apth):
                 os.remove(file_apth)

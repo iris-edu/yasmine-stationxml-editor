@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -54,7 +55,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.operators.OperatorsEditorCo
       operator.set('agency', item.agency)
       operator.set('contacts', item.contacts)
       operator.modified = {};
-      store.insert(0, operator);
+      if (!store.contains(operator)) {
+        store.insert(0, operator);
+      }
     });
   },
   fillRecord: function () {
@@ -71,9 +74,24 @@ Ext.define('yasmine.view.xml.builder.parameter.items.operators.OperatorsEditorCo
 
     record.set('value', operators);
   },
+  validate: function () {
+    let errors = [];
+    this.getViewModel().getStore('operatorStore').each(function (operator, index) {
+      if (!Ext.String.trim(operator.get('agency') || '')) {
+        errors.push('Operator ' + (index + 1) + ' requires an agency.');
+      }
+    });
+    this.getViewModel().set('validation.activeErrors', errors);
+    if (errors.length) {
+      return false;
+    }
+    return this.callParent(arguments);
+  },
   onOperatorUpdated: function (record) {
     let store = this.getViewModel().getStore('operatorStore');
-    store.insert(0, record);
+    if (!store.contains(record)) {
+      store.insert(0, record);
+    }
   },
   onAddClick: function () {
     this.showEditForm(new yasmine.view.xml.builder.parameter.items.operators.Operator());

@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -45,7 +46,7 @@ config = context.config  # @UndefinedVariable
 
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
-fileConfig(config.config_file_name)
+fileConfig(config.config_file_name, disable_existing_loggers=False)
 
 # add your model's MetaData object here
 # for 'autogenerate' support

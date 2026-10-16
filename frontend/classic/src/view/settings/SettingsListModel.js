@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,13 +37,26 @@
 Ext.define('yasmine.view.settings.SettingsListModel', {
   extend: 'Ext.app.ViewModel',
   alias: 'viewmodel.settings',
-  requires: ['yasmine.NodeTypeEnum'],
+  requires: [
+    'yasmine.NodeTypeEnum',
+    'yasmine.utils.StationXmlHelpContext'
+  ],
   data: {
     settings: null
   },
   stores: {
     networkDefaultFields: {
       autoLoad: true,
+      fields: [
+        'id',
+        'is_critical',
+        {
+          name: 'label',
+          calculate: function (data) {
+            return yasmine.utils.StationXmlHelpContext.labelForParameter(data.id);
+          }
+        }
+      ],
       proxy: {
         type: 'rest',
         url: `/api/attr/${yasmine.NodeTypeEnum.network}`,
@@ -51,6 +65,16 @@ Ext.define('yasmine.view.settings.SettingsListModel', {
     },
     stationDefaultFields: {
       autoLoad: true,
+      fields: [
+        'id',
+        'is_critical',
+        {
+          name: 'label',
+          calculate: function (data) {
+            return yasmine.utils.StationXmlHelpContext.labelForParameter(data.id);
+          }
+        }
+      ],
       proxy: {
         type: 'rest',
         url: `/api/attr/${yasmine.NodeTypeEnum.station}`,
@@ -59,6 +83,16 @@ Ext.define('yasmine.view.settings.SettingsListModel', {
     },
     channelDefaultFields: {
       autoLoad: true,
+      fields: [
+        'id',
+        'is_critical',
+        {
+          name: 'label',
+          calculate: function (data) {
+            return yasmine.utils.StationXmlHelpContext.labelForParameter(data.id);
+          }
+        }
+      ],
       proxy: {
         type: 'rest',
         url: `/api/attr/${yasmine.NodeTypeEnum.channel}`,

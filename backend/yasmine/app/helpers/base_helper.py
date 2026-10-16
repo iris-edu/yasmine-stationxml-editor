@@ -29,6 +29,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -37,9 +38,13 @@ import os
 import pickle
 from random import random
 from yasmine.app.helpers.etag_helper import EtagHelper
-from yasmine.app.helpers.utils.utils import ChannelUtils
+from yasmine.app.helpers.utils.utils import ChannelUtils, plot_max_frequency, response_plot_stages
 from yasmine.app.settings import MEDIA_ROOT
-from yasmine.app.utils.response_plot import polynomial_or_polezero_response, _units_to_evalresp_output
+from yasmine.app.utils.response_plot import (
+    format_plot_failure,
+    polynomial_or_polezero_response,
+    _units_to_evalresp_output,
+)
 
 
 # IRIS SI unit normalization (stationxml-seed-converter). Case-insensitive
@@ -320,49 +325,58 @@ class BaseHelper:
         return polynomial_or_polezero_response(response)
 
     def generate_channel_response_plot(self, response, sensors_keys, datalogger_keys, min_frequency,
-                                       max_frequency, instconfig=None):
+                                       max_frequency, instconfig=None, start_stage=None, end_stage=None):
         file_name = ''.join(sensors_keys) + '_' + ''.join(datalogger_keys)
         return ChannelUtils.create_response_plot(
             response, self.plot_folder, file_name, min_frequency, max_frequency,
-            instconfig=instconfig)
+            instconfig=instconfig, start_stage=start_stage, end_stage=end_stage)
 
     def generate_channel_response_csv(self, response, sensors_keys, datalogger_keys, min_frequency,
-                                      max_frequency, instconfig=None):
+                                      max_frequency, instconfig=None, start_stage=None, end_stage=None):
         file_name = ''.join(sensors_keys) + '_' + ''.join(datalogger_keys)
         return ChannelUtils.create_response_csv(
             response, self.plot_folder, file_name, min_frequency, max_frequency,
-            instconfig=instconfig)
+            instconfig=instconfig, start_stage=start_stage, end_stage=end_stage)
 
-    def get_sensor_response_and_plot(self, sensor_keys, datalogger_keys, min_fq, max_fq):
+    def get_sensor_response_and_plot(self, sensor_keys, datalogger_keys, min_fq, max_fq,
+                                     start_stage=None, end_stage=None):
         try:
             response_str = self.get_channel_response_str(sensor_keys, datalogger_keys)
         except Exception as err:
             return {'success': False, 'message': f'Cannot build channel response.<br> {err}'}
+        resp = None
         try:
             resp = self.get_channel_response_obj(sensor_keys, datalogger_keys)
             min_fq = float(min_fq) if min_fq else None
             max_fq = float(max_fq) if max_fq else None
-            plot_file_name = self.generate_channel_response_plot(resp, sensor_keys, datalogger_keys, min_fq, max_fq)
+            plot_file_name = self.generate_channel_response_plot(
+                resp, sensor_keys, datalogger_keys, min_fq, max_fq,
+                start_stage=start_stage, end_stage=end_stage)
             plot_url = f'/api/channel/response/plots/plots/{plot_file_name}?_dc={random()}'
-            csv_file_name = self.generate_channel_response_csv(resp, sensor_keys, datalogger_keys, min_fq, max_fq)
+            csv_file_name = self.generate_channel_response_csv(
+                resp, sensor_keys, datalogger_keys, min_fq, max_fq,
+                start_stage=start_stage, end_stage=end_stage)
             csv_url = f'/api/channel/response/plots/plots/{csv_file_name}?_dc={random()}'
+        except ValueError as err:
+            return {'success': False, 'message': str(err)}
         except Exception as err:
             import logging
-            import traceback
             logging.getLogger(__name__).exception('Cannot generate plot')
-            err_str = str(err).lower()
-            if 'units mismatch' in err_str or 'check_channel' in err_str or 'illegal resp format' in err_str:
-                msg = (
-                    'Cannot generate plot: units mismatch between sensor and datalogger stages. '
-                    'This may indicate an incompatible combination in the NRL. '
-                    '<b>The response data is available below and can still be added.</b>'
-                )
-            else:
-                tb_lines = traceback.format_exc().strip().split('\n')[-5:]
-                msg = f'Cannot generate plot.<br>{err}<br><small>{"<br>".join(tb_lines)}</small>'
-            return {'success': True, 'text': response_str, 'message': msg, 'plot_failed': True}
+            return {
+                'success': True,
+                'text': response_str,
+                'message': format_plot_failure(err, resp),
+                'plot_failed': True,
+            }
 
-        return {'success': True, 'text': response_str, 'plot_url': plot_url, 'csv_url': csv_url}
+        return {
+            'success': True,
+            'text': response_str,
+            'plot_url': plot_url,
+            'csv_url': csv_url,
+            'max_frequency': plot_max_frequency(resp, max_fq, min_fq),
+            'stages': response_plot_stages(resp),
+        }
 
     def _save_keys_files(self, sensors, dataloggers):
         with open(os.path.join(self.root_folder, self.sensor_keys_file), 'wb') as outfile:

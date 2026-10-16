@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -41,7 +42,9 @@ Ext.define('yasmine.view.xml.XmlList', {
     'yasmine.view.xml.list.XmlListModel'
   ],
   title: 'XML',
-  frame: true,
+  frame: false,
+  cls: 'yasmine-screen yasmine-data-screen',
+  minWidth: 0,
   plugins: 'gridfilters',
   controller: 'xml-list',
   viewModel: 'xml-list',
@@ -55,7 +58,9 @@ Ext.define('yasmine.view.xml.XmlList', {
     }
   },
   viewConfig: {
-    loadMask: false
+    loadMask: true,
+    deferEmptyText: true,
+    emptyText: '<div class="yasmine-empty-state">No StationXML documents yet.<br>Create a document or import an existing XML file.</div>'
   },
   columns: {
     defaults: {
@@ -71,25 +76,32 @@ Ext.define('yasmine.view.xml.XmlList', {
         text: 'Created at',
         dataIndex: 'created_at',
         xtype: 'datecolumn',
-        filter: {type: 'date', dateFormat: yasmine.Globals.DatePrintLongFormat},
+        yasmineGuiDate: 'long',
+        filter: {type: 'date', yasmineGuiDate: 'long'},
         format: yasmine.Globals.DatePrintLongFormat
       },
       {
         text: 'Updated at',
         dataIndex: 'updated_at',
         xtype: 'datecolumn',
-        filter: {type: 'date', dateFormat: yasmine.Globals.DatePrintLongFormat},
+        yasmineGuiDate: 'long',
+        filter: {type: 'date', yasmineGuiDate: 'long'},
         format: yasmine.Globals.DatePrintLongFormat
       }
     ]
   },
-  tbar: [{
+  tbar: {
+    cls: 'yasmine-wrap-toolbar',
+    items: [{
     itemId: 'createXmlId',
     tooltip: 'Create XML',
+    text: 'New XML',
     iconCls: 'x-fa fa-plus',
+    cls: 'yasmine-primary-action',
     handler: 'onCreateXmlClick'
   }, {
     tooltip: 'Delete XML',
+    text: 'Delete',
     itemId: 'deleteXmlId',
     iconCls: 'x-fa fa-minus',
     handler: 'onDeleteXmlClick',
@@ -99,6 +111,7 @@ Ext.define('yasmine.view.xml.XmlList', {
     }
   }, {
     tooltip: 'Edit XML',
+    text: 'Edit',
     iconCls: 'x-fa fa-pencil',
     handler: 'onEditXmlClick',
 
@@ -107,7 +120,9 @@ Ext.define('yasmine.view.xml.XmlList', {
       disabled: '{!theRow}'
     }
   }, '-', {
+    itemId: 'openBuilderId',
     tooltip: 'XML Builder',
+    text: 'Open Builder',
     iconCls: 'x-fa fa-wrench',
     handler: 'onBuildXmlClick',
     disabled: true,
@@ -116,17 +131,20 @@ Ext.define('yasmine.view.xml.XmlList', {
     }
   }, '-', {
     tooltip: 'Import XML',
+    text: 'Import',
     iconCls: 'x-fa fa-download',
     handler: 'onImportXmlClick'
   }, {
     tooltip: 'Export as XML',
+    text: 'Export',
     iconCls: 'x-fa fa-upload',
     handler: 'onExportXmlClick',
     disabled: true,
     bind: {
       disabled: '{!theRow}'
     }
-  }],
+  }]
+  },
   listeners: {
     itemdblclick: 'onBuildXmlClick'
   },

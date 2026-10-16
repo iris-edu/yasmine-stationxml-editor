@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 import logging
@@ -53,17 +54,17 @@ class UserLibraryService(HandlerMixin):
         self.logger = logging.getLogger(__name__)
 
     def import_from_url(self, url):
-        new_folder = FileConvertorService(True, True).convert_from_url(url)
+        new_folder = FileConvertorService(True, False).convert_from_url(url)
         self._parse_library(new_folder)
         shutil.rmtree(new_folder)
 
     def import_from_zip(self, zip_file):
-        new_folder = FileConvertorService(True, True).convert_from_zip(zip_file)
+        new_folder = FileConvertorService(True, False).convert_from_zip(zip_file)
         self._parse_library(new_folder)
         shutil.rmtree(new_folder)
 
     def import_from_folder(self, folder):
-        new_folder = FileConvertorService(True, True).convert_from_folder(folder)
+        new_folder = FileConvertorService(True, False).convert_from_folder(folder)
         self._parse_library(new_folder)
         shutil.rmtree(new_folder)
 
@@ -162,5 +163,7 @@ class UserLibraryService(HandlerMixin):
             return [], None
         with open(path, 'rb') as f:
             data_loaded = jsonref.load(f, base_uri=Path(folder).as_uri())
-            attr_id = next((x for x in attributes if x.name == att_name), None).id
-            return data_loaded, attr_id
+            attr = next((x for x in attributes if x.name == att_name), None)
+            if attr is None:
+                return [], None
+            return data_loaded, attr.id

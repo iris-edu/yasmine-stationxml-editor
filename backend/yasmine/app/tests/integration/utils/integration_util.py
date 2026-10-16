@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -38,18 +39,36 @@ from yasmine.app.utils.db import syncdb
 
 DATA_FOLDER = '../data'
 
+# unittest builds one TestCase instance per method and calls __init__ for all
+# of them before any test runs. Recreating the sqlite file each time unlinks
+# the database the earlier instance still has open, and SQLite then raises
+# "attempt to write a readonly database" (SQLITE_READONLY_DBMOVED).
+_migrated = set()
+
+
+def _remove_sqlite_files(db_file):
+    for suffix in ('', '-wal', '-shm'):
+        path = db_file + suffix if suffix else db_file
+        if os.path.exists(path):
+            os.remove(path)
+
 
 def migrate_db(db_name):
     db_file = os.path.join(TMP_ROOT, ('%s.sqlite' % db_name))
     import yasmine.app.settings as cnf
     cnf.DB_CONNECTION = ('sqlite:///%s' % db_file)
+    if db_name in _migrated and os.path.exists(db_file):
+        return
+    _remove_sqlite_files(db_file)
     syncdb(argv=['--raiseerr', 'upgrade', 'head'])
+    _migrated.add(db_name)
     print('The database has been created: %s' % db_file)
 
 
 def remove_db(db_name):
+    _migrated.discard(db_name)
     db_file = os.path.join(TMP_ROOT, ('%s.sqlite' % db_name))
-    os.remove(db_file)
+    _remove_sqlite_files(db_file)
     print('The database has been removed: %s' % db_file)
 
 

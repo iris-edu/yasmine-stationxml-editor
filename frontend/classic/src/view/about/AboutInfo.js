@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -35,11 +36,23 @@ Ext.define('yasmine.view.about.AboutInfo', {
   extend: 'Ext.panel.Panel',
   xtype: 'about-info',
   title: 'About Yasmine',
-  frame: true,
-  bodyPadding: 5,
+  frame: false,
+  cls: 'yasmine-screen yasmine-about-screen',
+  bodyPadding: 24,
+  scrollable: true,
   bind: {
-    html: `{acknowledgement}<br><br><br>
-    <b>Build date time (rfc-2822 format):</b>&nbsp;{buildTimestamp}<br>
-    <b>Commit revision (SHORT_SHA):</b>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{commitRevision}`
+    html: `<div class="yasmine-about-content"><div class="yasmine-about-brand">
+      <img class="yasmine-about-logo" src="{logoUrl}" alt="">
+      <div class="yasmine-about-wordmark">
+        <div class="yasmine-about-name">Yasmine</div>
+        <div class="yasmine-about-tagline">StationXML Editor</div>
+      </div>
+    </div>
+    <div class="yasmine-about-copy">{acknowledgement}</div>
+    <div class="yasmine-about-build">
+      <div><b>Version</b><span>{releaseVersion}</span></div>
+      <div><b>Build date</b><span>{buildTimestamp}</span></div>
+      <div><b>Revision</b><span>{commitRevision}</span></div>
+    </div></div>`
   }
 });

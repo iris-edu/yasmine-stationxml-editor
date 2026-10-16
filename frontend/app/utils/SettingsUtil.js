@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -34,9 +35,15 @@
 Ext.define("yasmine.utils.SettingsUtil", {
     singleton : true,
     applySettings : function(record) {
-        yasmine.Globals.DatePrintLongFormat = record.general__date_format_long;
-        yasmine.Globals.DatePrintShortFormat = record.general__date_format_short;
+        yasmine.Globals.DatePrintLongFormat = record.general__date_format_long || yasmine.Globals.DatePrintLongFormat;
+        yasmine.Globals.DatePrintShortFormat = record.general__date_format_short || yasmine.Globals.DatePrintShortFormat;
         yasmine.Globals.BuilderViewMode = record.general__xml_view_mode;
         yasmine.Globals.Settings = record;
+        if (yasmine.utils.DateUtil && yasmine.utils.DateUtil.refreshGuiDates) {
+          yasmine.utils.DateUtil.refreshGuiDates();
+        }
+        if (Ext.GlobalEvents) {
+          Ext.GlobalEvents.fireEvent('yasmine-settings-applied');
+        }
     }
 });

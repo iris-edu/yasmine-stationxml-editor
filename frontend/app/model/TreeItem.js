@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -77,7 +78,9 @@ Ext.define('yasmine.model.TreeItem', {
         }
 
         let dateStr = (dates.length > 0) ? `(${dates.join(' - ')})` : '';
-        return `${record.get('name')} ${dateStr} <i>${record.get('description')}</i>`;
+        let name = Ext.String.htmlEncode(record.get('name') || '');
+        let description = Ext.String.htmlEncode(record.get('description') || '');
+        return name + ' ' + dateStr + ' <i>' + description + '</i>';
       }
     }
   ]

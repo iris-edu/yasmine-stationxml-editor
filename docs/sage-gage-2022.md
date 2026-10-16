@@ -4,6 +4,8 @@ title: SAGE/GAGE 2022
 permalink: /sage-gage-2022/
 ---
 
+This page records the June 2022 short course. The current editor reads and writes [FDSN StationXML 1.2](https://docs.fdsn.org/projects/stationxml/en/v1.2/).
+
 **Title:** *Creating StationXML: Introducing Yasmine and the New Nominal Response Library Web Service*
 
 **Location:** SAGE/GAGE Community Science Workshop, Short Course, June 13, 2022, Pittsburgh, PA

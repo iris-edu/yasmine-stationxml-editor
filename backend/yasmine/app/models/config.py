@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -46,7 +47,9 @@ class ConfigModel(Base, BaseMixin):
     value = Column(Text(), nullable=False, default='')
 
     __tablename__ = 'config'
-    UniqueConstraint('group', 'name', name='config_group_name_uniq')
+    __table_args__ = (
+        UniqueConstraint('group', 'name', name='config_group_name_uniq'),
+    )
 
     @property
     def value_obj(self):

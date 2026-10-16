@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-27, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -42,7 +43,17 @@ Ext.define("yasmine.utils.ValidatorUtil", {
       url: `/api/xml/attr/validate/`,
       method: 'POST',
       success: function (response) {
-        result = JSON.parse(response.responseText);
+        try {
+          result = JSON.parse(response.responseText || '{}');
+        } catch (e) {
+          result = {success: false, message: ['Validation is unavailable.']};
+        }
+        if (!result.message) {
+          result.message = result.success ? [] : ['Validation is unavailable.'];
+        }
+      },
+      failure: function () {
+        result = {success: false, message: ['Validation is unavailable.']};
       }
     });
 

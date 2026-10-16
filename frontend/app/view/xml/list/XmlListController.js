@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -49,12 +50,69 @@ Ext.define('yasmine.view.xml.list.XmlListController', {
       }
     }
   },
+  init: function () {
+    this.syncXmlListColumns();
+    this.syncXmlToolbar();
+    this.mon(Ext.GlobalEvents, 'resize', this.syncXmlListLayout, this, {buffer: 150});
+  },
+  syncXmlListLayout: function () {
+    this.syncXmlListColumns();
+    this.syncXmlToolbar();
+  },
+  syncXmlListColumns: function () {
+    var grid = this.getView();
+    if (!grid || !yasmine.utils.ResponsiveUtil) {
+      return;
+    }
+    var stack = yasmine.utils.ResponsiveUtil.useStackLayout();
+    Ext.Array.each(['module', 'uri', 'sender'], function (dataIndex) {
+      var column = grid.down('gridcolumn[dataIndex=' + dataIndex + ']');
+      if (column) {
+        column.setHidden(stack);
+      }
+    });
+  },
+  syncXmlToolbar: function () {
+    var grid = this.getView();
+    var narrow;
+    var createButton;
+    var openButton;
+    if (!grid || grid.destroyed || !yasmine.utils.ResponsiveUtil) {
+      return;
+    }
+    narrow = yasmine.utils.ResponsiveUtil.useStackLayout();
+    createButton = grid.down('#createXmlId');
+    openButton = grid.down('#openBuilderId');
+    if (createButton) {
+      createButton.setText(narrow ? 'New' : 'New XML');
+    }
+    if (openButton) {
+      openButton.setText(narrow ? 'Open' : 'Open Builder');
+    }
+    if (grid.rendered && yasmine.utils.ResponsiveUtil.syncWrappingToolbars) {
+      Ext.defer(function () {
+        if (!grid.destroyed) {
+          yasmine.utils.ResponsiveUtil.syncWrappingToolbars();
+        }
+      }, 30);
+    }
+  },
   onCreateXmlClick: function () {
     let form = Ext.create({xtype: 'xml-edit'});
     let record = new yasmine.model.Xml();
-    record.set('source', yasmine.Globals.Settings.general__source);
-    record.set('module', yasmine.Globals.Settings.general__module);
-    record.set('uri', yasmine.Globals.Settings.general__uri);
+    let now = new Date();
+    let settings = yasmine.Globals.Settings || {};
+    record.set('source', settings.general__source);
+    record.set('module', settings.general__module);
+    record.set('uri', settings.general__uri);
+    record.set('created_at', new Date(
+      now.getUTCFullYear(),
+      now.getUTCMonth(),
+      now.getUTCDate(),
+      now.getUTCHours(),
+      now.getUTCMinutes(),
+      now.getUTCSeconds()
+    ));
 
     form.getViewModel().set('model', record);
     form.show();

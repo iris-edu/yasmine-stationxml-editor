@@ -29,9 +29,51 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
 #}
 
-<b>Children</b>
+<p><b>Inventory tree</b></p>
+<p>
+This pane is the StationXML hierarchy for the current file:
+<b>Inventory</b> &rarr; <b>Network</b> &rarr; <b>Station</b> &rarr; <b>Channel</b>.
+Select a node to edit its fields in the parameter list on the right.
+The <b>?</b> on that list opens StationXML 1.2 schema help for the selected field.
+</p>
+
+<p><b>Add (+)</b></p>
+<ul>
+<li><b>From a user library</b> &mdash; insert a saved Network, Station or Channel (and its children) under the current selection.</li>
+<li><b>Using a wizard</b> &mdash; create the next level step by step, including an instrument response from NRL or AROL.</li>
+<li><b>Default</b> &mdash; create an empty child with the required StationXML fields only. Fill the rest in the parameter list.</li>
+</ul>
+<p>
+The child type depends on the current selection: Inventory adds a Network,
+a Network adds a Station, a Station adds a Channel.
+</p>
+
+<p><b>Delete (&minus;)</b></p>
+<p>
+Removes the selected Network, Station or Channel and all of its children.
+This cannot be undone.
+</p>
+
+<p><b>Extract</b></p>
+<p>
+Copies the selected node into a user library so you can reuse it in other XML files.
+</p>
+
+<p><b>Epoch</b></p>
+<p>
+Filters the tree to nodes that are active on the chosen date.
+Clear the epoch to show the full inventory again.
+</p>
+
+<p><b>File and Builder Mode</b></p>
+<ul>
+<li><b>File &rarr; Validate XML</b> reports StationXML 1.2 XSD errors (these block export) and Yasmine/FDSN warnings.</li>
+<li><b>File &rarr; Export as XML</b> writes StationXML 1.2. Export is blocked if the file fails XSD validation.</li>
+<li><b>Builder Mode</b> is this editor. <b>Comparison Mode</b> compares two inventories side by side.</li>
+</ul>

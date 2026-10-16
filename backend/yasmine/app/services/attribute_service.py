@@ -29,36 +29,70 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
-import io
-
-from obspy import UTCDateTime
-from obspy import read_inventory
+from obspy.core.inventory.util import (
+    Azimuth,
+    ClockDrift,
+    DataAvailability,
+    DataAvailabilitySpan,
+    Dip,
+    Distance,
+    FloatWithUncertaintiesAndUnit,
+    Latitude,
+    Longitude,
+    SampleRate,
+)
 
 from yasmine.app.enums.xml_node import XmlNodeAttrEnum, XmlNodeEnum
-from yasmine.app.exceptions.exceptions import ResponseEditException
+from yasmine.app.exceptions.exceptions import BusinessException, ResponseEditException
 from yasmine.app.handlers.equipment import EquipmentMixin
 from yasmine.app.models import XmlNodeAttrValModel, XmlNodeInstModel, XmlNodeAttrModel
 from yasmine.app.services.xml_service import XmlService
-from yasmine.app.settings import DATE_FORMAT_SYSTEM
-from yasmine.app.utils.date import strptime
+from yasmine.app.utils.date import parse_naive_datetime, parse_utcdatetime
 from yasmine.app.utils.facade import HandlerMixin
 from yasmine.app.utils.imp_exp import ConvertToInventory
 from yasmine.app.utils.response_sensitivity import (
     get_updated_response_obj,
     recalculate_response_sensitivity,
-    validate_response_sacpz,
+)
+from yasmine.app.utils.response_schema import validate_response_tree
+from yasmine.app.utils.response_tree import response_tree_to_xml
+from yasmine.app.utils.stationxml_codec import (
+    MEASURED_ATTRIBUTE_NAMES,
+    merge_measured_value,
 )
 
 
+UNSET = object()
+
+
 class AttributeService(HandlerMixin, EquipmentMixin):
-    def create_attribute(self, attribute_id, node_id, value, spread_to_channels):
+    UNSET = UNSET
+
+    def create_attribute(
+            self, attribute_id, node_id, value, spread_to_channels,
+            value_meta=UNSET):
+        node_inst = self.db.get(XmlNodeInstModel, node_id)
+        attr = self.db.get(XmlNodeAttrModel, attribute_id)
+        if node_inst is None or attr is None:
+            raise BusinessException('Node or attribute not found')
+        existing = self.db.query(XmlNodeAttrValModel).filter(
+            XmlNodeAttrValModel.node_inst_id == node_inst.id,
+            XmlNodeAttrValModel.attr_id == attr.id,
+        ).first()
+        if existing is not None:
+            raise BusinessException(
+                'StationXML allows only one "%s" value on this node' % attr.name
+            )
+
         attr_model = XmlNodeAttrValModel()
-        attr_model.node_inst = self.db.get(XmlNodeInstModel, node_id)
-        attr_model.attr = self.db.get(XmlNodeAttrModel, attribute_id)
+        attr_model.node_inst = node_inst
+        attr_model.attr = attr
 
         self._update_attribute_value(attr_model, value)
+        self._update_attribute_metadata(attr_model, value_meta)
         self._update_node_shortcuts(attr_model, value)
 
         if spread_to_channels:
@@ -68,8 +102,10 @@ class AttributeService(HandlerMixin, EquipmentMixin):
 
         return attr_model
 
-    def update_attribute(self, attr_model, value, spread_to_channels):
+    def update_attribute(
+            self, attr_model, value, spread_to_channels, value_meta=UNSET):
         self._update_attribute_value(attr_model, value)
+        self._update_attribute_metadata(attr_model, value_meta)
         self._update_node_shortcuts(attr_model, value)
 
         if spread_to_channels:
@@ -79,6 +115,8 @@ class AttributeService(HandlerMixin, EquipmentMixin):
 
     def delete_attribute(self, db_id):
         attr_model = self.db.get(XmlNodeAttrValModel, db_id)
+        if attr_model is None or attr_model.node_inst is None:
+            raise BusinessException('Attribute not found')
         xml_id = attr_model.node_inst.xml_id
         self._update_node_shortcuts(attr_model, None)
 
@@ -99,6 +137,19 @@ class AttributeService(HandlerMixin, EquipmentMixin):
             self._update_equipment_attribute(obj, value)
         elif self._is_datalogger_or_sensor_attribute(obj):
             self._update_datalogger_or_sensor_attribute(obj, value)
+        elif obj.attr.name == XmlNodeAttrEnum.DATA_AVAILABILITY:
+            self._update_data_availability(obj, value)
+        elif self._is_measured_attribute(obj):
+            existing = obj.value_obj if obj.value is not None else None
+            obj.value_obj = merge_measured_value(
+                existing,
+                value,
+                self._measured_value_class(obj.attr.name),
+            )
+        elif obj.attr.name == XmlNodeAttrEnum.RESPONSE and isinstance(value, str):
+            raise ResponseEditException(
+                'The response was sent as text and was not saved. Select the response again.'
+            )
         else:
             obj.value_obj = value.strip() if isinstance(value, str) else value
 
@@ -114,13 +165,19 @@ class AttributeService(HandlerMixin, EquipmentMixin):
 
     def _update_modified_response(self, obj, value):
         node_id = value['nodeId']
+        issues = validate_response_tree(value['response'])
+        errors = [issue for issue in issues if issue['severity'] == 'error']
+        if errors:
+            message = '; '.join(
+                '%s: %s' % (issue['path'], issue['message'])
+                for issue in errors
+            )
+            raise ResponseEditException(ValueError(message))
+
         station_xml = ConvertToInventory(None, self).get_station_xml_for_channel(node_id)
-        self.response_xml_str = ''
-        self._prepare_response_json_as_xml(value['response'])
+        response_xml = response_tree_to_xml(value['response'])
         try:
-            response = get_updated_response_obj(self.response_xml_str, station_xml)
-            if not response.instrument_polynomial:
-                validate_response_sacpz(response)
+            response = get_updated_response_obj(response_xml, station_xml)
             obj.value_obj = response
         except Exception as err:
             raise ResponseEditException(err)
@@ -133,11 +190,16 @@ class AttributeService(HandlerMixin, EquipmentMixin):
             if not instconfig:
                 raise ResponseEditException(Exception('instconfig required for NRLv2 online'))
             source = value.get('source')
-            equipment = self.manage_equipment(obj.node_inst, instconfig, None, library_type, obj, nrlv2_source=source)
+            equipment = self.manage_equipment(
+                obj.node_inst, instconfig, None, library_type, obj, nrlv2_source=source
+            )
         else:
             sensor_keys = value.get('sensorKeys') or []
             datalogger_keys = value.get('dataloggerKeys') or []
-            equipment = self.manage_equipment(obj.node_inst, sensor_keys, datalogger_keys, library_type, obj)
+            equipment = self.manage_equipment(
+                obj.node_inst, sensor_keys, datalogger_keys, library_type, obj,
+                nrl_response_type=value.get('nrlResponseType'),
+            )
         for attr in equipment:
             if attr is not None:
                 self.db.add(attr)
@@ -145,31 +207,10 @@ class AttributeService(HandlerMixin, EquipmentMixin):
             self._recalculate_equipment_response(equipment)
 
     def _prepare_response_json_as_xml(self, json_obj, parent_node=None):
-        for key, value in json_obj.items():
-            if key == 'children':
-                for item in value:
-                    if isinstance(item, dict):
-                        self._prepare_response_json_as_xml(item, parent_node)
-                    else:
-                        self.response_xml_str += str(item)
-            elif key == 'attributes':
-                attrs = ''
-                for attrKey, attrValue in value.items():
-                    if len(str(attrValue)) > 0:
-                        if len(attrs) > 0:
-                            attrs += ' '
-                        attrs += '%s="%s"' % (attrKey, attrValue)
-                start = self.response_xml_str.rfind('<%s>' % parent_node)
-                end = start + len(parent_node) + 2
-                self.response_xml_str = self.response_xml_str[:start] + '<%s %s>' % (
-                    parent_node, attrs) + self.response_xml_str[end:]
-            else:
-                self.response_xml_str += '<%s>' % key
-                if isinstance(value, dict):
-                    self._prepare_response_json_as_xml(value, key)
-                else:
-                    self.response_xml_str += str(value)
-                self.response_xml_str += '</%s>' % key
+        if parent_node is not None:
+            raise ValueError('Partial response serialization is no longer supported')
+        self.response_xml_str = response_tree_to_xml(json_obj)
+        return self.response_xml_str
 
     @staticmethod
     def _recalculate_equipment_response(equipment):
@@ -178,7 +219,9 @@ class AttributeService(HandlerMixin, EquipmentMixin):
         response_attr = equipment[-1]
         if response_attr is None or response_attr.value_obj is None:
             return
-        response, _ = recalculate_response_sensitivity(response_attr.value_obj)
+        response, _ = recalculate_response_sensitivity(
+            response_attr.value_obj, allow_zero_gain_reset=True
+        )
         response_attr.value_obj = response
 
     def _update_datalogger_or_sensor_attribute(self, obj, equipment):
@@ -190,16 +233,85 @@ class AttributeService(HandlerMixin, EquipmentMixin):
         obj.value_obj = equipments
 
     @staticmethod
+    def _update_data_availability(obj, value):
+        if value is None or isinstance(value, DataAvailability):
+            obj.value_obj = value
+            return
+        # Editor may send {extent:{start,end}, spans:[{numberSegments,...}]}
+        # while ObsPy / older clients use top-level start/end and snake_case.
+        extent = value.get('extent') if isinstance(value.get('extent'), dict) else {}
+        start = value.get('start')
+        end = value.get('end')
+        if start is None and extent:
+            start = extent.get('start')
+        if end is None and extent:
+            end = extent.get('end')
+        spans = []
+        for span in value.get('spans', []) or []:
+            if isinstance(span, DataAvailabilitySpan):
+                spans.append(span)
+            else:
+                spans.append(DataAvailabilitySpan(
+                    start=span.get('start'),
+                    end=span.get('end'),
+                    number_of_segments=(
+                        span.get('number_of_segments')
+                        if span.get('number_of_segments') is not None
+                        else span.get('numberSegments')
+                    ),
+                    maximum_time_tear=(
+                        span.get('maximum_time_tear')
+                        if span.get('maximum_time_tear') is not None
+                        else span.get('maximumTimeTear')
+                    ),
+                ))
+        obj.value_obj = DataAvailability(
+            start=start,
+            end=end,
+            spans=spans,
+        )
+
+    @staticmethod
+    def _measured_value_class(attribute_name):
+        return {
+            XmlNodeAttrEnum.LATITUDE: Latitude,
+            XmlNodeAttrEnum.LONGITUDE: Longitude,
+            XmlNodeAttrEnum.ELEVATION: Distance,
+            XmlNodeAttrEnum.DEPTH: Distance,
+            XmlNodeAttrEnum.AZIMUTH: Azimuth,
+            XmlNodeAttrEnum.DIP: Dip,
+            XmlNodeAttrEnum.WATER_LEVEL: FloatWithUncertaintiesAndUnit,
+            XmlNodeAttrEnum.SAMPLE_RATE: SampleRate,
+            XmlNodeAttrEnum.CLOCK_DRIFT_IN_SECONDS_PER_SAMPLE: ClockDrift,
+        }.get(attribute_name)
+
+    def _update_attribute_metadata(self, obj, value_meta):
+        if (
+            value_meta is UNSET
+            or not self._is_measured_attribute(obj)
+            or obj.value is None
+        ):
+            return
+        existing = obj.value_obj
+        metadata = dict(value_meta or {})
+        metadata['value'] = float(existing)
+        obj.value_obj = merge_measured_value(
+            existing,
+            metadata,
+            self._measured_value_class(obj.attr.name),
+        )
+
+    @staticmethod
     def _update_equipment_calibration_date(equipments):
         for equipment in equipments:
             calibration_dates = []
             for calibration_date in equipment.calibration_dates:
-                calibration_dates.append(UTCDateTime(calibration_date))
+                calibration_dates.append(parse_utcdatetime(calibration_date))
             equipment.calibration_dates = calibration_dates
 
     @staticmethod
     def _update_date_attribute(obj, value):
-        obj.value_obj = UTCDateTime(strptime(value, DATE_FORMAT_SYSTEM))
+        obj.value_obj = parse_utcdatetime(value)
 
     @staticmethod
     def _update_node_shortcuts(obj, value):
@@ -208,7 +320,7 @@ class AttributeService(HandlerMixin, EquipmentMixin):
         elif obj.attr.name in [XmlNodeAttrEnum.START_DATE, XmlNodeAttrEnum.END_DATE]:
             py_date = None
             if isinstance(value, str):
-                py_date = strptime(value, DATE_FORMAT_SYSTEM)
+                py_date = parse_naive_datetime(value)
             elif value is not None:
                 py_date = value.datetime
             setattr(obj.node_inst, obj.attr.name, py_date)
@@ -223,6 +335,10 @@ class AttributeService(HandlerMixin, EquipmentMixin):
     @staticmethod
     def _is_equipments_attribute(obj):
         return obj.attr.name in [XmlNodeAttrEnum.EQUIPMENTS]
+
+    @staticmethod
+    def _is_measured_attribute(obj):
+        return obj.attr.name in MEASURED_ATTRIBUTE_NAMES
 
     @staticmethod
     def _is_datalogger_or_sensor_attribute(obj):

@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -41,11 +42,28 @@ Ext.define('yasmine.view.xml.XmlImport', {
     controller: 'xml-import',
     title: 'Import XML',
     modal: true,
-    frame: true,
+    frame: false,
+    cls: 'yasmine-window',
+    constrain: true,
+    minWidth: 280,
     defaultFocus : 'name',
+    listeners: {
+        show: function () {
+            yasmine.utils.ResponsiveUtil.fitWindow(this, {
+                minWidth: 400,
+                minHeight: 220,
+                width: 480,
+                height: 260
+            });
+        },
+        afterlayout: function () {
+            yasmine.utils.ResponsiveUtil.clampWindow(this);
+        }
+    },
     items: {
         xtype: 'form',
         reference: 'importForm',
+        width: '100%',
         bodyPadding: 10,
         defaults: {
             anchor: '100%',
@@ -65,14 +83,18 @@ Ext.define('yasmine.view.xml.XmlImport', {
             allowBlank: false,
             buttonText: '',
             buttonConfig: {
-                iconCls: 'fa fa-upload'
+                iconCls: 'x-fa fa-upload'
             }
         }],
         buttons: [{
             text: 'Upload',
+            reference: 'uploadButton',
+            iconCls: 'x-fa fa-upload',
+            cls: 'yasmine-primary-action',
             handler: 'onImportClick'
         }, {
             text: 'Cancel',
+            iconCls: 'x-fa fa-ban',
             handler: 'onCancelClick'
         }]
     }

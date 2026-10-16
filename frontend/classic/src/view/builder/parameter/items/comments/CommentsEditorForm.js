@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -38,34 +39,59 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorForm
   xtype: 'comments-editor-form',
   requires: [
     'yasmine.view.xml.builder.parameter.items.comments.CommentsEditorFormModel',
-    'yasmine.view.xml.builder.parameter.items.comments.CommentsEditorFormController'],
+    'yasmine.view.xml.builder.parameter.items.comments.CommentsEditorFormController',
+    'Ext.plugin.Responsive'
+  ],
   controller: 'comments-editor-form',
   viewModel: 'comments-editor-form',
   title: 'Comment',
   modal: true,
-  frame: true,
-  width: 600,
+  frame: false,
+  cls: 'yasmine-window yasmine-collection-window',
+  minWidth: 280,
+  layout: 'fit',
+  tools: [{
+    type: 'help',
+    handler: 'onHelpClick'
+  }],
   bodyPadding: 10,
+  listeners: {
+    show: function () {
+      yasmine.utils.ResponsiveUtil.fitWindow(this, {
+        minWidth: 400,
+        minHeight: 360,
+        width: 600,
+        height: 520
+      });
+    },
+    afterlayout: function () {
+      yasmine.utils.ResponsiveUtil.clampWindow(this);
+    }
+  },
   items: {
     xtype: 'form',
-    layout: 'anchor',
-    defaults: {
-      anchor: '100%'
+    minWidth: 0,
+    scrollable: 'y',
+    layout: {
+      type: 'vbox',
+      align: 'stretch'
     },
     items: [
       {
-        flex: 1,
         xtype: 'textfield',
         labelAlign: 'top',
         fieldLabel: 'Subject',
+        stationXmlRelativePath: '@subject',
         bind: '{subject}'
       },
       {
         xtype: 'combobox',
-        flex: 1,
         itemId: 'focusItem',
-        fieldLabel: 'Comment',
+        fieldLabel: 'Value',
+        stationXmlRelativePath: 'Value',
         labelAlign: 'top',
+        allowBlank: false,
+        allowOnlyWhitespace: false,
         queryMode: 'local',
         displayField: 'searchText',
         valueField: 'value',
@@ -92,57 +118,81 @@ Ext.define('yasmine.view.xml.builder.parameter.items.comments.CommentsEditorForm
         listConfig: {
           listeners: {
             beforeshow: function (picker) {
-              picker.minWidth = 600;
+              picker.minWidth = yasmine.utils.ResponsiveUtil.fitMinWidth(600);
             }
           }
         },
       },
       {
-        xtype: 'displayfield',
-        flex: 1,
+        xtype: 'numberfield',
         labelAlign: 'top',
-        fieldLabel: 'ID',
+        fieldLabel: 'ID (optional)',
+        stationXmlRelativePath: '@id',
         bind: '{id}',
-        fieldStyle: 'padding-left: 1.5em;'
+        allowBlank: true,
+        allowDecimals: false,
+        minValue: 0
       },
       {
-        layout: 'hbox',
+        layout: {
+          type: 'hbox',
+          align: 'stretch'
+        },
+        plugins: 'responsive',
+        responsiveConfig: {
+          'width < 768 || height < 500': {
+            layout: {type: 'vbox', align: 'stretch'}
+          },
+          'width >= 768 && height >= 500': {
+            layout: {type: 'hbox', align: 'stretch'}
+          }
+        },
         items: [
           {
             xtype: 'datefield',
             flex: 1,
+            minWidth: 0,
             labelAlign: 'top',
             padding: '0 5 0 0',
-            format: yasmine.Globals.DatePrintLongFormat,
+            yasmineGuiDate: 'long',
             fieldLabel: 'Effective Start Date',
+            stationXmlRelativePath: 'BeginEffectiveTime',
             bind: '{beginEffectiveTime}',
-            allowBlank: false
+            allowBlank: true
           },
           {
             xtype: 'datefield',
             flex: 1,
+            minWidth: 0,
             labelAlign: 'top',
             padding: '0 0 0 5',
-            format: yasmine.Globals.DatePrintLongFormat,
+            yasmineGuiDate: 'long',
             fieldLabel: 'Effective End Date',
+            stationXmlRelativePath: 'EndEffectiveTime',
             bind: '{endEffectiveTime}',
-            allowBlank: false
+            allowBlank: true
           }
         ]
       },
       {
         xtype: 'person-list',
         margin: '20 0 10 0',
-        height: 300,
         flex: 1,
+        minHeight: 160,
+        minWidth: 0,
         reference: 'person-list'
       }
     ],
     buttons: [{
       text: 'Save',
+      minWidth: 0,
+      iconCls: 'x-fa fa-floppy-o',
+      cls: 'yasmine-primary-action',
       handler: 'onSaveClick'
     }, {
       text: 'Cancel',
+      minWidth: 0,
+      iconCls: 'x-fa fa-ban',
       handler: 'onCancelClick'
     }]
   }

@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -44,48 +45,54 @@ Ext.define('yasmine.view.xml.builder.children.card.ChildrenCard', {
   items: [
     {
       xtype: 'dataview',
-      loadMask: false,
+      loadMask: true,
       bind: {
         store: '{childrenStore}',
         selection: '{selectedItem}'
       },
       tpl: Ext.create('Ext.XTemplate',
         '<tpl for=".">',
-        '<div class="phone  x-unselectable" style="border-color: {locationColor}',
-        '<tpl if="last">',
-        '; clear: both;',
-        '</tpl>',
-        '<tpl if="type == \'back\'">',
-        '; height: 68px;',
-        '</tpl>',
-        '">',
+        '<div class="phone yasmine-node-card x-unselectable',
+        '<tpl if="type == \'back\'"> yasmine-node-card-back-item</tpl>',
+        '"',
+        '<tpl if="locationColor"> style="border-left-color: {locationColor}"</tpl>',
+        '>',
         '<tpl if="type == \'node\'">',
-        '<div><b>Code: </b> <span style="color: black;">{name}</span></div>',
-        '<div><b>Start: </b> <span style="color: black;">{start:date(yasmine.Globals.DatePrintShortFormat)}</span></div>',
-        '<div><b>End: </b> <span style="color: black;">{end:date(yasmine.Globals.DatePrintShortFormat)}</span></div>',
+        '<div class="yasmine-node-card-title">{[this.text(values.name)]}</div>',
+        '<div><b>Start</b><span>{[this.displayDate(values.start)]}</span></div>',
+        '<div><b>End</b><span>{[this.displayDate(values.end)]}</span></div>',
         '</tpl>',
         '<tpl if="nodeType == 1">',
-        '<div><b>Description: </b><span style="color: black;">{description}</span></div>',
+        '<div><b>Description</b><span>{[this.text(values.description)]}</span></div>',
         '</tpl>',
         '<tpl if="nodeType == 2">',
-        '<div><b>Longitude: </b> <span style="color: black;">{longitude}</span></div>',
-        '<div><b>Latitude: </b> <span style="color: black;">{latitude}</span></div>',
-        '<div><b>Site: </b> <span style="color: black;">{site}</span></div>',
+        '<div><b>Longitude</b><span>{[this.text(values.longitude)]}</span></div>',
+        '<div><b>Latitude</b><span>{[this.text(values.latitude)]}</span></div>',
+        '<div><b>Site</b><span>{[this.text(values.site)]}</span></div>',
         '</tpl>',
         '<tpl if="nodeType == 3">',
-        '<div><b>Sample Rate: </b> <span style="color: black;">{sampleRate}</span></div>',
-        '<div><b>Sensor: </b> <span style="color: black;">{sensor}</span></div>',
+        '<div><b>Sample rate</b><span>{[this.text(values.sampleRate)]}</span></div>',
+        '<div><b>Sensor</b><span>{[this.text(values.sensor)]}</span></div>',
         '</tpl>',
         '<tpl if="has_children == true">',
-        '<div><b>Click To Expand</b></div>',
+        '<div class="yasmine-node-card-hint">Open children</div>',
         '</tpl>',
         '<tpl if="type == \'back\'">',
-        '<i class="fa fa-chevron-circle-left fa-5x" style="color: #5fa2dd; padding-left: 37px;" aria-hidden="true"></i>',
+        '<i class="x-fa fa-arrow-left yasmine-node-card-back" aria-hidden="true"></i>',
         '</tpl>',
         '</div>',
-        '</tpl>'
+        '</tpl>',
+        {
+          displayDate: function (value) {
+            return Ext.String.htmlEncode(yasmine.utils.DateUtil.formatShort(value) || '');
+          },
+          text: function (value) {
+            return Ext.String.htmlEncode(value == null ? '' : String(value));
+          }
+        }
       ),
       id: 'phones',
+      cls: 'yasmine-node-cards',
       scrollable: true,
       itemSelector: 'div.phone',
       listeners: {

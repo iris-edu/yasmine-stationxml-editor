@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -34,10 +35,52 @@
 Ext.define('yasmine.view.userlibrary.UserLibraryListController', {
   extend: 'Ext.app.ViewController',
   alias: 'controller.userlibrary-list',
+  requires: [
+    'yasmine.view.userlibrary.UserLibraryImport'
+  ],
+  listen: {
+    controller: {
+      '#userLibraryImport-controller': {
+        libraryImported: 'onLibraryImported'
+      }
+    }
+  },
+  init: function () {
+    this.syncLibraryToolbar();
+    this.mon(Ext.GlobalEvents, 'resize', this.syncLibraryToolbar, this, {buffer: 150});
+  },
+  syncLibraryToolbar: function () {
+    var grid = this.getView();
+    var card = yasmine.utils.ResponsiveUtil && yasmine.utils.ResponsiveUtil.useCardLayout();
+    var createButton = grid.down('#createLibrary');
+    var openButton = grid.down('#openLibrary');
+    if (createButton) {
+      createButton.setText(card ? 'New' : 'New Library');
+    }
+    if (openButton) {
+      openButton.setText(card ? 'Open' : 'Open Library');
+    }
+  },
   onCreateLibraryClick: function () {
-    let record = new yasmine.model.UserLibrary({id: null});
-    this.getLibraryStore().insert(0, record)
-    this.startEditing(record)
+    let record = new yasmine.model.UserLibrary();
+    let grid = this.getView();
+    this.getLibraryStore().insert(0, record);
+    // The new row is not in the view until the next layout. startEdit
+    // before that returns without opening the editor.
+    Ext.defer(function () {
+      if (grid.destroyed) {
+        return;
+      }
+      if (grid.getView().getNode(record)) {
+        this.startEditing(record);
+        return;
+      }
+      Ext.defer(function () {
+        if (!grid.destroyed && grid.getView().getNode(record)) {
+          this.startEditing(record);
+        }
+      }, 50, this);
+    }, 30, this);
   },
   onEditLibraryClick: function () {
     this.startEditing(this.getSelectedLibrary())
@@ -50,8 +93,25 @@ Ext.define('yasmine.view.userlibrary.UserLibraryListController', {
     }, this);
   },
   onConfigureLibraryClick: function () {
-    this.getView().findPlugin('rowediting').cancelEdit();
-    this.redirectTo(`user-library-builder/${this.getSelectedLibrary().id}`);
+    var grid = this.getView();
+    var plugin = grid && grid.findPlugin('rowediting');
+    var selected = this.getSelectedLibrary();
+    if (plugin && plugin.editing) {
+      plugin.cancelEdit();
+    }
+    if (!selected || selected.phantom || !selected.id) {
+      return;
+    }
+    this.redirectTo('user-library-builder/' + selected.id);
+  },
+  onImportLibraryClick: function () {
+    Ext.create({xtype: 'user-library-import'}).show();
+  },
+  onExportLibraryClick: function () {
+    yasmine.store.FileLoader.load(`api/user-library/ie/${this.getSelectedLibrary().id}`);
+  },
+  onLibraryImported: function () {
+    this.getViewModel().getStore('userLibraryStore').reload();
   },
   startEditing: function (record) {
     this.getView().findPlugin('rowediting').startEdit(record, 0);

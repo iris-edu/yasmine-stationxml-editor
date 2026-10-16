@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * NRLv2 Response Selector ViewModel - Same structure as NRL
 *
@@ -44,9 +45,18 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
 
     wizardMode: false,
     responseTree: null,
-    activeSelectorTab: 0
+    activeSelectorTab: 0,
+    responseElement: null,
+    plotStartStage: null,
+    plotEndStage: null,
+    hasPlotStages: false,
+    plotLoading: false
   },
   stores: {
+    plotStageStore: {
+      fields: ['number', 'label'],
+      data: []
+    },
     sensorStore: {
       type: 'tree',
       model: 'yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2ResponseTreeModel',
@@ -94,25 +104,38 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
   formulas: {
     dataloggerStatus: function (get) {
       return get('dataloggerPreview')
-        ? ' <i class="fa fa-check" style="color: green"></i>'
-        : ' <i class="fa fa-ban" style="color: red"></i>';
+        ? ' <i class="x-fa fa-check yasmine-status-success"></i>'
+        : ' <i class="x-fa fa-ban yasmine-status-danger"></i>';
     },
     sensorStatus: function (get) {
       return get('sensorPreview')
-        ? ' <i class="fa fa-check" style="color: green"></i>'
-        : ' <i class="fa fa-ban" style="color: red"></i>';
+        ? ' <i class="x-fa fa-check yasmine-status-success"></i>'
+        : ' <i class="x-fa fa-ban yasmine-status-danger"></i>';
     },
     responseStatus: function (get) {
-      return (get('sensorPreview') && get('dataloggerPreview'))
-        ? ' <i class="fa fa-check" style="color: green"></i>'
-        : ' <i class="fa fa-ban" style="color: red"></i>';
+      let element = get('responseElement');
+      let ready = (element === 'integrated' || element === 'soh')
+        ? !!get('dataloggerPreview')
+        : (get('sensorPreview') && get('dataloggerPreview'));
+      return ready
+        ? ' <i class="x-fa fa-check yasmine-status-success"></i>'
+        : ' <i class="x-fa fa-ban yasmine-status-danger"></i>';
+    },
+    instrumentTabTitle: function (get) {
+      let element = get('responseElement');
+      let label = element === 'integrated' ? 'Integrated' : (element === 'soh' ? 'SOH' : 'Datalogger');
+      return get('dataloggerStatus') + ' ' + label;
     },
     responsePreviewWizardCls: function (get) {
       return get('wizardMode') ? 'response-preview-wizard' : '';
     },
     instconfig: function (get) {
-      let s = get('sensorInstconfig');
       let d = get('dataloggerInstconfig');
+      let element = get('responseElement');
+      if (element === 'integrated' || element === 'soh') {
+        return d || null;
+      }
+      let s = get('sensorInstconfig');
       return (s && d) ? s + ':' + d : null;
     },
     dataloggerFilteredConfigs: function (get) {
@@ -261,6 +284,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.nrlv2.Nrlv2
     { name: 'key', type: 'string', persist: false },
     { name: 'leaf', type: 'boolean', persist: false },
     { name: 'source', type: 'string', persist: false },
+    { name: '_emptyPlaceholder', type: 'boolean', persist: false, defaultValue: false },
+    { name: 'help', type: 'string', persist: false, defaultValue: '' },
     {
       name: 'title',
       type: 'string',

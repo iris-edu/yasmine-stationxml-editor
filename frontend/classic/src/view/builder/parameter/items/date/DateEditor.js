@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -41,7 +42,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.date.DateEditor', {
   ],
   viewModel: 'date-editor',
   controller: 'date-editor',
-  format: yasmine.Globals.DatePrintLongFormat,
+  yasmineGuiDate: 'long',
   validateOnBlur: true,
   validator: function (value) {
     return this.getController().validator(this.getValue())

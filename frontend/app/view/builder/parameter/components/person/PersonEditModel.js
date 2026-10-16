@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -45,7 +46,14 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEditModel
     person: null,
 
     parameterId: null,
-    nodeTypeId: null
+    nodeTypeId: null,
+    stationXmlPersonPath: 'Author',
+    stationXmlParameterName: 'comments'
+  },
+  formulas: {
+    personLabel: function (get) {
+      return get('stationXmlPersonPath') === 'Contact' ? 'Contact' : 'Author';
+    }
   },
   stores: {
     agencyHelpStore: {
@@ -86,7 +94,7 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonEditModel
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.components.person.AgencyHelper', {
-  extend: 'Ext.data.Model',
+  extend: 'yasmine.model.CollectionItem',
   fields: [
     { name: 'acromyn', type: 'string' },
     { name: 'name', type: 'string' },
@@ -103,28 +111,28 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.AgencyHelper', 
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.components.person.Name', {
-  extend: 'Ext.data.Model',
+  extend: 'yasmine.model.CollectionItem',
   fields: [
     { name: '_name', type: 'string' }
   ]
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.components.person.Agency', {
-  extend: 'Ext.data.Model',
+  extend: 'yasmine.model.CollectionItem',
   fields: [
     { name: '_name', type: 'string' }
   ]
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.components.person.Email', {
-  extend: 'Ext.data.Model',
+  extend: 'yasmine.model.CollectionItem',
   fields: [
     { name: '_email', type: 'string' }
   ]
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.components.person.Phone', {
-  extend: 'Ext.data.Model',
+  extend: 'yasmine.model.CollectionItem',
   fields: [
     { name: '_country_code', type: 'string' },
     { name: '_area_code', type: 'string' },

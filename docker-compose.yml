@@ -1,3 +1,4 @@
+# 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
 services:
     yasmine-frontend:
         container_name: yasmine-frontend
@@ -12,11 +13,21 @@ services:
             - yasmine
     yasmine-backend:
         container_name: yasmine-backend
-        build: backend
+        build:
+            context: .
+            dockerfile: backend/Dockerfile
         image: yasmine/backend
 #        platform: linux/amd64 # for MacOS M1+ users
         ports:
             - "8080:80"
+        environment:
+            YASMINE_DEBUG: "0"
+        healthcheck:
+            test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1/healthz')"]
+            interval: 30s
+            timeout: 5s
+            retries: 5
+            start_period: 40s
         volumes:
             - ./data:/opt/yasmine/data
             - ./backend:/opt/yasmine/src  

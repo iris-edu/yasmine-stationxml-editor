@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,20 +37,34 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   xtype: 'channel-response-tree-editor',
   reference: 'channel-response-tree-editor',
   requires: [
+    'Ext.plugin.Responsive',
     'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.tree.Tree',
     'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.ValueEditor',
     'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.AttributeEditor',
     'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.ChannelResponseTreeEditorModel',
-    'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.ChannelResponseTreeEditorController'
+    'yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.ChannelResponseTreeEditorController',
+    'yasmine.utils.ResponseSchemaUtil',
+    'yasmine.utils.XmlNodeUtil'
   ],
   viewModel: 'channel-response-tree-editor',
   controller: 'channel-response-tree-editor',
+  flex: 1,
+  minHeight: 240,
   layout: {
     type: 'hbox',
     align: 'stretch'
   },
+  plugins: 'responsive',
+  responsiveConfig: {
+    'width < 768 || height < 500': {
+      layout: {type: 'vbox', align: 'stretch'}
+    },
+    'width >= 768 && height >= 500': {
+      layout: {type: 'hbox', align: 'stretch'}
+    }
+  },
 
-  style: 'border: solid #d0d0d0 1px;',
+  cls: 'yasmine-panel-outline yasmine-response-tree-editor',
 
   items: [
     {
@@ -61,9 +76,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
           flex: 1,
           scrollable: true,
           autoScroll: true,
-          style: 'border-right: solid #d0d0d0 1px;',
+          cls: 'yasmine-response-tree',
           xtype: 'channel-response-tree',
           width: 400,
+          minWidth: 0,
           reference: 'channelresponsetree'
         }
       ]
@@ -73,14 +89,25 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
       layout: {
         type: 'vbox',
         pack: 'center',
-        align: 'center'
+        align: 'stretch'
       },
       width: 400,
+      flex: 1,
+      minWidth: 0,
+      plugins: 'responsive',
+      responsiveConfig: {
+        'width < 768 || height < 500': {
+          width: undefined
+        },
+        'width >= 768 && height >= 500': {
+          width: 400
+        }
+      },
       items: [
         {
           xtype: 'channel-response-value-editor',
           reference: 'channel-response-value-editor',
-          width: 400,
+          width: '100%',
           height: 105,
           hidden: true,
           bind: {
@@ -91,7 +118,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
           xtype: 'channel-response-attribute-editor',
           reference: 'channel-response-attribute-editor',
           flex: 1,
-          width: 400,
+          width: '100%',
           hidden: true,
           bind: {
             hidden: '{!selectedResponseNode}'
@@ -99,7 +126,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
         },
         {
           xtype: 'panel',
-          html: '<span style="font-size: x-large; font-weight: 700;">Please select a node</span>',
+          html: '<div class="yasmine-empty-state">Select a response node to edit its value and attributes.</div>',
           hidden: true,
           bind: {
             hidden: '{selectedResponseNode}'

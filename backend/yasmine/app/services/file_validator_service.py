@@ -28,6 +28,7 @@
 # ****************************************************************************/
 
 
+import json
 import os
 import logging
 from pathlib import Path
@@ -45,7 +46,12 @@ class FileValidatorService:
         schema = self._read_schema(schema_file_path)
         for file in files:
             with open(file, 'r') as fl:
-                instance = jsonref.load(fl, base_uri=Path(os.path.dirname(file)).as_uri())
+                try:
+                    instance = jsonref.load(fl, base_uri=Path(os.path.dirname(file)).as_uri())
+                except json.JSONDecodeError as error:
+                    self.logger.error(f"{file} has invalid JSON: {error}")
+                    errors.append(f"invalid JSON: {error}")
+                    continue
                 valid_schema = jsonschema.Draft7Validator(schema)
                 for error in valid_schema.iter_errors(instance):
                     error_element = "".join(f"[{err}]" for err in error.path)

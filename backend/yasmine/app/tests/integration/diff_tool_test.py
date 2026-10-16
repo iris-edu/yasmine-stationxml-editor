@@ -1,3 +1,4 @@
+# 2026-09-18, version 4.1.3-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # This file is part of the yasmine editing tool.
@@ -37,15 +38,17 @@ import os
 class DiffTollTest(unittest.TestCase):
     FILES_FOLDER = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'data')
 
-    def test_sensors_keys(self):
-        with open(os.path.join(self.FILES_FOLDER, 'station_from_obspy.xml'), 'rt') as f1:
-            with open(os.path.join(self.FILES_FOLDER, 'station_from_obspy2.xml'), 'rt') as f2:
+    def test_diff_html(self):
+        f1_path = os.path.join(self.FILES_FOLDER, 'station_from_obspy.xml')
+        f2_path = os.path.join(self.FILES_FOLDER, 'station_from_obspy2.xml')
+        if not (os.path.isfile(f1_path) and os.path.isfile(f2_path)):
+            self.skipTest('diff fixtures are missing')
+        with open(f1_path, 'rt') as f1:
+            with open(f2_path, 'rt') as f2:
                 d = difflib.HtmlDiff()
                 d._legend = ''
-                out_file = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'result.html')
                 result = d.make_file(f1.readlines(), f2.readlines(), context=True)
-                with open(out_file, 'w') as f:
-                    f.writelines(result)
+                self.assertIn('<table', result)
 
 
 if __name__ == "__main__":

@@ -45,7 +45,8 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonModel', {
     xml2Id: null,
     xml3Id: null,
     minFrequency: 0.001,
-    maxFrequency: null
+    maxFrequency: null,
+    plotLoading: false
   },
   stores: {
     xmlStore: {
@@ -72,6 +73,7 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonModel', {
       if (!get('xml1ChartChannelResponseImageUrl')) {
         return 'Selected channel doesn\'t have a response.';
       }
+      return '';
     },
     xml2ChartMessage: function (get) {
       if (!get('xml2Id')) {
@@ -89,6 +91,7 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonModel', {
       if (!get('xml2ChartChannelResponseImageUrl')) {
         return 'Channel was found, but it doesn\'t have a response.'
       }
+      return '';
     },
     xml3ChartMessage: function (get) {
       if (get('xml3ChartIsLoading')) {
@@ -97,6 +100,7 @@ Ext.define('yasmine.view.xml.builder.comparison.ComparisonModel', {
       if (!get('xml1ChartChannelResponseImageUrl') || !get('xml2ChartChannelResponseImageUrl')) {
         return 'Both responses should be selected to see their difference here.'
       }
+      return '';
     }
   }
 });

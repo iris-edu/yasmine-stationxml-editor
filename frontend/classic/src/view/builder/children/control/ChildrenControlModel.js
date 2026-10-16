@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -73,6 +74,19 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlModel', {
       }
       return !selectedNode.root;
     },
+    canShowMap: function (get) {
+      let selectedNode = get('selectedNode');
+      if (!selectedNode) {
+        return false;
+      }
+      if (selectedNode.id === 0 || selectedNode.root) {
+        return true;
+      }
+      let nodeType = selectedNode.nodeType;
+      return nodeType === yasmine.NodeTypeEnum.network ||
+        nodeType === yasmine.NodeTypeEnum.station ||
+        nodeType === yasmine.NodeTypeEnum.channel;
+    },
     canTemplate: function (get) {
       let selectedNode = get('selectedNode');
       if (!selectedNode) {
@@ -98,7 +112,7 @@ Ext.define('yasmine.view.xml.builder.children.control.ChildrenControlModel', {
 });
 
 Ext.define('yasmine.view.xml.builder.children.control.Date', {
-  extend: 'Ext.data.Model',
+  extend: 'yasmine.model.CollectionItem',
   fields: [
     {name: 'date', type: 'date', persist: false, dateFormat: yasmine.Globals.DateReadFormat},
     {

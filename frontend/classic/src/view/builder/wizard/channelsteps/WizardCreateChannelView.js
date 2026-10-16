@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -60,13 +61,17 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.WizardCreateChannelView
       return true;
     },
     initComponent: function (startNodeId, startNodeType) {
-      let container = this.lookup('wizard-container');
-      container.removeAll(true, true);
-
+      let view = this.getView();
       let stationNodeId = (startNodeType === yasmine.NodeTypeEnum.station) ? startNodeId : 0;
+      if (view && view.setLoading) {
+        view.setLoading('Loading channel step...');
+      }
       yasmine.model.ChannelCreation.load(stationNodeId, {
         scope: this,
         success: function (channelInfo) {
+          if (view && view.setLoading) {
+            view.setLoading(false);
+          }
           if (channelInfo) {
             try {
               this.createChannelWizards(channelInfo);
@@ -76,28 +81,32 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.WizardCreateChannelView
           }
         },
         failure: function () {
+          if (view && view.setLoading) {
+            view.setLoading(false);
+          }
           Ext.Msg.alert('Error', 'Failed to load channel configuration. Please try again.');
         }
       });
     },
     createChannelWizards: function (channelInfo) {
       let container = this.lookup('wizard-container');
-      container.setHidden(false);
-      container.getTabBar().hide();
-      container.removeAll(true, true);
+      let view = this.getView();
+      let win = view && view.up('window');
       const stationData = this.getViewModel().get('stationStoredData');
       const count = Math.max(1, (stationData && stationData.activeSampleRate) ? stationData.activeSampleRate : 1);
       let firstTab;
+      container.removeAll(true, true);
       for (let i = 0; i < count; i++) {
         let content = Ext.create({
           xtype: 'wizard-per-sample-rate-channel'
         });
         content.getViewModel().set('sampleRateNumber', i + 1);
+        content.getViewModel().set('multiSampleRate', count > 1);
         content.getViewModel().set('channelInfo', channelInfo.copy(null));
         content.getViewModel().set('stationAttributes', (stationData && stationData.attributes) ? stationData.attributes : []);
         content.getController().initComponent();
 
-        container.add([content]);
+        container.add(content);
         if (i === 0) {
           firstTab = content;
         }
@@ -107,6 +116,12 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.WizardCreateChannelView
         container.suspendEvents();
         container.setActiveTab(firstTab);
         container.resumeEvents();
+      }
+      if (view && view.updateLayout) {
+        view.updateLayout();
+      }
+      if (win && win.updateLayout) {
+        win.updateLayout();
       }
     },
     fillStoredData: function () {
@@ -132,8 +147,10 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.WizardCreateChannelView
         let wizards = wizardContainer.items;
         for (let i = 0; i < wizards.getCount(); i++) {
           if (currentWizard.id === wizards.getAt(i).id) {
-            currentWizard = wizards.getAt(i+1);
-            wizardContainer.setActiveTab(currentWizard);
+            let nextWizard = wizards.getAt(i + 1);
+            if (nextWizard) {
+              wizardContainer.setActiveTab(nextWizard);
+            }
             break;
           }
         }
@@ -157,15 +174,15 @@ Ext.define('yasmine.view.xml.builder.wizard.channelsteps.WizardCreateChannelView
       }
     }
   },
-  layout: {
-    type: 'vbox',
-    align: 'stretch'
-  },
+  layout: 'fit',
   items: [
     {
       xtype: 'tabpanel',
-      flex: 1,
-      reference: 'wizard-container'
+      reference: 'wizard-container',
+      tabBar: {
+        ui: 'sheet',
+        hidden: true
+      }
     }
   ]
 });

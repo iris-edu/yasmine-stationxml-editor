@@ -1,3 +1,133 @@
+# 2026-10-01, version 4.4.0-beta: ASGSR, Alexey Emanov
+2026/10/01 : 4.4.0-beta
+ - Allow text selection and copy from Strict Validate XML List and Tree reports (ExtJS Window workaround)
+ - In Strict Validate XML, allow StageGain Frequency 0.0 for unity Coefficients stages (single Numerator = 1)
+# 2026-09-30, version 4.4.0-beta: ASGSR, Alexey Emanov
+2026/09/30 : 4.4.0-beta
+ - Fix Response attribute cell editing (including Stage @number) by using cellediting instead of rowediting
+ - Align Validate XML code lengths with Strict/FDSN and add soft SEED-classic hints
+ - Require confirm before resetting InstrumentSensitivity 0→1 on recalculate; spell out Auto frequency honesty
+ - Show map channel QC for missing azimuth/dip; keep Epoch label on phone wrap; expand GATITO labels
+ - Disable BufferedRenderer on User Libraries to stop Open Library scrollTo flakes
+ - Add read-only Extensions summary and delete confirms that count foreign-namespace sidecars
+ - Suggest SEED channel codes from AROL responses; disable Recalculate for polynomials; post-import 1.1→1.2 migration notes
+ - Expand Known issues and operator playbooks (sidecars, AROL limits, polynomial, span-only Extent)
+# 2026-09-29, version 4.4.0-beta: ASGSR, Alexey Emanov
+2026/09/29 : 4.4.0-beta
+ - Make `yasmineapp.py test --gui` / `--network` set env before skip decorators so Selenium and download suites actually run
+ - Route NRL helper and SOH band letters through seed_channel_prefix (same L≈1 Hz rule as Strict Validate)
+ - Reject Windows drive and oversized ZIP member counts on extract; quote download Content-Disposition filenames
+ - Run backend and frontend unit tests on GitHub Actions push; document trusted-LAN API and Strict≠export in Known issues
+ - Keep Hierarchy Select Epoch on its own full-width row on phone viewports so Inventory is not clipped
+ - Accept a floating-point custom frequency in Recalculate Sensitivity (same style as plot Min/Max)
+ - Show Recalculate Sensitivity results as the next step in the same window after Recalculate
+ - After Recalculate Sensitivity, show previous and new sensitivity with percent change, and apply only on Save recalculation results
+ - In Strict Validate XML, key warnings by channel/station epoch and group the report tree by epoch
+ - Compare seismometer triplets on overlapping epoch windows, and warn when component epochs overlap but do not match
+# 2026-09-28, version 4.4.0-beta: ASGSR, Alexey Emanov
+2026/09/28 : 4.4.0-beta
+ - Prefill wizard station and channel start dates from the parent epoch, and channel coordinates from the station
+ - In Strict Validate XML, allow StageGain Frequency 0.0 for low-pass FIR stages (FDSN preferred DC / sum of coefficients)
+ - Before Recalculate Sensitivity, show ObsPy Auto frequency (first-stage normalization capped by Fs/4) and allow a custom frequency
+2026/09/27 : 4.4.0-beta
+ - Open Edit Response again: drop the unused hiddenfield that was missing from the production bundle, and pass nodeInstanceId on Import RESP submit
+ - Treat flat-to-acceleration responses as broadband in Strict Validate XML, so high-frequency PZ poles do not force band E
+ - Add File → Strict Validate XML, a scrollable list of warnings about suspicious times, coordinates, codes, and response amplitudes
+ - Keep those strict checks from blocking StationXML export; only the existing schema errors still stop a download
+ - Keep builder toolbars above the panel so File, Add and Map receive clicks
+ - Recalculate NRL cascade sensitivity even when stage units are already filled
+ - Normalize digital poles and zeros on the unit circle, and scale polynomial plots with the datalogger gain only
+ - Pass the NRL Online source through the channel wizard, and refuse that library when it is switched off
+ - Show the XML list empty state only after the store has loaded
+ - Write AROL InstrumentSensitivity output units from the last stage, and keep an AD conversion stage after the type is uppercased
+ - Leave a missing sensitivity frequency to ObsPy, and suggest a short-period SEED band from offline NRL key text
+ - Report a failed NRL sync instead of success, and replace AROL without deleting the current library first
+ - Wrap builder and XML toolbars through iPad width so Map, Epoch, and Import stay reachable
+ - Label a response plot as counts per ground-motion unit, and wrap a difference-plot phase into ±180°
+ - Suggest SEED band L for a sample rate just above 1 Hz, and instrument P for a 4.5 Hz geophone
+ - Keep Settings fields reachable on a phone by scrolling the two columns instead of clipping them
+ - Show Recalculate Sensitivity again on the channel-wizard Response tab
+ - Load response plots, sensitivity recalculation, and the response tree with the stored node id
+ - Keep an imported RESP as the channel response, and plot the stored response
+ - Drop a StationXML document when import fails after the first station, so a partial file is not left in the list
+ - Report whether a similar channel has a response even when that attribute is stored first, without copying the flag from another channel
+ - Say when field validation, settings save, user-library import, node delete, or a SEED code suggestion fails
+ - Upload StationXML and user libraries to an absolute /api path, and ignore a second click while an upload is running
+ - Show the map empty state, and keep card Back from a channel
+ - Go back in the wizard without claiming that the current answers will be deleted
+ - Keep the splash up until the Sencha build is ready, then open the application
+ - Import a StationXML larger than 100MB, including an EarthScope network file at response level, one station at a time
+ - Refuse a second StationXML import while one is already running, so two uploads cannot corrupt the database
+ - Show 100% only when a StationXML import has finished, instead of cycling the progress bar
+ - Show stations and channels on a map from the builder, scoped to the selected inventory, network, station, or channel and to the selected epoch
+ - Return an error instead of failing the request when a node, attribute, network, or station is missing
+ - Show inventory names as text in cards, the tree, map labels, and delete confirmations
+ - Keep the channel wizard open when network, station, or channel creation fails
+ - Name each channel-wizard step for what it asks, and keep the step count from jumping after the library is chosen
+ - Choose the response library, response type, and channel orientation with buttons
+ - Ask Orientation applies once, including for Integrated responses, and suggest the SEED channel code from the response units
+ - Explain a failed response plot or sensitivity recalculation by stage, including a missing gain or decimation
+ - Replace a zero stage-0 gain before recalculating sensitivity
+ - Suggest SEED channel families from units and description, including rotation, magnetometer, calibration, and the electronic test point
+ - Keep one unreadable AROL manufacturer from dropping the catalog, and write YAML dates as ISO strings without leaving a partial JSON file
+ - Import StationXML 1.1 and export it as 1.2
+ - Use the SQLite DELETE journal so a Docker Desktop bind mount does not raise a disk I/O error
+ - Report invalid AROL JSON instead of failing the validator
+ - Show Import RESP only while a response preview is open
+ - Keep the NRL response-type cards visible in a compact window
+ - Show the full Created date, including seconds, in the Edit XML dialog
+
+2026/09/25 : 4.3.3-beta
+ - Return 404 when a stored record id is missing instead of failing while serializing it
+ - Keep Alembic from disabling application loggers during migrations in the same process
+ - Open the New Library row editor after the new row has been laid out
+ - Use the NRL Online Low-Frequency Corner to tell a short-period sensor from a broadband one when suggesting the channel name and prefix
+ - Write the About build date and git revision into the backend image at build time, without mounting .git
+ - Keep the NRL breadcrumb Help button at crumb height on narrow windows
+ - Open Channel Dip schema help from the wizard question Orientation applies
+ - Document the wizard ? tool and the NRL catalog Help button
+
+2026/09/24 : 4.3.1-beta
+ - Suggest SEED channel codes for SOH responses, and ask whether orientation applies before the prefix step
+ - Keep GUI date fields on the configured short and long formats
+ - Report the evalresp reason when a response plot fails, including a zero stage gain
+ - Keep sensitivity recalculation from failing when a stage sample rate is missing or not numeric
+ - Lay node cards in equal columns, with labels beside values and one column below 768px
+ - Apply the saved Tree or Card mode after settings finish loading
+ - Show the full Metadata column header
+
+2026/09/24 : 4.3.0-beta
+ - Add an NRL response-type step so Integrated and SOH instruments can be chosen on their own in the channel wizard and the response editor
+ - Show the build date and git revision on the About page, including when the backend runs in Docker
+ - Convert naive local datetimes when tzlocal returns a zoneinfo timezone
+ - Raise minimums in requirements.txt: lxml 6.1.3, Tornado 6.5.10, SQLAlchemy 2.0.54, Alembic 1.20.0, pytz 2026.3.post1, ObsPy 1.5.1, python-slugify 9.1.1
+
+2026/09/23 : 4.2.0-beta
+ - Align user documentation with the StationXML 1.2 editor, validation, and current UI labels
+ - Wrap compact toolbars so buttons, Epoch and Add Field controls do not overlap at 320–767px
+ - Keep StationXML doubles (SampleRate 0.001, slow-rate examples) instead of ExtJS 2-decimal rounding
+ - Show StationXML field names as spaced XML words (Start Date, Clock Drift)
+ - Remove leftover Channel storage_format (dropped in StationXML 1.2)
+ - Fit Comment dialog PERSONS toolbar and Save/Cancel buttons after the form stopped stretching
+ - Keep Response Plot Min/Max fields and rebuild/download buttons visible in compact windows
+ - Keep Sample Rate / measurement metadata Clear, Save and Cancel buttons on screen
+ - Restore the comments grid header after a 400px Authors column height leaked into the layout
+ - Complete StationXML 1.2 field coverage, including DataAvailability and measured-value metadata
+ - Schema-aware Response tree with all filter and polynomial branches
+ - Preserve foreign-namespace extension elements and attributes during round-trip
+ - Separate blocking XSD errors from Yasmine/FDSN operational warnings
+ - Contextual StationXML 1.2 help from the original English XSD, including nested Comment, Operator and Person editors
+ - Block export when the generated file fails StationXML 1.2 XSD validation
+ - Copy extension sidecars when cloning nodes into an XML or user library
+
+2026/09/18 : 4.1.3-beta
+ - Responsive Classic UI: viewport breakpoints, stacked phone layouts, two-column Settings on desktop
+ - Fix iOS Safari blank screen and keep editors inside the viewport
+ - 44px icon hit targets on iPhone-class and compact-height viewports
+ - Recalculate Sensitivity: isolate matplotlib stderr from the HTTP response
+ - Raise the NRL unzip cap to 300 GiB
+ - Tests are opt-in (`YASMINE_TEST=1`); Selenium and xmlunittest are no longer runtime dependencies
+
 2026/08/19 : 4.1.2-beta (earthscope-nrl-host)
  - Point NRL Online / NRL Offline defaults at https://service.earthscope.org/irisws/nrl/1/
  - Migrate stored nrlv2_base_url when it still uses the former service.iris.edu default

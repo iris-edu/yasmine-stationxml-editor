@@ -1,10 +1,36 @@
 /*
+ * 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
  * This is is imported by virtue of "sass.etc" in "app.json".
+ *
+ * Viewport-class hooks. Layout still comes from ResponsiveUtil / Ext
+ * responsiveConfig; these rules only tighten chrome and prevent page
+ * overflow. Minimum supported viewport: 320 CSS px.
  */
 
-.fa-minus-circle {
-  color: #dd6550 !important;
+@import '../var/tokens';
+
+html {
+  height: 100%;
+  height: -webkit-fill-available;
+  height: 100dvh;
 }
+
+html, body {
+  width: 100%;
+  margin: 0;
+}
+
+body {
+  min-height: 100%;
+  min-height: -webkit-fill-available;
+  min-height: 100dvh;
+  box-sizing: border-box;
+}
+
+/* Ext.plugin.Viewport uses <body> as the component element. Padding on
+   body (including iOS safe-area insets) shrinks the Classic layout to
+   nothing. Apply safe-area on the navigation chrome instead. */
+
 
 .x-menu-no-icon a.x-menu-item-link .x-menu-item-text {
   margin-left: 5px;
@@ -13,6 +39,9 @@
 .library-btn .x-btn-inner {
   font-size: x-large;
   height: 18px;
+  /* Ext default-small button text is #f0f0f0; library cards use light fills. */
+  color: $yasmine-primary-dark;
+  font-weight: 700;
 }
 
 .library-btn-multiline .x-btn-inner {
@@ -25,10 +54,2051 @@
   display: none;
 }
 
-.trash-icon-color {
-  color: #dd6550 !important;
+
+.x-breadcrumb-btn .x-btn-wrap-plain-toolbar-small.x-btn-split:after,
+.x-breadcrumb-btn .x-btn-wrap-plain-toolbar-small.x-btn-arrow:after {
+  font-family: FontAwesome !important;
+  font-size: 16px;
+  color: $yasmine-primary;
+  content: "\f0fe" !important;
+  background: none !important;
+  width: 20px;
 }
 
-.x-breadcrumb-btn .x-btn-wrap-plain-toolbar-small.x-btn-arrow:after {
+.x-btn-menu-active.x-breadcrumb-btn .x-btn-wrap-plain-toolbar-small.x-btn-split:after,
+.x-btn-menu-active.x-breadcrumb-btn .x-btn-wrap-plain-toolbar-small.x-btn-arrow:after {
+  content: "\f146" !important;
+}
+
+html.x-viewport {
+  overflow: hidden;
+}
+
+.yasmine-vp-xs .x-tab-bar-navigation .x-tab-navigation,
+.yasmine-vp-sm .x-tab-bar-navigation .x-tab-navigation,
+.yasmine-compact-height .x-tab-bar-navigation .x-tab-navigation {
+  min-width: 40px !important;
+  min-height: 40px !important;
+  padding: 6px 8px !important;
+  box-sizing: border-box;
+}
+
+.yasmine-vp-xs .x-tab-bar-navigation .x-tab-inner-navigation,
+.yasmine-vp-sm .x-tab-bar-navigation .x-tab-inner-navigation,
+.yasmine-compact-height .x-tab-bar-navigation .x-tab-inner-navigation {
+  display: none !important;
+  width: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.yasmine-vp-xs .x-tab-icon-el-navigation,
+.yasmine-vp-sm .x-tab-icon-el-navigation,
+.yasmine-compact-height .x-tab-icon-el-navigation {
+  margin: 0 !important;
+  width: 26px !important;
+  height: 26px !important;
+  font-size: 24px !important;
+  line-height: 26px !important;
+}
+
+.yasmine-vp-xs .x-panel-header-navigation .x-title-text-navigation,
+.yasmine-vp-sm .x-panel-header-navigation .x-title-text-navigation,
+.yasmine-compact-height .x-panel-header-navigation .x-title-text-navigation {
+  margin: 2px 6px !important;
+  font-size: 14px !important;
+  line-height: 16px !important;
+}
+
+.yasmine-vp-xs .x-panel-header-navigation,
+.yasmine-vp-sm .x-panel-header-navigation,
+.yasmine-vp-md .x-panel-header-navigation,
+.yasmine-vp-lg .x-panel-header-navigation,
+.yasmine-compact-height .x-panel-header-navigation {
+  padding: max(2px, env(safe-area-inset-top, 0px)) 4px 2px max(4px, env(safe-area-inset-left, 0px)) !important;
+}
+
+.yasmine-vp-xs .yasmine-header-logo,
+.yasmine-vp-sm .yasmine-header-logo,
+.yasmine-vp-md .yasmine-header-logo,
+.yasmine-vp-lg .yasmine-header-logo,
+.yasmine-compact-height .yasmine-header-logo {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+}
+
+.yasmine-fa-svg-host.yasmine-fa-from-before::before {
+  content: none !important;
+}
+
+.yasmine-fa-svg-host.yasmine-fa-from-after::after {
+  content: none !important;
+}
+
+.yasmine-fa-svg {
+  display: block;
+  width: 1em;
+  height: 1em;
+  fill: currentColor;
+  pointer-events: none;
+}
+
+i.yasmine-fa-svg-host,
+a.yasmine-fa-svg-host {
+  display: inline-block;
+  line-height: 1;
+  vertical-align: -0.15em;
+}
+
+/* Ext tree elbows/icons are full row-height boxes; FA ::before sat on the
+   text line via line-height. Inline SVG must be flex-centered the same way. */
+.x-tree-elbow-img.yasmine-fa-svg-host,
+.x-tree-icon.yasmine-fa-svg-host {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  vertical-align: top;
+  box-sizing: border-box;
+}
+
+.x-tree-elbow-img.yasmine-fa-svg-host > .yasmine-fa-svg,
+.x-tree-icon.yasmine-fa-svg-host > .yasmine-fa-svg {
+  flex: 0 0 auto;
+}
+
+.yasmine-header-logo,
+.yasmine-about-logo,
+.yasmine-splash-logo {
+  overflow: hidden;
+}
+
+.yasmine-header-logo {
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.24),
+    0 4px 12px rgba(4, 25, 43, 0.3);
+}
+
+.x-panel-header-navigation,
+.x-panel-header-navigation-vertical,
+.x-panel-header-navigation-horizontal {
+  background-color: #123b5d !important;
+  background-image: none !important;
+}
+
+.x-panel-header-title-navigation {
+  margin: 6px 12px;
+  background: transparent !important;
+}
+
+.yasmine-vp-xl .x-panel-header-title-navigation,
+.yasmine-vp-xxl .x-panel-header-title-navigation,
+.yasmine-vp-uw .x-panel-header-title-navigation {
+  left: 12px !important;
+}
+
+.yasmine-vp-xs .yasmine-header-text,
+.yasmine-vp-sm .yasmine-header-text,
+.yasmine-vp-md .yasmine-header-text,
+.yasmine-vp-lg .yasmine-header-text,
+.yasmine-compact-height .yasmine-header-text {
+  display: none !important;
+}
+
+.yasmine-vp-xs .x-panel-header-title-navigation,
+.yasmine-vp-sm .x-panel-header-title-navigation,
+.yasmine-vp-md .x-panel-header-title-navigation,
+.yasmine-vp-lg .x-panel-header-title-navigation,
+.yasmine-compact-height .x-panel-header-title-navigation {
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: 48px !important;
+  flex: 0 0 auto !important;
+}
+
+.yasmine-vp-xs .x-panel-header-title-navigation > .x-title-text-navigation,
+.yasmine-vp-sm .x-panel-header-title-navigation > .x-title-text-navigation,
+.yasmine-vp-md .x-panel-header-title-navigation > .x-title-text-navigation,
+.yasmine-vp-lg .x-panel-header-title-navigation > .x-title-text-navigation,
+.yasmine-compact-height .x-panel-header-title-navigation > .x-title-text-navigation {
+  margin: 2px 4px !important;
+  width: auto !important;
+}
+
+.yasmine-vp-xs .yasmine-header-brand,
+.yasmine-vp-sm .yasmine-header-brand,
+.yasmine-vp-md .yasmine-header-brand,
+.yasmine-vp-lg .yasmine-header-brand,
+.yasmine-compact-height .yasmine-header-brand {
+  gap: 0;
+}
+
+.yasmine-about-brand {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 24px;
+  margin: 0;
+  padding: 24px;
+  color: $yasmine-primary-dark;
+  background: linear-gradient(135deg, $yasmine-primary-soft 0%, #f8fbfd 100%);
+  border: 1px solid $yasmine-border;
+  border-radius: $yasmine-radius-lg;
+}
+
+.yasmine-about-logo {
+  display: block;
+  width: 120px;
+  height: 120px;
+  border-radius: 26px;
+  box-shadow:
+    0 0 0 1px rgba(18, 59, 93, 0.08),
+    0 12px 28px rgba(18, 59, 93, 0.16);
+}
+
+.yasmine-about-name {
+  font-size: 40px;
+  line-height: 1;
+  font-weight: 650;
+  letter-spacing: -1.2px;
+}
+
+.yasmine-about-tagline {
+  margin-top: 8px;
+  color: $yasmine-text-muted;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.yasmine-about-content {
+  width: 100%;
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.yasmine-about-copy {
+  margin-top: $yasmine-space-5;
+  color: $yasmine-text;
+  font-size: 14px;
+  line-height: 1.65;
+}
+
+.yasmine-about-build {
+  display: grid;
+  grid-template-columns: max-content minmax(0, unquote("1fr"));
+  gap: $yasmine-space-2 $yasmine-space-4;
+  margin-top: $yasmine-space-5;
+  padding: $yasmine-space-4;
+  border-top: 1px solid $yasmine-border;
+  color: $yasmine-text-muted;
+}
+
+.yasmine-about-build > div {
+  display: contents;
+}
+
+.yasmine-about-build span {
+  overflow-wrap: anywhere;
+}
+
+.yasmine-vp-xs .yasmine-about-brand,
+.yasmine-vp-sm .yasmine-about-brand {
+  flex-direction: column;
+  text-align: center;
+  gap: 12px;
+  padding: 14px;
+}
+
+.yasmine-vp-xs .yasmine-about-logo,
+.yasmine-vp-sm .yasmine-about-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 22px;
+}
+
+.yasmine-vp-xs .yasmine-about-name,
+.yasmine-vp-sm .yasmine-about-name {
+  font-size: 28px;
+}
+
+.yasmine-vp-xs .yasmine-about-tagline,
+.yasmine-vp-sm .yasmine-about-tagline {
+  font-size: 10px;
+  letter-spacing: 2px;
+}
+
+.yasmine-vp-xs .x-panel-header-title-navigation > .x-title-text-navigation:after,
+.yasmine-vp-sm .x-panel-header-title-navigation > .x-title-text-navigation:after,
+.yasmine-vp-md .x-panel-header-title-navigation > .x-title-text-navigation:after,
+.yasmine-vp-lg .x-panel-header-title-navigation > .x-title-text-navigation:after,
+.yasmine-compact-height .x-panel-header-title-navigation > .x-title-text-navigation:after {
+  display: none;
+}
+
+.yasmine-vp-xl .x-panel-header-title-navigation,
+.yasmine-vp-xxl .x-panel-header-title-navigation,
+.yasmine-vp-uw .x-panel-header-title-navigation {
+  max-width: none;
+  min-width: 0;
+}
+
+.yasmine-vp-xs #phones div.phone,
+.yasmine-vp-xs #phones-template div.phone,
+.yasmine-vp-sm #phones div.phone,
+.yasmine-vp-sm #phones-template div.phone {
+  margin: 3px;
+  padding: 6px 8px;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+
+.yasmine-vp-xs .x-grid-cell-inner,
+.yasmine-vp-sm .x-grid-cell-inner,
+.yasmine-vp-xs .x-tree-node-text,
+.yasmine-vp-sm .x-tree-node-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Finger-sized hit targets on iPhone-class viewports (Apple HIG 44 CSS px). */
+.yasmine-vp-xs .x-btn,
+.yasmine-vp-sm .x-btn,
+.yasmine-compact-height .x-btn {
+  min-height: 44px !important;
+}
+
+.yasmine-vp-xs .x-btn:has(.x-btn-no-text),
+.yasmine-vp-sm .x-btn:has(.x-btn-no-text),
+.yasmine-compact-height .x-btn:has(.x-btn-no-text) {
+  min-width: 44px !important;
+  width: 44px !important;
+}
+
+.yasmine-vp-xs .x-btn:has(.x-btn-arrow):has(.x-btn-no-text),
+.yasmine-vp-sm .x-btn:has(.x-btn-arrow):has(.x-btn-no-text),
+.yasmine-compact-height .x-btn:has(.x-btn-arrow):has(.x-btn-no-text) {
+  min-width: 52px !important;
+  width: 52px !important;
+}
+
+.yasmine-vp-xs .x-btn-icon-el,
+.yasmine-vp-sm .x-btn-icon-el,
+.yasmine-compact-height .x-btn-icon-el {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 18px !important;
+  line-height: 20px !important;
+}
+
+/* Icon buttons are already a positioning context (absolute in
+   toolbars, relative otherwise). Do not force position:relative. */
+
+.yasmine-vp-xs .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-wrap,
+.yasmine-vp-sm .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-wrap,
+.yasmine-compact-height .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-wrap,
+.yasmine-vp-xs .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-button,
+.yasmine-vp-sm .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-button,
+.yasmine-compact-height .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-button {
+  position: static !important;
+}
+
+.yasmine-vp-xs .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-inner,
+.yasmine-vp-sm .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-inner,
+.yasmine-compact-height .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-inner {
+  display: none !important;
+  width: 0 !important;
+  padding: 0 !important;
+}
+
+.yasmine-vp-xs .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-icon-el,
+.yasmine-vp-sm .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-icon-el,
+.yasmine-compact-height .x-btn:has(.x-btn-no-text):not(:has(.x-btn-arrow)) .x-btn-icon-el {
+  position: absolute !important;
+  left: 50% !important;
+  top: 50% !important;
+  margin: 0 !important;
+  transform: translate(-50%, -50%);
+}
+
+/* Keep ExtJS table layout so footer text buttons keep their
+   measured width and stay on-screen. */
+.yasmine-vp-xs .x-btn:has(.x-btn-text) .x-btn-wrap,
+.yasmine-vp-sm .x-btn:has(.x-btn-text) .x-btn-wrap,
+.yasmine-compact-height .x-btn:has(.x-btn-text) .x-btn-wrap,
+.yasmine-vp-xs .x-btn:has(.x-btn-text) .x-btn-button,
+.yasmine-vp-sm .x-btn:has(.x-btn-text) .x-btn-button,
+.yasmine-compact-height .x-btn:has(.x-btn-text) .x-btn-button {
+  height: 100% !important;
+}
+
+.yasmine-vp-xs .x-btn:has(.x-btn-text) .x-btn-icon-el,
+.yasmine-vp-sm .x-btn:has(.x-btn-text) .x-btn-icon-el,
+.yasmine-compact-height .x-btn:has(.x-btn-text) .x-btn-icon-el {
+  position: static !important;
+  top: auto !important;
+  left: auto !important;
+  margin: 0 6px 0 0 !important;
+}
+
+.yasmine-vp-xs .x-toolbar .x-btn,
+.yasmine-vp-sm .x-toolbar .x-btn,
+.yasmine-compact-height .x-toolbar .x-btn,
+.yasmine-vp-xs .parameter-editor-footer .x-btn,
+.yasmine-vp-sm .parameter-editor-footer .x-btn,
+.yasmine-compact-height .parameter-editor-footer .x-btn,
+.yasmine-vp-xs .x-segmented-button .x-btn,
+.yasmine-vp-sm .x-segmented-button .x-btn,
+.yasmine-compact-height .x-segmented-button .x-btn {
+  min-height: 44px !important;
+}
+
+.yasmine-vp-xs .x-segmented-button,
+.yasmine-vp-sm .x-segmented-button,
+.yasmine-compact-height .x-segmented-button {
+  min-height: 44px !important;
+  height: 44px !important;
+}
+
+.yasmine-vp-xs .x-segmented-button .x-btn,
+.yasmine-vp-sm .x-segmented-button .x-btn,
+.yasmine-compact-height .x-segmented-button .x-btn {
+  height: 44px !important;
+}
+
+.yasmine-vp-xs .x-panel-header:not(.x-panel-header-navigation),
+.yasmine-vp-sm .x-panel-header:not(.x-panel-header-navigation),
+.yasmine-compact-height .x-panel-header:not(.x-panel-header-navigation) {
+  padding: 0 8px 0 12px !important;
+}
+
+.yasmine-vp-xs .x-panel-header:not(.x-panel-header-navigation) .x-title-text,
+.yasmine-vp-sm .x-panel-header:not(.x-panel-header-navigation) .x-title-text,
+.yasmine-compact-height .x-panel-header:not(.x-panel-header-navigation) .x-title-text {
+  line-height: 26px !important;
+}
+
+.yasmine-vp-xs .x-tool,
+.yasmine-vp-sm .x-tool,
+.yasmine-compact-height .x-tool {
+  width: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+}
+
+.yasmine-vp-xs .x-panel-header:not(.x-panel-header-navigation) .x-tool,
+.yasmine-vp-sm .x-panel-header:not(.x-panel-header-navigation) .x-tool,
+.yasmine-compact-height .x-panel-header:not(.x-panel-header-navigation) .x-tool {
+  width: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+}
+
+.yasmine-vp-xs .x-tool-tool-el,
+.yasmine-vp-sm .x-tool-tool-el,
+.yasmine-compact-height .x-tool-tool-el,
+.yasmine-vp-xs .x-tool-img,
+.yasmine-vp-sm .x-tool-img,
+.yasmine-compact-height .x-tool-img {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 26px !important;
+  line-height: 28px !important;
+  margin: 8px !important;
+}
+
+.yasmine-vp-xs .x-panel-header:not(.x-panel-header-navigation) .x-tool-tool-el,
+.yasmine-vp-sm .x-panel-header:not(.x-panel-header-navigation) .x-tool-tool-el,
+.yasmine-compact-height .x-panel-header:not(.x-panel-header-navigation) .x-tool-tool-el,
+.yasmine-vp-xs .x-panel-header:not(.x-panel-header-navigation) .x-tool-img,
+.yasmine-vp-sm .x-panel-header:not(.x-panel-header-navigation) .x-tool-img,
+.yasmine-compact-height .x-panel-header:not(.x-panel-header-navigation) .x-tool-img {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 26px !important;
+  line-height: 28px !important;
+  margin: 8px !important;
+}
+
+/*
+ * Dialog / panel header tools (help, maximize, close, …): same hit area, glyph
+ * size, and spacing on all widths so icons stay aligned with each other.
+ * Matches the narrow-viewport tool sizing above (44px hit / 28px glyph).
+ */
+.x-panel-header:not(.x-panel-header-navigation) .x-tool,
+.x-window-header .x-tool {
+  width: 44px !important;
+  height: 44px !important;
+  margin: 0 !important;
+}
+
+.x-panel-header:not(.x-panel-header-navigation) .x-tool-tool-el,
+.x-panel-header:not(.x-panel-header-navigation) .x-tool-img,
+.x-window-header .x-tool-tool-el,
+.x-window-header .x-tool-img {
+  width: 28px !important;
+  height: 28px !important;
+  font-size: 26px !important;
+  line-height: 28px !important;
+  margin: 8px !important;
+}
+
+.yasmine-vp-xs .x-menu-item,
+.yasmine-vp-sm .x-menu-item,
+.yasmine-compact-height .x-menu-item {
+  min-height: 44px;
+}
+
+.yasmine-vp-xs .x-menu-item-text,
+.yasmine-vp-sm .x-menu-item-text,
+.yasmine-compact-height .x-menu-item-text {
+  min-height: 44px;
+  line-height: 44px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+.yasmine-vp-xs .x-menu-item-icon,
+.yasmine-vp-sm .x-menu-item-icon,
+.yasmine-compact-height .x-menu-item-icon,
+.yasmine-vp-xs .x-menu-item-icon-el,
+.yasmine-vp-sm .x-menu-item-icon-el,
+.yasmine-compact-height .x-menu-item-icon-el {
+  top: 12px;
   width: 20px;
+  height: 20px;
+  font-size: 16px;
+  line-height: 20px;
+}
+
+.yasmine-vp-xs .x-tree-expander,
+.yasmine-vp-sm .x-tree-expander,
+.yasmine-compact-height .x-tree-expander {
+  width: 32px !important;
+  height: 32px !important;
+  font-size: 18px !important;
+  line-height: 32px !important;
+}
+
+/* Hierarchy walkers are plus/minus squares. The Triton arrow glyphs
+   (caret-right / caret-down) are the old ExtJS elbows. */
+.x-tree-arrows .x-tree-expander:before {
+  content: "\f0fe" !important;
+  font-family: FontAwesome !important;
+}
+
+.x-tree-arrows .x-grid-tree-node-expanded .x-tree-expander:before {
+  content: "\f146" !important;
+  font-family: FontAwesome !important;
+}
+
+/* These glyphs share specificity with the SVG-host reset above and win on
+   source order. After the icon script inserts the inline SVG, drop the
+   font glyph so the expander is not drawn twice. */
+.x-tree-arrows .x-tree-expander.yasmine-fa-svg-host.yasmine-fa-from-before:before,
+.x-tree-arrows .x-grid-tree-node-expanded .x-tree-expander.yasmine-fa-svg-host.yasmine-fa-from-before:before {
+  content: none !important;
+}
+
+.yasmine-vp-xs .x-grid-cell-inner-treecolumn,
+.yasmine-vp-sm .x-grid-cell-inner-treecolumn,
+.yasmine-compact-height .x-grid-cell-inner-treecolumn {
+  min-height: 36px;
+  line-height: 28px;
+}
+
+.yasmine-vp-xs .x-form-trigger,
+.yasmine-vp-sm .x-form-trigger,
+.yasmine-compact-height .x-form-trigger {
+  width: 36px !important;
+}
+
+.yasmine-vp-xs .x-toolbar .x-box-scroller,
+.yasmine-vp-sm .x-toolbar .x-box-scroller,
+.yasmine-compact-height .x-toolbar .x-box-scroller {
+  min-width: 36px !important;
+  min-height: 44px !important;
+}
+
+.yasmine-compare-msg {
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-weight: 700;
+  font-size: 16px;
+  text-align: center;
+  padding: 16px;
+  box-sizing: border-box;
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  line-height: 1.4;
+}
+
+.yasmine-vp-xs .yasmine-compare-msg,
+.yasmine-vp-sm .yasmine-compare-msg,
+.yasmine-compact-height .yasmine-compare-msg {
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+/* Footer / wrap toolbars: drop ExtJS absolute packing so Save/Cancel stay on screen. */
+.yasmine-vp-xs .parameter-editor-footer .x-box-inner,
+.yasmine-vp-sm .parameter-editor-footer .x-box-inner,
+.yasmine-compact-height .parameter-editor-footer .x-box-inner,
+.yasmine-vp-xs .x-toolbar-footer .x-box-inner,
+.yasmine-vp-sm .x-toolbar-footer .x-box-inner,
+.yasmine-compact-height .x-toolbar-footer .x-box-inner,
+.yasmine-vp-xs .yasmine-wrap-toolbar .x-box-inner,
+.yasmine-vp-sm .yasmine-wrap-toolbar .x-box-inner,
+.yasmine-compact-height .yasmine-wrap-toolbar .x-box-inner {
+  position: static !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: auto !important;
+  gap: 6px;
+  overflow: visible !important;
+}
+
+.yasmine-vp-xs .parameter-editor-footer .x-box-inner,
+.yasmine-vp-sm .parameter-editor-footer .x-box-inner,
+.yasmine-compact-height .parameter-editor-footer .x-box-inner,
+.yasmine-vp-xs .x-toolbar-footer .x-box-inner,
+.yasmine-vp-sm .x-toolbar-footer .x-box-inner,
+.yasmine-compact-height .x-toolbar-footer .x-box-inner {
+  justify-content: flex-end !important;
+}
+
+.yasmine-vp-xs .yasmine-wrap-toolbar .x-box-inner,
+.yasmine-vp-sm .yasmine-wrap-toolbar .x-box-inner,
+.yasmine-compact-height .yasmine-wrap-toolbar .x-box-inner {
+  justify-content: flex-start !important;
+}
+
+.yasmine-vp-xs .yasmine-wrap-toolbar .x-box-scroller,
+.yasmine-vp-sm .yasmine-wrap-toolbar .x-box-scroller,
+.yasmine-compact-height .yasmine-wrap-toolbar .x-box-scroller {
+  display: none !important;
+}
+
+.yasmine-vp-xs .parameter-editor-footer .x-box-item,
+.yasmine-vp-sm .parameter-editor-footer .x-box-item,
+.yasmine-compact-height .parameter-editor-footer .x-box-item,
+.yasmine-vp-xs .x-toolbar-footer .x-box-item,
+.yasmine-vp-sm .x-toolbar-footer .x-box-item,
+.yasmine-compact-height .x-toolbar-footer .x-box-item,
+.yasmine-vp-xs .yasmine-wrap-toolbar .x-box-item,
+.yasmine-vp-sm .yasmine-wrap-toolbar .x-box-item,
+.yasmine-compact-height .yasmine-wrap-toolbar .x-box-item {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+/* Only the panel body's box-inner: nested containers (e.g. an old type-card
+   hbox wrapper) must not inherit height:100%, or cards clip below the fold. */
+.yasmine-vp-xs .yasmine-selectors .x-panel-body > .x-box-inner,
+.yasmine-vp-sm .yasmine-selectors .x-panel-body > .x-box-inner,
+.yasmine-compact-height .yasmine-selectors .x-panel-body > .x-box-inner {
+  position: static !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: center !important;
+  width: 100% !important;
+  height: 100% !important;
+}
+
+/* md also stacks when SelectorsContainer uses vbox (<1024). */
+.yasmine-vp-xs .yasmine-selectors .library-btn,
+.yasmine-vp-sm .yasmine-selectors .library-btn,
+.yasmine-vp-md .yasmine-response-library-selectors .library-btn,
+.yasmine-compact-height .yasmine-selectors .library-btn {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  width: 100% !important;
+  max-width: none !important;
+  height: 72px !important;
+  min-height: 72px !important;
+  margin: 8px 0 !important;
+}
+
+.yasmine-vp-xs .yasmine-selectors .library-btn .x-btn-inner,
+.yasmine-vp-sm .yasmine-selectors .library-btn .x-btn-inner,
+.yasmine-vp-md .yasmine-response-library-selectors .library-btn .x-btn-inner,
+.yasmine-compact-height .yasmine-selectors .library-btn .x-btn-inner {
+  font-size: 18px;
+  height: auto;
+  white-space: normal;
+  line-height: 1.2;
+}
+
+.yasmine-vp-xs .yasmine-response-library-selectors .x-panel-body > .x-box-inner,
+.yasmine-vp-sm .yasmine-response-library-selectors .x-panel-body > .x-box-inner,
+.yasmine-vp-md .yasmine-response-library-selectors .x-panel-body > .x-box-inner,
+.yasmine-compact-height .yasmine-response-library-selectors .x-panel-body > .x-box-inner {
+  position: static !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: stretch !important;
+  justify-content: flex-start !important;
+  width: 100% !important;
+  height: auto !important;
+  min-height: 100%;
+}
+
+.yasmine-resp-upload .yasmine-resp-upload-fields {
+  width: 100%;
+  margin: 0 auto;
+}
+
+.yasmine-resp-upload-hint {
+  color: #666;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.yasmine-vp-xs .yasmine-resp-upload .x-form-file-wrap,
+.yasmine-vp-sm .yasmine-resp-upload .x-form-file-wrap,
+.yasmine-compact-height .yasmine-resp-upload .x-form-file-wrap {
+  max-width: 100%;
+}
+
+.yasmine-vp-xs .yasmine-resp-upload .x-form-file-btn,
+.yasmine-vp-sm .yasmine-resp-upload .x-form-file-btn,
+.yasmine-compact-height .yasmine-resp-upload .x-form-file-btn {
+  max-width: 40%;
+}
+
+.yasmine-vp-xs .x-tab-bar,
+.yasmine-vp-sm .x-tab-bar,
+.yasmine-compact-height .x-tab-bar {
+  overflow: hidden;
+}
+
+.yasmine-vp-xs .parameter-editor-footer,
+.yasmine-vp-sm .parameter-editor-footer,
+.yasmine-compact-height .parameter-editor-footer,
+.yasmine-vp-xs .x-toolbar-footer:not(.x-docked),
+.yasmine-vp-sm .x-toolbar-footer:not(.x-docked),
+.yasmine-compact-height .x-toolbar-footer:not(.x-docked) {
+  min-height: 56px !important;
+  height: auto !important;
+  padding: 6px !important;
+}
+
+/* Docked footers stay in the ExtJS dock box. height:auto paints them over the body. */
+.yasmine-vp-xs .x-docked.x-toolbar-footer,
+.yasmine-vp-sm .x-docked.x-toolbar-footer,
+.yasmine-compact-height .x-docked.x-toolbar-footer {
+  padding: 6px !important;
+  box-sizing: border-box;
+  overflow: hidden;
+}
+
+.yasmine-vp-xs .parameter-editor-footer .x-btn,
+.yasmine-vp-sm .parameter-editor-footer .x-btn,
+.yasmine-compact-height .parameter-editor-footer .x-btn,
+.yasmine-vp-xs .x-toolbar-footer .x-btn,
+.yasmine-vp-sm .x-toolbar-footer .x-btn,
+.yasmine-compact-height .x-toolbar-footer .x-btn {
+  height: 44px !important;
+}
+
+.yasmine-vp-xs .parameter-editor-footer .yasmine-action-buttons,
+.yasmine-vp-sm .parameter-editor-footer .yasmine-action-buttons,
+.yasmine-compact-height .parameter-editor-footer .yasmine-action-buttons,
+.yasmine-vp-xs .x-toolbar-footer .yasmine-action-buttons,
+.yasmine-vp-sm .x-toolbar-footer .yasmine-action-buttons,
+.yasmine-compact-height .x-toolbar-footer .yasmine-action-buttons {
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+.yasmine-vp-xs .x-window.x-window-maximized,
+.yasmine-vp-sm .x-window.x-window-maximized,
+.yasmine-compact-height .x-window.x-window-maximized {
+  left: 0 !important;
+  top: 0 !important;
+  width: 100% !important;
+  max-width: 100vw !important;
+}
+
+.yasmine-vp-xs .x-window.x-window-maximized .x-window-header,
+.yasmine-vp-sm .x-window.x-window-maximized .x-window-header,
+.yasmine-compact-height .x-window.x-window-maximized .x-window-header {
+  width: 100% !important;
+}
+
+.yasmine-vp-xs .x-breadcrumb-btn,
+.yasmine-vp-sm .x-breadcrumb-btn,
+.yasmine-compact-height .x-breadcrumb-btn {
+  max-width: 100%;
+}
+
+.yasmine-vp-xs .equipment.x-breadcrumb-btn-ct,
+.yasmine-vp-sm .equipment.x-breadcrumb-btn-ct,
+.yasmine-compact-height .equipment.x-breadcrumb-btn-ct {
+  height: auto !important;
+}
+
+/* Sit beside the crumb. The 44px finger target turns this framed button
+   into a tall gray block; the crumb itself stays text-sized. */
+.yasmine-vp-xs .yasmine-breadcrumb-help.x-btn,
+.yasmine-vp-sm .yasmine-breadcrumb-help.x-btn,
+.yasmine-compact-height .yasmine-breadcrumb-help.x-btn {
+  min-height: 0 !important;
+  height: auto !important;
+  width: auto !important;
+  min-width: 0 !important;
+}
+
+.yasmine-vp-xs .yasmine-breadcrumb-help .x-btn-wrap,
+.yasmine-vp-sm .yasmine-breadcrumb-help .x-btn-wrap,
+.yasmine-compact-height .yasmine-breadcrumb-help .x-btn-wrap,
+.yasmine-vp-xs .yasmine-breadcrumb-help .x-btn-button,
+.yasmine-vp-sm .yasmine-breadcrumb-help .x-btn-button,
+.yasmine-compact-height .yasmine-breadcrumb-help .x-btn-button {
+  height: auto !important;
+}
+
+.nrlv2-config-list {
+  border: 1px solid #d0d0d0;
+  background: #fff;
+  min-height: 80px;
+}
+
+.nrlv2-config-list .x-box-inner {
+  overflow: auto !important;
+}
+
+.nrlv2-config-preview {
+  min-height: 80px;
+}
+
+.nrlv2-config-preview .x-form-textarea {
+  overflow: auto !important;
+}
+
+/* Compact chrome: wrap toolbar items instead of clipping them under
+   neighbours. ExtJS still packs with absolute coordinates; override that
+   packing and grow the toolbar height to match the wrapped content. */
+.yasmine-vp-xs .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-sm .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-md .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-compact-height .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner {
+  position: static !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: auto !important;
+  gap: 6px;
+  overflow: visible !important;
+}
+
+.yasmine-vp-xs .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb):not(.x-docked),
+.yasmine-vp-sm .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb):not(.x-docked),
+.yasmine-compact-height .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb):not(.x-docked) {
+  height: auto !important;
+  min-height: 44px !important;
+  overflow: visible !important;
+}
+
+.yasmine-vp-xs .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-item,
+.yasmine-vp-sm .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-item,
+.yasmine-compact-height .x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-item {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+}
+
+.yasmine-vp-xs .yasmine-user-library-toolbar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-sm .yasmine-user-library-toolbar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-compact-height .yasmine-user-library-toolbar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner {
+  flex-wrap: nowrap !important;
+  gap: 2px;
+}
+
+.yasmine-vp-xs .yasmine-user-library-toolbar .x-btn,
+.yasmine-vp-sm .yasmine-user-library-toolbar .x-btn,
+.yasmine-compact-height .yasmine-user-library-toolbar .x-btn {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  padding-left: 1px !important;
+  padding-right: 1px !important;
+}
+
+.yasmine-vp-xs .yasmine-user-library-toolbar .x-btn-inner,
+.yasmine-vp-sm .yasmine-user-library-toolbar .x-btn-inner,
+.yasmine-compact-height .yasmine-user-library-toolbar .x-btn-inner {
+  padding-left: 2px !important;
+  padding-right: 2px !important;
+  font-size: 11px !important;
+}
+
+.yasmine-vp-xs .x-toolbar-separator,
+.yasmine-vp-sm .x-toolbar-separator,
+.yasmine-compact-height .x-toolbar-separator {
+  display: none !important;
+}
+
+.yasmine-vp-xs .x-toolbar:not(.x-tab-bar):not(.x-breadcrumb) .x-box-scroller,
+.yasmine-vp-sm .x-toolbar:not(.x-tab-bar):not(.x-breadcrumb) .x-box-scroller,
+.yasmine-compact-height .x-toolbar:not(.x-tab-bar):not(.x-breadcrumb) .x-box-scroller,
+.yasmine-vp-xs .x-toolbar:not(.x-tab-bar) .x-box-menu,
+.yasmine-vp-sm .x-toolbar:not(.x-tab-bar) .x-box-menu,
+.yasmine-compact-height .x-toolbar:not(.x-tab-bar) .x-box-menu {
+  display: none !important;
+}
+
+.yasmine-vp-xs .x-toolbar .x-field:not(.yasmine-epoch-field),
+.yasmine-vp-sm .x-toolbar .x-field:not(.yasmine-epoch-field),
+.yasmine-compact-height .x-toolbar .x-field:not(.yasmine-epoch-field) {
+  flex: 1 1 140px !important;
+  min-width: 0 !important;
+  max-width: 100% !important;
+  width: auto !important;
+}
+
+.yasmine-vp-xs .x-toolbar .x-form-item-label,
+.yasmine-vp-sm .x-toolbar .x-form-item-label,
+.yasmine-compact-height .x-toolbar .x-form-item-label {
+  display: none !important;
+  width: 0 !important;
+}
+
+.yasmine-vp-xs .x-toolbar .x-form-item-body,
+.yasmine-vp-sm .x-toolbar .x-form-item-body,
+.yasmine-compact-height .x-toolbar .x-form-item-body {
+  left: 0 !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* Separators stay hidden on compact. The Map↔Epoch tbfill is kept on
+   md+ (see default toolbar rules); on xs/sm/compact-height it is
+   collapsed below so Epoch can take a full-width second row. */
+.yasmine-vp-xs .children-control-bar .x-toolbar-spacer:not(.yasmine-toolbar-fill),
+.yasmine-vp-sm .children-control-bar .x-toolbar-spacer:not(.yasmine-toolbar-fill),
+.yasmine-compact-height .children-control-bar .x-toolbar-spacer:not(.yasmine-toolbar-fill) {
+  display: none !important;
+}
+
+/* On phone/tablet wrap widths the Map↔Epoch fill only wastes a flex
+   slot and can leave Epoch sharing a cramped first row. Drop it so
+   Epoch always starts its own full-width row (see flex-basis below). */
+.yasmine-vp-xs .children-control-bar .yasmine-toolbar-fill,
+.yasmine-vp-sm .children-control-bar .yasmine-toolbar-fill,
+.yasmine-compact-height .children-control-bar .yasmine-toolbar-fill {
+  display: none !important;
+  flex: 0 0 0 !important;
+  min-width: 0 !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  overflow: hidden !important;
+}
+
+/* Buttons share one row with Select Epoch / Add Field. ExtJS packs
+   them inside .x-box-target, so nowrap on .x-box-inner is not enough. */
+.yasmine-vp-xs .children-control-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-sm .children-control-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-md .children-control-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-compact-height .children-control-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-xs .parameter-list-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-sm .parameter-list-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-md .parameter-list-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-compact-height .parameter-list-bar.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner {
+  flex-wrap: wrap !important;
+}
+
+.yasmine-vp-xs .children-control-bar .x-box-target,
+.yasmine-vp-sm .children-control-bar .x-box-target,
+.yasmine-vp-md .children-control-bar .x-box-target,
+.yasmine-compact-height .children-control-bar .x-box-target,
+.yasmine-vp-xs .parameter-list-bar .x-box-target,
+.yasmine-vp-sm .parameter-list-bar .x-box-target,
+.yasmine-vp-md .parameter-list-bar .x-box-target,
+.yasmine-compact-height .parameter-list-bar .x-box-target {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  /* Stretch so split +/-/upload buttons and Select Epoch share one
+     top/height. With align-items:center, arrow-button wraps collapse
+     to the 20px SVG and those icons sit above the − / epoch centers. */
+  align-items: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+  gap: 4px;
+}
+
+.yasmine-vp-xs .children-control-bar .x-btn,
+.yasmine-vp-sm .children-control-bar .x-btn,
+.yasmine-compact-height .children-control-bar .x-btn,
+.yasmine-vp-xs .parameter-list-bar .x-btn,
+.yasmine-vp-sm .parameter-list-bar .x-btn,
+.yasmine-compact-height .parameter-list-bar .x-btn {
+  flex: 0 0 auto !important;
+  align-self: stretch !important;
+  box-sizing: border-box !important;
+}
+
+.yasmine-vp-xs .children-control-bar.x-toolbar .x-field:not(.yasmine-epoch-field),
+.yasmine-vp-sm .children-control-bar.x-toolbar .x-field:not(.yasmine-epoch-field),
+.yasmine-compact-height .children-control-bar.x-toolbar .x-field:not(.yasmine-epoch-field),
+.yasmine-vp-xs .parameter-list-bar.x-toolbar .x-field,
+.yasmine-vp-sm .parameter-list-bar.x-toolbar .x-field,
+.yasmine-compact-height .parameter-list-bar.x-toolbar .x-field {
+  display: flex !important;
+  align-items: stretch !important;
+  align-self: stretch !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
+}
+
+/* Epoch triggers are 22px so the clear icon stays inside the bar.
+   Input is 12px so "Y-m-d H:i:s" fits that width. */
+.children-control-bar .yasmine-epoch-field .x-form-trigger {
+  width: 22px !important;
+}
+
+.children-control-bar .yasmine-epoch-field .x-form-text {
+  font-size: 12px !important;
+}
+
+/* Epoch combo stays the width set in JS (246 with label, 186 without)
+   on wide toolbars — leftover space belongs to the Map↔Epoch expander.
+   On compact viewports force a full-width second row so Select Epoch
+   never shares the +/−/Map row and cannot paint over Inventory. */
+.children-control-bar.x-toolbar .yasmine-epoch-field {
+  display: table !important;
+  table-layout: fixed !important;
+  flex: 0 0 auto !important;
+  align-self: center !important;
+  overflow: visible !important;
+}
+
+.yasmine-vp-xs .children-control-bar.x-toolbar .yasmine-epoch-field,
+.yasmine-vp-sm .children-control-bar.x-toolbar .yasmine-epoch-field,
+.yasmine-compact-height .children-control-bar.x-toolbar .yasmine-epoch-field {
+  display: table !important;
+  table-layout: fixed !important;
+  flex: 1 1 100% !important;
+  width: 100% !important;
+  max-width: 100% !important;
+  align-self: stretch !important;
+  overflow: visible !important;
+}
+
+/* Wide: keep "Epoch:" label. Compact/card: hide label only. */
+.yasmine-vp-xs .children-control-bar .yasmine-epoch-field .x-form-item-label,
+.yasmine-vp-sm .children-control-bar .yasmine-epoch-field .x-form-item-label,
+.yasmine-compact-height .children-control-bar .yasmine-epoch-field .x-form-item-label {
+  display: none !important;
+  width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+.children-control-bar .yasmine-epoch-field .x-form-item-body,
+.yasmine-vp-xs .children-control-bar .yasmine-epoch-field .x-form-item-body,
+.yasmine-vp-sm .children-control-bar .yasmine-epoch-field .x-form-item-body,
+.yasmine-compact-height .children-control-bar .yasmine-epoch-field .x-form-item-body {
+  display: table-cell !important;
+  flex: none !important;
+  position: relative !important;
+  left: auto !important;
+  /* Do not force body == field width (that clipped clear/picker triggers
+     when the label cell was present). Let the table allocate remainder. */
+  width: auto !important;
+  min-width: 0 !important;
+  max-width: none !important;
+  align-self: auto !important;
+  overflow: visible !important;
+}
+
+.children-control-bar .yasmine-epoch-field .x-form-trigger-wrap,
+.yasmine-vp-xs .children-control-bar .yasmine-epoch-field .x-form-trigger-wrap,
+.yasmine-vp-sm .children-control-bar .yasmine-epoch-field .x-form-trigger-wrap,
+.yasmine-compact-height .children-control-bar .yasmine-epoch-field .x-form-trigger-wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+  overflow: visible !important;
+}
+
+.yasmine-vp-xs .children-control-bar .x-form-item-body,
+.yasmine-vp-sm .children-control-bar .x-form-item-body,
+.yasmine-compact-height .children-control-bar .x-form-item-body,
+.yasmine-vp-xs .parameter-list-bar .x-form-item-body,
+.yasmine-vp-sm .parameter-list-bar .x-form-item-body,
+.yasmine-compact-height .parameter-list-bar .x-form-item-body {
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: none !important;
+  position: relative !important;
+  left: auto !important;
+  align-self: stretch !important;
+  display: flex !important;
+  align-items: center !important;
+}
+
+/* Icon-only split buttons (+ / upload) need a filled wrap so the SVG
+   sits on the same center line as − and Select Epoch. */
+.yasmine-vp-xs .children-control-bar .x-btn .x-btn-wrap,
+.yasmine-vp-sm .children-control-bar .x-btn .x-btn-wrap,
+.yasmine-compact-height .children-control-bar .x-btn .x-btn-wrap,
+.yasmine-vp-xs .parameter-list-bar .x-btn .x-btn-wrap,
+.yasmine-vp-sm .parameter-list-bar .x-btn .x-btn-wrap,
+.yasmine-compact-height .parameter-list-bar .x-btn .x-btn-wrap,
+.yasmine-vp-xs .children-control-bar .x-btn .x-btn-button,
+.yasmine-vp-sm .children-control-bar .x-btn .x-btn-button,
+.yasmine-compact-height .children-control-bar .x-btn .x-btn-button,
+.yasmine-vp-xs .parameter-list-bar .x-btn .x-btn-button,
+.yasmine-vp-sm .parameter-list-bar .x-btn .x-btn-button,
+.yasmine-compact-height .parameter-list-bar .x-btn .x-btn-button {
+  height: 100% !important;
+}
+
+.yasmine-vp-xs .children-control-bar .x-form-trigger-wrap:has(.x-form-empty-field) .x-form-clear-trigger,
+.yasmine-vp-sm .children-control-bar .x-form-trigger-wrap:has(.x-form-empty-field) .x-form-clear-trigger,
+.yasmine-compact-height .children-control-bar .x-form-trigger-wrap:has(.x-form-empty-field) .x-form-clear-trigger,
+.yasmine-vp-xs .parameter-list-bar .x-form-trigger-wrap:has(.x-form-empty-field) .x-form-clear-trigger,
+.yasmine-vp-sm .parameter-list-bar .x-form-trigger-wrap:has(.x-form-empty-field) .x-form-clear-trigger,
+.yasmine-compact-height .parameter-list-bar .x-form-trigger-wrap:has(.x-form-empty-field) .x-form-clear-trigger {
+  display: none !important;
+}
+
+.yasmine-vp-xs .yasmine-toolbar-break,
+.yasmine-vp-sm .yasmine-toolbar-break,
+.yasmine-compact-height .yasmine-toolbar-break {
+  flex: 1 1 100% !important;
+  max-width: 100%;
+}
+
+.yasmine-vp-xs .x-toolbar .x-segmented-button,
+.yasmine-vp-sm .x-toolbar .x-segmented-button,
+.yasmine-compact-height .x-toolbar .x-segmented-button {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  height: auto !important;
+  min-height: 44px !important;
+  max-width: 100%;
+}
+
+/* File, Builder, and Hierarchy/Parameters share one row.
+   ExtJS packs the buttons inside .x-box-target, not .x-box-inner. */
+.yasmine-vp-xs .yasmine-builder-menu.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-sm .yasmine-builder-menu.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-vp-md .yasmine-builder-menu.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner,
+.yasmine-compact-height .yasmine-builder-menu.x-toolbar:not(.x-tab-bar):not(.x-grid-header-ct):not(.x-breadcrumb) .x-box-inner {
+  flex-wrap: wrap !important;
+}
+
+.yasmine-vp-xs .yasmine-builder-menu .x-box-target,
+.yasmine-vp-sm .yasmine-builder-menu .x-box-target,
+.yasmine-vp-md .yasmine-builder-menu .x-box-target,
+.yasmine-compact-height .yasmine-builder-menu .x-box-target {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  /* Stretch so File/Builder get a definite height; otherwise wrap
+     height:100% collapses to the 20px icon and the labeled buttons
+     sit above Hierarchy/Parameters. */
+  align-items: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+  gap: 4px;
+}
+
+.yasmine-vp-xs .yasmine-builder-menu.x-toolbar .x-segmented-button,
+.yasmine-vp-sm .yasmine-builder-menu.x-toolbar .x-segmented-button,
+.yasmine-compact-height .yasmine-builder-menu.x-toolbar .x-segmented-button {
+  flex: 0 0 auto !important;
+  align-self: stretch !important;
+  width: auto !important;
+  max-width: none !important;
+  min-width: min-content !important;
+  margin: 0 !important;
+  flex-wrap: nowrap !important;
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.yasmine-vp-xs .yasmine-builder-menu .x-btn,
+.yasmine-vp-sm .yasmine-builder-menu .x-btn,
+.yasmine-compact-height .yasmine-builder-menu .x-btn {
+  flex: 0 0 auto !important;
+  align-self: stretch !important;
+  width: auto !important;
+  min-width: min-content !important;
+  max-width: none !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+  box-sizing: border-box !important;
+}
+
+.yasmine-vp-xs .yasmine-builder-menu .x-btn-inner,
+.yasmine-vp-sm .yasmine-builder-menu .x-btn-inner,
+.yasmine-compact-height .yasmine-builder-menu .x-btn-inner {
+  white-space: nowrap !important;
+  padding-left: 4px !important;
+  padding-right: 4px !important;
+}
+
+.yasmine-vp-xs .x-window-header-title,
+.yasmine-vp-sm .x-window-header-title,
+.yasmine-compact-height .x-window-header-title,
+.yasmine-vp-xs .x-panel-header-title:not(.x-panel-header-title-navigation),
+.yasmine-vp-sm .x-panel-header-title:not(.x-panel-header-title-navigation),
+.yasmine-compact-height .x-panel-header-title:not(.x-panel-header-title-navigation) {
+  min-width: 0 !important;
+  overflow: hidden;
+}
+
+.x-window-header-title .x-title-text,
+.x-panel-header:not(.x-panel-header-navigation) .x-title-text {
+  /* table-cell + ellipsis reprints the tail ("Networkwork"). */
+  display: block !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.yasmine-wizard-window .x-window-header-title,
+.yasmine-wizard-window .x-window-header-title .x-title-item,
+.yasmine-wizard-window .x-window-header-title .x-title-text {
+  display: block !important;
+  overflow: visible !important;
+  text-overflow: clip;
+  white-space: normal;
+  width: auto !important;
+  line-height: 1.35;
+}
+
+.x-message-box {
+  max-width: calc(100vw - 16px) !important;
+  max-height: calc(100vh - 16px) !important;
+}
+
+.x-message-box .x-window-body {
+  max-width: 100%;
+  overflow: auto;
+}
+
+.yasmine-vp-xs .yasmine-inline-field-row,
+.yasmine-vp-sm .yasmine-inline-field-row,
+.yasmine-compact-height .yasmine-inline-field-row {
+  height: auto !important;
+  overflow: visible !important;
+}
+
+.yasmine-vp-xs .x-form-radio-group .x-form-radio-group-inner,
+.yasmine-vp-sm .x-form-radio-group .x-form-radio-group-inner {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+}
+
+.yasmine-vp-xs .x-tab-bar-navigation,
+.yasmine-vp-sm .x-tab-bar-navigation,
+.yasmine-compact-height .x-tab-bar-navigation {
+  overflow: visible;
+}
+
+.yasmine-vp-xs .x-grid-header-ct,
+.yasmine-vp-sm .x-grid-header-ct {
+  overflow: hidden;
+}
+
+/* -------------------------------------------------------------------------
+ * Yasmine visual system
+ * ---------------------------------------------------------------------- */
+
+html,
+body,
+.x-body {
+  color: $yasmine-text;
+  background: $yasmine-canvas;
+  font-family: $yasmine-font-family;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+.x-panel-body,
+.x-window-body,
+.x-grid-body,
+.x-form-item-label,
+.x-form-display-field,
+.x-grid-cell,
+.x-menu-item-text {
+  color: $yasmine-text;
+}
+
+.x-panel-body-default {
+  background: $yasmine-surface;
+}
+
+.x-panel-default-framed,
+.x-window-default {
+  border-color: $yasmine-border !important;
+  border-radius: $yasmine-radius-md;
+  background: $yasmine-surface;
+}
+
+.x-panel-header-default,
+.x-panel-header-default-framed,
+.x-window-header-default {
+  border-color: $yasmine-border !important;
+  background: $yasmine-primary-dark;
+  background-image: none;
+}
+
+.x-panel-header-default .x-title-text,
+.x-panel-header-default-framed .x-title-text,
+.x-window-header-default .x-title-text {
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.x-toolbar-default,
+.x-toolbar-footer {
+  border-color: $yasmine-border;
+  background: $yasmine-surface-muted;
+  background-image: none;
+}
+
+.x-toolbar-footer {
+  padding: $yasmine-space-2 $yasmine-space-3;
+}
+
+.x-btn-default-toolbar-small,
+.x-btn-default-small,
+.x-btn-default-medium {
+  border-color: $yasmine-border-strong;
+  border-radius: $yasmine-radius-sm;
+  background: $yasmine-surface;
+  background-image: none;
+}
+
+.x-btn-default-toolbar-small-over,
+.x-btn-default-small-over,
+.x-btn-default-medium-over {
+  border-color: $yasmine-primary;
+  background: $yasmine-primary-soft;
+  background-image: none;
+}
+
+.x-btn-default-toolbar-small-pressed,
+.x-btn-default-small-pressed,
+.x-btn-default-medium-pressed,
+.x-btn-default-toolbar-small-menu-active {
+  border-color: $yasmine-primary-strong;
+  background: #dcecf2;
+  background-image: none;
+}
+
+.yasmine-primary-action.x-btn,
+.yasmine-primary-action .x-btn-wrap {
+  border-color: $yasmine-primary-strong !important;
+  background: $yasmine-primary !important;
+  background-image: none !important;
+}
+
+.yasmine-primary-action .x-btn-inner,
+.yasmine-primary-action .x-btn-icon-el {
+  color: #fff !important;
+}
+
+.yasmine-danger-action .x-btn-icon-el,
+.x-btn-icon-el.fa-minus,
+.x-btn-icon-el.fa-trash,
+.x-menu-item-icon.fa-minus,
+.x-menu-item-icon.fa-trash,
+.x-menu-item-icon-el.fa-minus,
+.x-menu-item-icon-el.fa-trash,
+.x-action-col-icon.fa-minus,
+.x-action-col-icon.fa-trash,
+.x-action-col-icon.fa-minus-circle,
+.fa-minus-circle,
+.trash-icon-color {
+  color: $yasmine-danger !important;
+}
+
+.yasmine-danger-action .x-btn-icon-el > .yasmine-fa-svg,
+.x-btn-icon-el.fa-minus > .yasmine-fa-svg,
+.x-btn-icon-el.fa-trash > .yasmine-fa-svg,
+.x-menu-item-icon.fa-minus > .yasmine-fa-svg,
+.x-menu-item-icon.fa-trash > .yasmine-fa-svg,
+.x-menu-item-icon-el.fa-minus > .yasmine-fa-svg,
+.x-menu-item-icon-el.fa-trash > .yasmine-fa-svg,
+.x-action-col-icon.fa-minus > .yasmine-fa-svg,
+.x-action-col-icon.fa-trash > .yasmine-fa-svg,
+.x-action-col-icon.fa-minus-circle > .yasmine-fa-svg,
+.fa-minus-circle > .yasmine-fa-svg,
+.trash-icon-color > .yasmine-fa-svg {
+  fill: $yasmine-danger;
+}
+
+.x-btn-focus,
+.x-btn.x-btn-focus,
+.x-form-trigger-wrap-focus,
+.x-grid-item-focused .x-grid-cell-inner:before,
+.x-view-item-focused {
+  outline: 2px solid $yasmine-focus !important;
+  outline-offset: 1px;
+}
+
+.x-form-text,
+.x-form-textarea,
+.x-form-trigger-wrap,
+.x-tagfield {
+  border-color: $yasmine-border-strong;
+  border-radius: $yasmine-radius-sm;
+  background: $yasmine-surface;
+}
+
+.x-form-text:focus,
+.x-form-textarea:focus {
+  border-color: $yasmine-focus;
+}
+
+// Number fields reuse the combo trigger, and the icon script used to append a
+// second caret under the ExtJS spinner. Draw one up/down pair that fills the field.
+.x-form-trigger-spinner {
+  position: relative;
+  box-shadow: inset 1px 0 0 $yasmine-border;
+
+  > .yasmine-fa-svg {
+    display: none !important;
+  }
+}
+
+.x-form-trigger-spinner .x-form-spinner-up,
+.x-form-trigger-spinner .x-form-spinner-down {
+  position: absolute;
+  left: 0;
+  width: 100% !important;
+  height: 50% !important;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: $yasmine-surface !important;
+  background-image: none !important;
+  cursor: pointer;
+}
+
+.x-form-trigger-spinner .x-form-spinner-up {
+  top: 0;
+}
+
+.x-form-trigger-spinner .x-form-spinner-down {
+  bottom: 0;
+  box-shadow: inset 0 1px 0 $yasmine-border;
+}
+
+.x-form-trigger-spinner .x-form-spinner-up:before,
+.x-form-trigger-spinner .x-form-spinner-down:before {
+  content: '' !important;
+  position: static !important;
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 0;
+  font-size: 0 !important;
+  line-height: 0 !important;
+  border-style: solid;
+  border-color: transparent;
+  transform: none !important;
+}
+
+.x-form-trigger-spinner .x-form-spinner-up:before {
+  border-width: 0 5px 6px;
+  border-bottom-color: $yasmine-text-muted;
+}
+
+.x-form-trigger-spinner .x-form-spinner-down:before {
+  border-width: 6px 5px 0;
+  border-top-color: $yasmine-text-muted;
+}
+
+.x-form-trigger-spinner .x-form-spinner-over {
+  background: $yasmine-primary-soft !important;
+}
+
+.x-form-trigger-spinner .x-form-spinner-over:before {
+  border-top-color: $yasmine-primary-dark;
+  border-bottom-color: $yasmine-primary-dark;
+}
+
+.x-form-trigger-spinner .x-form-spinner-click {
+  background: #dcecf2 !important;
+}
+
+.x-form-trigger-spinner .x-form-spinner-up-disabled,
+.x-form-trigger-spinner .x-form-spinner-down-disabled {
+  cursor: default;
+  opacity: 0.35;
+}
+
+.x-form-item-label {
+  color: $yasmine-text-muted;
+  font-weight: 600;
+}
+
+.x-form-invalid-field {
+  border-color: $yasmine-danger;
+  background-color: #fff8f7;
+}
+
+.x-fieldset {
+  border-color: $yasmine-border;
+  border-radius: $yasmine-radius-md;
+  background: $yasmine-surface-raised;
+  // Safari clips a legend whose fieldset has overflow:hidden (WebKit bug 188836).
+  overflow: visible !important;
+}
+
+.x-fieldset-header {
+  overflow: visible !important;
+}
+
+.x-fieldset-header-text {
+  color: $yasmine-primary-dark;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+// A floated title inside legend is laid out (the border still breaks) but not painted in Safari.
+.x-fieldset-header .x-fieldset-header-text {
+  float: none !important;
+  display: inline-block !important;
+}
+
+.x-grid-header-ct {
+  border-color: $yasmine-border;
+  background: $yasmine-surface-muted;
+}
+
+.x-column-header {
+  border-color: $yasmine-border;
+  background: $yasmine-surface-muted;
+  background-image: none;
+}
+
+.x-column-header-text {
+  color: $yasmine-primary-dark;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+}
+
+.x-grid-item {
+  color: $yasmine-text;
+  border-color: #e6ecef;
+}
+
+.x-grid-item-alt {
+  background: $yasmine-surface-raised;
+}
+
+.x-grid-item-over {
+  background: #f0f6f8;
+}
+
+.x-grid-item-selected {
+  color: $yasmine-primary-dark;
+  background: $yasmine-primary-soft;
+}
+
+.x-grid-cell-inner {
+  padding-top: 9px;
+  padding-bottom: 9px;
+}
+
+.x-menu-default {
+  border-color: $yasmine-border-strong;
+  border-radius: $yasmine-radius-sm;
+  background: $yasmine-surface;
+}
+
+.x-menu-item-active {
+  background: $yasmine-primary-soft;
+}
+
+.x-mask {
+  background: rgba(18, 59, 93, 0.22);
+}
+
+.x-mask-msg {
+  border-color: $yasmine-border;
+  border-radius: $yasmine-radius-md;
+  background: $yasmine-surface;
+}
+
+.yasmine-screen,
+.yasmine-workspace {
+  border: 0 !important;
+  border-radius: 0;
+  background: $yasmine-canvas;
+}
+
+.yasmine-screen > .x-panel-bodyWrap > .x-panel-body,
+.yasmine-workspace > .x-panel-bodyWrap > .x-panel-body {
+  background: $yasmine-surface;
+}
+
+.yasmine-screen .x-toolbar,
+.yasmine-workspace .x-toolbar {
+  padding: $yasmine-space-2;
+}
+
+.yasmine-screen-title {
+  color: $yasmine-primary-dark;
+  font-size: 18px;
+  font-weight: 650;
+}
+
+.yasmine-empty-state {
+  display: flex;
+  min-height: 180px;
+  align-items: center;
+  justify-content: center;
+  padding: $yasmine-space-5;
+  color: $yasmine-text-muted;
+  font-size: 14px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.yasmine-inline-note {
+  padding: $yasmine-space-3;
+  border-left: 3px solid $yasmine-primary;
+  background: $yasmine-primary-soft;
+  color: $yasmine-primary-dark;
+  line-height: 1.45;
+}
+
+.yasmine-panel-outline {
+  border: 1px solid $yasmine-border !important;
+  background: $yasmine-surface;
+}
+
+.yasmine-window {
+  border-radius: $yasmine-radius-lg;
+}
+
+.yasmine-window .x-window-body {
+  background: $yasmine-surface;
+}
+
+.yasmine-window .x-toolbar-footer {
+  border-top: 1px solid $yasmine-border;
+}
+
+.yasmine-wizard-window .x-window-body {
+  background: $yasmine-canvas;
+}
+
+.yasmine-wizard-card {
+  border: 1px solid $yasmine-border;
+  border-radius: $yasmine-radius-lg;
+  background: $yasmine-surface;
+}
+
+.yasmine-wizard-window .x-toolbar-footer {
+  border-top: 1px solid $yasmine-border;
+  background: $yasmine-surface;
+}
+
+.yasmine-context-help .yasmine-help-content {
+  color: $yasmine-text;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.yasmine-context-help .yasmine-help-content h1,
+.yasmine-context-help .yasmine-help-content h2,
+.yasmine-context-help .yasmine-help-content h3 {
+  color: $yasmine-primary-dark;
+}
+
+.x-segmented-button .x-btn {
+  border-color: $yasmine-border-strong !important;
+  background-color: $yasmine-surface !important;
+  background-image: none !important;
+}
+
+.x-segmented-button .x-btn .x-btn-inner,
+.x-segmented-button .x-btn .x-btn-icon-el {
+  color: $yasmine-text-muted !important;
+  font-weight: 600;
+}
+
+.x-segmented-button .x-btn.x-btn-over {
+  border-color: $yasmine-primary !important;
+  background-color: $yasmine-primary-soft !important;
+  background-image: none !important;
+}
+
+.x-segmented-button .x-btn.x-btn-over .x-btn-inner,
+.x-segmented-button .x-btn.x-btn-over .x-btn-icon-el {
+  color: $yasmine-primary-dark !important;
+}
+
+.x-segmented-button .x-btn.x-btn-pressed,
+.x-segmented-button .x-btn.x-btn-pressed.x-btn-over {
+  border-color: $yasmine-primary-strong !important;
+  background-color: $yasmine-primary !important;
+  background-image: none !important;
+}
+
+.x-segmented-button .x-btn.x-btn-pressed .x-btn-inner,
+.x-segmented-button .x-btn.x-btn-pressed .x-btn-icon-el,
+.x-segmented-button .x-btn.x-btn-pressed.x-btn-over .x-btn-inner,
+.x-segmented-button .x-btn.x-btn-pressed.x-btn-over .x-btn-icon-el {
+  color: #fff !important;
+  font-weight: 700;
+}
+
+.yasmine-library-workspace .x-segmented-button {
+  background: $yasmine-surface-muted;
+}
+
+.yasmine-library-type-switcher .x-btn {
+  min-width: 116px;
+}
+
+.parameter-editor-footer-wrap {
+  border-top: 1px solid $yasmine-border;
+  background: $yasmine-surface-muted;
+}
+
+.parameter-editor-footer {
+  border: 0;
+}
+
+.settings-list .x-fieldset {
+  padding: $yasmine-space-4;
+}
+
+.settings-list .settings-col {
+  padding: $yasmine-space-3 !important;
+}
+
+.yasmine-status-success {
+  color: $yasmine-success !important;
+}
+
+.yasmine-status-warning {
+  color: $yasmine-warning !important;
+}
+
+.yasmine-status-danger {
+  color: $yasmine-danger !important;
+}
+
+@media (max-width: 767px), (max-height: 499px) {
+  .x-grid-cell-inner {
+    padding-top: 11px;
+    padding-bottom: 11px;
+  }
+
+  .yasmine-screen .x-toolbar,
+  .yasmine-workspace .x-toolbar {
+    padding: 6px;
+  }
+
+  .x-window-maximized,
+  .x-window-maximized .x-window-bodyWrap {
+    border-radius: 0 !important;
+  }
+
+  .settings-list .x-fieldset {
+    margin: 0 0 $yasmine-space-3;
+    padding: $yasmine-space-3;
+  }
+
+  .yasmine-library-type-switcher {
+    display: flex !important;
+    width: 100%;
+  }
+
+  .yasmine-library-type-switcher .x-btn {
+    flex: 1 1 0 !important;
+    min-width: 0;
+  }
+
+  .yasmine-library-type-switcher .x-btn-inner {
+    padding-right: 4px;
+    padding-left: 4px;
+    font-size: 12px;
+  }
+
+  .yasmine-wizard-card {
+    border: 0;
+    border-radius: 0;
+    padding: $yasmine-space-3 !important;
+  }
+}
+
+.yasmine-map-station-icon,
+.yasmine-map-channel-icon {
+  background: transparent;
+  border: 0;
+}
+
+.yasmine-map-label {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid #8aa4b5;
+  border-radius: 2px;
+  color: #123b5d;
+  font: 12px Helvetica, Arial, sans-serif;
+  padding: 1px 5px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.yasmine-map-label::before {
+  display: none;
+}
+
+.yasmine-map-feature-menu .x-menu-item-text {
+  color: #123b5d;
+}
+
+.yasmine-map-feature-menu .x-menu-item-disabled .x-menu-item-text {
+  opacity: 1;
+  color: #123b5d;
+}
+
+/* Card map toolbar: basemap + download icon, then station/channel pairs.
+   Ext packs toolbar items in .x-box-target, so the wrap has to live there. */
+.yasmine-map-row-break {
+  display: none;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .x-box-target,
+.yasmine-vp-sm .yasmine-map-toolbar .x-box-target,
+.yasmine-compact-height .yasmine-map-toolbar .x-box-target {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  width: 100% !important;
+  height: auto !important;
+  gap: 4px;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .yasmine-map-basemap,
+.yasmine-vp-sm .yasmine-map-toolbar .yasmine-map-basemap,
+.yasmine-compact-height .yasmine-map-toolbar .yasmine-map-basemap {
+  order: 1;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  width: auto !important;
+  max-width: calc(100% - 48px) !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .yasmine-map-basemap .x-box-inner,
+.yasmine-vp-sm .yasmine-map-toolbar .yasmine-map-basemap .x-box-inner,
+.yasmine-compact-height .yasmine-map-toolbar .yasmine-map-basemap .x-box-inner {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: stretch !important;
+  width: 100% !important;
+  height: auto !important;
+  position: static !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .yasmine-map-basemap .x-btn,
+.yasmine-vp-sm .yasmine-map-toolbar .yasmine-map-basemap .x-btn,
+.yasmine-compact-height .yasmine-map-toolbar .yasmine-map-basemap .x-btn {
+  position: relative !important;
+  left: auto !important;
+  top: auto !important;
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  width: auto !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .yasmine-map-basemap .x-btn-inner,
+.yasmine-vp-sm .yasmine-map-toolbar .yasmine-map-basemap .x-btn-inner,
+.yasmine-compact-height .yasmine-map-toolbar .yasmine-map-basemap .x-btn-inner {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-left: 6px !important;
+  padding-right: 6px !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .yasmine-map-download,
+.yasmine-vp-sm .yasmine-map-toolbar .yasmine-map-download,
+.yasmine-compact-height .yasmine-map-toolbar .yasmine-map-download {
+  order: 2;
+  flex: 0 0 auto !important;
+  width: auto !important;
+  margin-left: auto !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .yasmine-map-break-basemap,
+.yasmine-vp-sm .yasmine-map-toolbar .yasmine-map-break-basemap,
+.yasmine-compact-height .yasmine-map-toolbar .yasmine-map-break-basemap {
+  display: block !important;
+  order: 3;
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar.x-toolbar .yasmine-map-stations.x-field,
+.yasmine-vp-sm .yasmine-map-toolbar.x-toolbar .yasmine-map-stations.x-field,
+.yasmine-compact-height .yasmine-map-toolbar.x-toolbar .yasmine-map-stations.x-field,
+.yasmine-vp-xs .yasmine-map-toolbar.x-toolbar .yasmine-map-station-labels.x-field,
+.yasmine-vp-sm .yasmine-map-toolbar.x-toolbar .yasmine-map-station-labels.x-field,
+.yasmine-compact-height .yasmine-map-toolbar.x-toolbar .yasmine-map-station-labels.x-field {
+  order: 4;
+  flex: 1 1 calc(50% - 6px) !important;
+  width: calc(50% - 6px) !important;
+  max-width: calc(50% - 6px) !important;
+  min-width: 0 !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .yasmine-map-break-stations,
+.yasmine-vp-sm .yasmine-map-toolbar .yasmine-map-break-stations,
+.yasmine-compact-height .yasmine-map-toolbar .yasmine-map-break-stations {
+  display: block !important;
+  order: 5;
+  flex: 0 0 100% !important;
+  width: 100% !important;
+  height: 0 !important;
+  min-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar.x-toolbar .yasmine-map-channels.x-field,
+.yasmine-vp-sm .yasmine-map-toolbar.x-toolbar .yasmine-map-channels.x-field,
+.yasmine-compact-height .yasmine-map-toolbar.x-toolbar .yasmine-map-channels.x-field,
+.yasmine-vp-xs .yasmine-map-toolbar.x-toolbar .yasmine-map-channel-labels.x-field,
+.yasmine-vp-sm .yasmine-map-toolbar.x-toolbar .yasmine-map-channel-labels.x-field,
+.yasmine-compact-height .yasmine-map-toolbar.x-toolbar .yasmine-map-channel-labels.x-field {
+  order: 6;
+  flex: 1 1 calc(50% - 6px) !important;
+  width: calc(50% - 6px) !important;
+  max-width: calc(50% - 6px) !important;
+  min-width: 0 !important;
+}
+
+.yasmine-vp-xs .yasmine-map-toolbar .x-toolbar-spacer,
+.yasmine-vp-sm .yasmine-map-toolbar .x-toolbar-spacer,
+.yasmine-compact-height .yasmine-map-toolbar .x-toolbar-spacer {
+  display: none !important;
+}
+
+
+/* Channel wizard selectable choice buttons (library, type, orientation, NRL params). */
+.yasmine-wizard-step-heading-text {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: $yasmine-primary-dark;
+}
+
+.yasmine-wizard-choice-btn.x-btn,
+.yasmine-wizard-choice-btn .x-btn-wrap {
+  border-color: $yasmine-border-strong !important;
+  border-width: 1px !important;
+  border-radius: $yasmine-radius-md !important;
+  background: $yasmine-surface !important;
+  background-image: none !important;
+  padding-top: 8px !important;
+  padding-bottom: 8px !important;
+}
+
+.yasmine-wizard-choice-btn .x-btn-inner {
+  color: $yasmine-text !important;
+  font-weight: 600;
+  white-space: normal;
+  text-align: left;
+}
+
+.yasmine-wizard-choice-btn.x-btn-over,
+.yasmine-wizard-choice-btn.x-btn-over .x-btn-wrap {
+  border-color: $yasmine-primary !important;
+  background: $yasmine-primary-soft !important;
+  background-image: none !important;
+}
+
+.yasmine-wizard-choice-btn.x-btn-over .x-btn-inner {
+  color: $yasmine-primary-dark !important;
+}
+
+.yasmine-wizard-choice-btn.x-btn-pressed,
+.yasmine-wizard-choice-btn.x-btn-pressed.x-btn-over,
+.yasmine-wizard-choice-btn.x-btn-pressed .x-btn-wrap,
+.yasmine-wizard-choice-btn.x-btn-pressed.x-btn-over .x-btn-wrap {
+  border-color: $yasmine-primary-dark !important;
+  border-width: 2px !important;
+  background: #c5dde8 !important;
+  background-image: none !important;
+}
+
+.yasmine-wizard-choice-btn.x-btn-pressed .x-btn-inner,
+.yasmine-wizard-choice-btn.x-btn-pressed.x-btn-over .x-btn-inner {
+  color: $yasmine-primary-dark !important;
+  font-weight: 700;
+}
+
+.yasmine-wizard-choice-btn.x-btn-disabled,
+.yasmine-wizard-choice-btn.x-btn-disabled .x-btn-wrap {
+  border-color: $yasmine-border !important;
+  background: $yasmine-surface-muted !important;
+  opacity: 1 !important;
+}
+
+.yasmine-wizard-choice-btn.x-btn-disabled .x-btn-inner {
+  color: $yasmine-text-muted !important;
+}
+
+.yasmine-wizard-choice-btn-chip.x-btn,
+.yasmine-wizard-choice-btn-chip .x-btn-wrap {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+}
+
+.yasmine-wizard-choice-btn-chip .x-btn-inner {
+  text-align: center;
+  font-size: 12px;
+}
+
+.yasmine-wizard-choice-list-wrap .x-box-inner {
+  flex-wrap: wrap !important;
 }

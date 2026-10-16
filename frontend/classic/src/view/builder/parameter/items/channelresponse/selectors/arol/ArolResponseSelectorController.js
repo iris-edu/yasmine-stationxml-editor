@@ -1,4 +1,5 @@
 /* ****************************************************************************
+* 2026-09-26, version 4.4.0-beta: ASGSR, Alexey Emanov
 *
 * This file is part of the yasmine editing tool.
 *
@@ -90,20 +91,30 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
   },
   loadChannelResponsePlot: function () {
     if (this.getViewModel().get('responseTree')) {
-      this.recalculateSensitivity();
+      this.recalculateSensitivity({prompt: false});
       return;
     }
     this.loadChannelResponseIfPossible();
   },
   downloadChannelResponsePlot: function () {
-    let win = window.open('', '_blank');
-    win.location = this.getViewModel().get('channelResponseImageUrl');
-    win.focus();
+    let url = this.getViewModel().get('channelResponseImageUrl');
+    if (!url) {
+      return;
+    }
+    let win = window.open(url, '_blank');
+    if (win) {
+      win.focus();
+    }
   },
   downloadChannelResponseCsv: function () {
-    let win = window.open('', '_self');
-    win.location = this.getViewModel().get('channelResponseCsvUrl');
-    win.focus();
+    let url = this.getViewModel().get('channelResponseCsvUrl');
+    if (!url) {
+      return;
+    }
+    let win = window.open(url, '_self');
+    if (win) {
+      win.focus();
+    }
   },
   updateDataloggerView: function () {
     let data = this.getDataloggerJson();
@@ -183,20 +194,20 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
 
       let checkboxes = options.map(option => {
         return {
-          boxLabel: option,
+          boxLabel: Ext.String.htmlEncode(option),
           inputValue: option,
           checked: selectedOptions.has(filter.code) && selectedOptions.get(filter.code) === option
         }
       });
 
       let label = filter.name || filter.Name || filter.label || filter.code || '';
-      let name = filter.required ? `* ${label}` : label;
+      let name = filter.required ? '* ' + label : label;
       let help = filter.help || filter.Help || filter.question || '';
       let fieldset = Ext.create({
         xtype: 'fieldset',
         cls: 'arol-filter-fieldset',
         disabled: !filter.required && priorityFilters.length > 0,
-        title: `${name} <i class="fa fa-question-circle" data-qtip="${help}"></i>`,
+        title: Ext.String.htmlEncode(name) + ' <i class="fa fa-question-circle" data-qtip="' + Ext.String.htmlEncode(help) + '"></i>',
         items: Ext.create({
           xtype: 'checkboxgroup',
           columns: 1,
@@ -223,7 +234,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
   updateResponseList: function (data, instrument, container, selectedOptions) {
     let files = this.getFilteredFiles(data, selectedOptions);
 
-    let filesHtml = files.map(x => `<a  href="#">${x}</a>`).join('<br/>');
+    let filesHtml = files.map(function (path) {
+      return '<a href="#">' + Ext.String.htmlEncode(path) + '</a>';
+    }).join('<br/>');
 
     let response = new Map();
     files.forEach(path => {
@@ -253,7 +266,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
 
     container.setHtml(filesHtml);
 
-    this.getViewModel().get(instrument).resultTitle = values.filter(x => x).join(', ');
+    this.getViewModel().get(instrument).resultTitle = Ext.String.htmlEncode(
+      values.filter(x => x).join(', ')
+    );
     this.getViewModel().get(instrument).selectedFiles = [...files];
     this.getViewModel().set('sensor_file', '');
     this.getViewModel().set('datalogger_file', '');
@@ -332,7 +347,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
     let result = `<b>${path}</b> <br/>`;
     let filters = data.responses.find(x => x.path === path).applicable_filters;
     for (let filter of Array.from(new Map(Object.entries(filters)).keys()).sort()) {
-      result += `${filter}:<i style="position: absolute; left: 200px;">${filters[filter] ? filters[filter] : '<span style="color: red">any</span>'}</i> <br/>`
+      result += `<div style="display:flex; gap:12px; margin:2px 0;"><span>${filter}</span><i>${filters[filter] ? filters[filter] : '<span style="color: red">any</span>'}</i></div>`
     }
     return result;
   },
@@ -427,11 +442,16 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
     let that = this;
     that.getViewModel().set('channelResponseText', null);
     that.getViewModel().set('responseTree', null);
+    yasmine.utils.ResponseRecalculateUtil.setPlotLoading(this.getView(), true);
     Ext.Ajax.request({
       method: 'GET',
-      params: {sensorKeys, dataloggerKeys, min, max},
+      params: Ext.apply(
+        {sensorKeys, dataloggerKeys, min, max},
+        yasmine.utils.ResponseRecalculateUtil.plotStageParams(this.getViewModel())
+      ),
       url: '/api/arol/channel/response/preview/',
       success: function (response) {
+        yasmine.utils.ResponseRecalculateUtil.setPlotLoading(that.getView(), false);
         let result = JSON.parse(response.responseText);
         if (result.text) {
           that.getViewModel().set('channelResponseText', result.text);
@@ -440,6 +460,7 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
         if (result.plot_url) {
           that.getViewModel().set('channelResponseImageUrl', result.plot_url);
         }
+        yasmine.utils.ResponseRecalculateUtil.applyPlotMaxFrequency(that.getViewModel(), result);
         if (result.csv_url) {
           that.getViewModel().set('channelResponseCsvUrl', result.csv_url);
         }
@@ -454,6 +475,9 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
         }
         yasmine.utils.ResponseRecalculateUtil.updateWizardActionButtons(that.getViewModel());
         yasmine.utils.ResponseRecalculateUtil.updateParameterEditorActionButtons(that.getViewModel());
+      },
+      failure: function () {
+        yasmine.utils.ResponseRecalculateUtil.setPlotLoading(that.getView(), false);
       }
     });
   },
@@ -483,7 +507,8 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
     return this.getViewModel().get('datalogger.keys');
   },
 
-  recalculateSensitivity: function () {
+  recalculateSensitivity: function (options) {
+    options = options || {};
     let vm = this.getViewModel();
     if (!vm.get('sensorCompleted') || !vm.get('dataloggerCompleted')) {
       return;
@@ -493,15 +518,17 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
     if (!sensorKeys.length || !dataloggerKeys.length) {
       return;
     }
-    Ext.Ajax.request({
-      method: 'POST',
-      url: '/api/channel/response/recalculate-sensitivity/',
-      jsonData: {
-        libraryType: 'arol',
-        sensorKeys: sensorKeys,
-        dataloggerKeys: dataloggerKeys,
-        min: vm.get('minFrequency'),
-        max: vm.get('maxFrequency')
+    let payload = {
+      libraryType: 'arol',
+      sensorKeys: sensorKeys,
+      dataloggerKeys: dataloggerKeys,
+      min: vm.get('minFrequency'),
+      max: vm.get('maxFrequency')
+    };
+    Ext.apply(payload, yasmine.utils.ResponseRecalculateUtil.plotStageParams(vm));
+    let handlers = {
+      apply: function (result) {
+        yasmine.utils.ResponseRecalculateUtil.applyRecalculateResult(vm, result);
       },
       success: function (response) {
         let result = JSON.parse(response.responseText);
@@ -513,6 +540,18 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
       },
       failure: function () {
         yasmine.utils.ResponseRecalculateUtil.showRecalculateError();
+      }
+    };
+    if (options.prompt === false) {
+      yasmine.utils.ResponseRecalculateUtil.postRecalculateSensitivity(
+        payload, null, handlers
+      );
+      return;
+    }
+    yasmine.utils.ResponseRecalculateUtil.promptRecalculateSensitivityWithReview(payload, {
+      apply: handlers.apply,
+      failure: function () {
+        yasmine.utils.ResponseRecalculateUtil.showRecalculateError('Cannot load recalculation options.');
       }
     });
   }

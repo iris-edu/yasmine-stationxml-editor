@@ -1,0 +1,13 @@
+# 2026-09-25, version 4.3.3-beta: ASGSR, Alexey Emanov
+.git/objects
+.git/modules
+.git/hooks
+.git/logs
+.git/cursor
+data
+frontend
+docs
+**/.venv
+**/__pycache__
+**/*.pyc
+**/.DS_Store

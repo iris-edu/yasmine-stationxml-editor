@@ -27,12 +27,17 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
 
 Ext.define('yasmine.model.UserLibrary', {
   extend: 'Ext.data.Model',
+  requires: [
+    'Ext.data.identifier.Negative'
+  ],
+  identifier: 'negative',
   proxy: {
     type: 'rest',
     url: '/api/user-library/',
@@ -45,8 +50,8 @@ Ext.define('yasmine.model.UserLibrary', {
   fields: [
     { name: 'id', type: 'int', persist: false },
     { name: 'name', type: 'string', persist: true },
-    { name: 'updated_at', type: 'date', persist: false, dateFormat: 'd/m/Y H:i:s' },
-    { name: 'created_at', type: 'date', persist: false, dateFormat: 'd/m/Y H:i:s' }
+    { name: 'updated_at', type: 'date', persist: false, dateFormat: 'Y-m-d\\TH:i:s' },
+    { name: 'created_at', type: 'date', persist: false, dateFormat: 'Y-m-d\\TH:i:s' }
   ],
   validators: {
     name: { type: 'presence', allowEmpty: false }

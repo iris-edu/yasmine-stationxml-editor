@@ -27,12 +27,19 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
+import io
+import os
 import unittest
 
-import xmlunittest
+try:
+    import xmlunittest
+except ImportError:
+    xmlunittest = None
+
 from sqlalchemy.orm import joinedload
 
 from yasmine.app.enums.xml_node import XmlNodeEnum, XmlNodeAttrEnum
@@ -44,7 +51,11 @@ from yasmine.app.utils.facade import ProcessMixin
 from yasmine.app.utils.imp_exp import ImportStationXml
 
 
-class DefaultChannelCreationTest(unittest.TestCase, ProcessMixin, xmlunittest.XmlTestMixin):
+_XmlMixin = xmlunittest.XmlTestMixin if xmlunittest else object
+
+
+@unittest.skipUnless(xmlunittest, 'xmlunittest is not installed')
+class DefaultChannelCreationTest(unittest.TestCase, ProcessMixin, _XmlMixin):
 
     def __init__(self, *args, **kwargs):
         super(DefaultChannelCreationTest, self).__init__(*args, **kwargs)
@@ -114,8 +125,11 @@ class DefaultChannelCreationTest(unittest.TestCase, ProcessMixin, xmlunittest.Xm
         return [attribute.value_obj for attribute in attrs if attribute.attr_name == attr_name][0]
 
     def _import_xml(self, file_name):
-        with open(get_file_path(file_name), 'rb') as f:
-            return ImportStationXml(file_name, f, self).run()
+        path = get_file_path(file_name)
+        if not os.path.isfile(path):
+            self.skipTest('fixture missing: %s' % path)
+        with open(path, 'rb') as f:
+            return ImportStationXml(file_name, io.BytesIO(f.read()), self).run()
 
     def tearDown(self):
         with db_transaction(self.db):

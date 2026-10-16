@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-23, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -36,7 +37,17 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonListModel
     alias: 'viewmodel.person-list',
     data: {
       parameterId: null,
-      nodeTypeId: null
+      nodeTypeId: null,
+      stationXmlPersonPath: 'Author',
+      stationXmlParameterName: 'comments'
+    },
+    formulas: {
+        personLabel: function (get) {
+            return get('stationXmlPersonPath') === 'Contact' ? 'Contact' : 'Author';
+        },
+        personCollectionLabel: function (get) {
+            return get('stationXmlPersonPath') === 'Contact' ? 'Contacts' : 'Authors';
+        }
     },
     stores: {
         personStore: {
@@ -47,7 +58,7 @@ Ext.define('yasmine.view.xml.builder.parameter.components.person.PersonListModel
 });
 
 Ext.define('yasmine.view.xml.builder.parameter.components.person.Person', {
-    extend: 'Ext.data.Model',
+    extend: 'yasmine.model.CollectionItem',
     fields: [
         { name: '_names' },
         { name: '_agencies' },

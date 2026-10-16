@@ -29,6 +29,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-20, version 4.2.0-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -58,27 +59,114 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
     this.fireEvent('responseNodeSelected', this.getSelectedRecord());
     this.getView().getStore().getRoot().collapseChildren(true);
   },
-  onAddNewNodeClick: function () {
-    let nodeName = this.getViewModel().get('newNodeName');
+  onAddMenuBeforeShow: function (menu) {
     let selectedNode = this.getSelectedRecord();
-    let newNode = selectedNode.createNode({
-      name: nodeName,
-      text: nodeName,
-      iconCls: 'fa-code',
-      isattr: false,
-      leaf: true
+    let options = yasmine.utils.ResponseSchemaUtil.childOptions(selectedNode);
+    menu.removeAll();
+    if (!options.length) {
+      menu.add({text: 'No schema children available', disabled: true});
+      return;
+    }
+    Ext.Array.each(options, function (option) {
+      menu.add({
+        text: Ext.htmlEncode(option.definition.name) + (option.replaces ? ' (replace current choice)' : ''),
+        iconCls: option.replaces ? 'x-fa fa-exchange' : 'x-fa fa-code',
+        handler: function () {
+          this.onAddNewNodeClick(option);
+        },
+        scope: this
+      });
+    }, this);
+  },
+  onAddNewNodeClick: function (option) {
+    let selectedNode = this.getSelectedRecord();
+    if (!selectedNode || !option) {
+      return;
+    }
+    if (option.conflicts && option.conflicts.length) {
+      let names = Ext.Array.map(option.conflicts, function (node) {
+        return node.get('key');
+      }).join(', ');
+      Ext.MessageBox.confirm(
+        'Replace response choice',
+        `Adding '${option.definition.name}' replaces: ${Ext.htmlEncode(names)}. Continue?`,
+        function (button) {
+          if (button === 'yes') {
+            this.addSchemaOption(selectedNode, option);
+          }
+        },
+        this
+      );
+      return;
+    }
+    this.addSchemaOption(selectedNode, option);
+  },
+  addSchemaOption: function (selectedNode, option) {
+    Ext.Array.each(option.conflicts || [], function (node) {
+      node.remove();
+      node.destroy();
     });
-    selectedNode.appendChild(newNode);
+
+    let parentDefinition = yasmine.utils.ResponseSchemaUtil.definitionForNode(selectedNode);
+    let choice = option.definition.choice && parentDefinition && parentDefinition.choices
+      ? parentDefinition.choices[option.definition.choice]
+      : null;
+    let definitions = [option.definition];
+    if (choice && choice.allOrNone) {
+      definitions = Ext.Array.filter(parentDefinition.children || [], function (definition) {
+        return definition.choice === option.definition.choice &&
+          yasmine.utils.ResponseSchemaUtil.countChildren(selectedNode, definition.name) === 0;
+      });
+    }
+
+    let addedNode = null;
+    Ext.Array.each(definitions, function (definition) {
+      addedNode = this.addDefinition(selectedNode, definition) || addedNode;
+    }, this);
+    this.ensureRequiredChildren(selectedNode);
     selectedNode.expand();
-
-    this.getViewModel().set('newNodeName', null);
-
-    this.initNodeData(nodeName, newNode);
-
-    this.fireEvent('responseNodeSelected', selectedNode);
+    this.getView().setSelection(addedNode || selectedNode);
+    this.fireEvent('responseNodeSelected', this.getSelectedRecord());
+  },
+  addDefinition: function (parentNode, definition) {
+    let rawNode = yasmine.utils.ResponseSchemaUtil.createLegacyNode(
+      definition.name,
+      definition.type,
+      parentNode
+    );
+    let editor = this.getView().up('channel-response-tree-editor');
+    editor.getController().convertResponseTreeStore(rawNode, parentNode.get('schemaType'));
+    let newNode = parentNode.createNode(rawNode);
+    let target = yasmine.utils.ResponseSchemaUtil.insertionTarget(parentNode, definition);
+    if (target) {
+      parentNode.insertBefore(newNode, target);
+    } else {
+      parentNode.appendChild(newNode);
+    }
+    return newNode;
+  },
+  ensureRequiredChildren: function (parentNode) {
+    let parentDefinition = yasmine.utils.ResponseSchemaUtil.definitionForNode(parentNode);
+    Ext.Array.each((parentDefinition && parentDefinition.children) || [], function (definition) {
+      let required = definition.min || 0;
+      if (definition.requiredUnless) {
+        let alternativeExists = Ext.Array.some(definition.requiredUnless, function (name) {
+          return yasmine.utils.ResponseSchemaUtil.countChildren(parentNode, name) > 0;
+        });
+        if (!alternativeExists) {
+          required = Math.max(required, 1);
+        }
+      }
+      while (yasmine.utils.ResponseSchemaUtil.countChildren(parentNode, definition.name) < required) {
+        this.addDefinition(parentNode, definition);
+      }
+    }, this);
   },
   onDeleteClick: function () {
     let node = this.getViewModel().get('selectedResponseNode');
+    if (!yasmine.utils.ResponseSchemaUtil.canDeleteNode(node)) {
+      return;
+    }
     let nodeName = node.data.key;
     Ext.MessageBox.confirm(`Delete '${nodeName}' node`, `Are you sure you want to delete '${nodeName}'?`, function (btn) {
       if (btn === 'yes') {
@@ -127,25 +215,20 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
     let selectedNode = this.getSelectedRecord();
     let nodeData = selectedNode.data;
     let nodeName = `<span>${nodeData.key}</span>`;
-    selectedNode.set('text', record.get('value') ? `${nodeName}:&nbsp;<b>${record.get('value')}</b>` : nodeName);
+    let encodedValue = Ext.htmlEncode(String(record.get('value') || ''));
+    selectedNode.set('text', record.get('value') ? `${nodeName}:&nbsp;<b>${encodedValue}</b>` : nodeName);
 
     if (yasmine.utils.XmlNodeUtil.isPlainValue(selectedNode)) {
       nodeData[nodeData.key] = record.get('value');
     } else if (yasmine.utils.XmlNodeUtil.isArrayValue(selectedNode)) {
       nodeData[nodeData.key].children[0] = record.get('value');
+    } else if (Ext.isObject(nodeData[nodeData.key])) {
+      nodeData[nodeData.key].children = record.get('value') === ''
+        ? []
+        : [record.get('value')];
     }
 
-    let parentNode = selectedNode.parentNode;
-    if (parentNode && !parentNode.isRoot()) {
-      parentNode.data[parentNode.data.key].children = parentNode.data.children;
-
-      while (parentNode.parentNode && parentNode.parentNode.data.key) {
-        parentNode = parentNode.parentNode;
-        parentNode.data[parentNode.data.key].children = parentNode.data.children;
-      }
-    }
-
-    this.getViewModel().set('canAddNewNode', yasmine.utils.XmlNodeUtil.canAddNode(selectedNode));
+    this.fireEvent('responseNodeSelected', selectedNode);
   },
   onNodeNameUpdated: function (record) {
     let selectedNode = this.getSelectedRecord();
@@ -162,11 +245,11 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   deleteNode: function () {
     let node = this.getSelectedRecord();
     let parentNode = node.parentNode;
-    node.remove();
-    node.destroy();
-
-    let nodeDataIndex = parentNode.data.children.map(x => x.id).indexOf(node.id);
-    delete parentNode.data.children[nodeDataIndex];
+    let nodes = yasmine.utils.ResponseSchemaUtil.dependentDeleteNodes(node);
+    Ext.Array.each(nodes, function (item) {
+      item.remove();
+      item.destroy();
+    });
 
     this.getView().setSelection(parentNode);
     this.fireEvent('responseNodeSelected', this.getSelectedRecord());
@@ -174,33 +257,6 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.treeeditor.
   getSelectedRecord: function () {
     return this.getView().getSelection()[0];
   },
-  initNodeData: function (nodeName, node) {
-    node.data.key = nodeName;
-    node.data[nodeName] = null;
-
-    let parentNode = node.parentNode;
-    if (!parentNode || !parentNode.data) return;
-
-    if (!parentNode.data['children']) {
-      parentNode.data['children'] = [];
-    }
-    parentNode.data['children'].push(node.data);
-
-    let parentKey = parentNode.data.key;
-    if (!parentKey) return;
-
-    let parentValue = parentNode.data[parentKey];
-    if (!parentValue || typeof parentValue !== 'object') {
-      parentNode.data[parentKey] = {
-        children: parentValue != null ? [parentValue] : []
-      };
-    }
-    if (!parentNode.data[parentKey].children) {
-      parentNode.data[parentKey].children = [];
-    }
-    parentNode.data[parentKey].children.push(node.data);
-  },
-
   onResponseNodeSelect: function () {
     this.fireEvent('responseNodeSelected', this.getSelectedRecord());
   }

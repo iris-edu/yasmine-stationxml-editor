@@ -27,6 +27,7 @@
 *
 *
 * 2019/10/07 : version 2.0.0 initial commit
+* 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 *
 * ****************************************************************************/
 
@@ -64,14 +65,18 @@ Ext.define('yasmine.model.ChannelCreation', {
     {name: 'dip1', type: 'number'},
     {name: 'dip2', type: 'number'},
     {name: 'dip3', type: 'number'},
-    {name: 'start_date', type: 'date', dateFormat: 'd/m/Y H:i:s'},
-    {name: 'end_date', type: 'date', dateFormat: 'd/m/Y H:i:s'},
+    {name: 'start_date', type: 'date', dateFormat: 'Y-m-d\\TH:i:s'},
+    {name: 'end_date', type: 'date', dateFormat: 'Y-m-d\\TH:i:s'},
     {name: 'stationNodeId', type: 'int'},
     {name: 'sensorKeys'},
     {name: 'dataloggerKeys'},
     {name: 'libraryType'},
     {name: 'instconfig'},
+    {name: 'source'},
+    {name: 'nrlResponseType'},
     {name: 'responseTree'},
+    {name: 'omitDipAzimuth', type: 'boolean', defaultValue: false},
+    {name: 'sampleRate', type: 'number', allowNull: true},
     {
       name: 'summary', type: 'string', persist: false,
       depends: ['location_code', 'latitude', 'longitude', 'elevation', 'depth', 'libraryType', 'dataloggerKeys', 'sensorKeys'],

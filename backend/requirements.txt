@@ -1,18 +1,18 @@
+# 2026-09-24, version 4.3.0-beta: ASGSR, Alexey Emanov
 jsonschema>=4.26.0
 xmljson>=0.2.1
-lxml>=6.1.1
+lxml>=6.1.3
 jsonref>=1.1.0
-tornado>=6.5.7
-SQLAlchemy>=2.0.51,<2.1
-alembic>=1.18.5
-selenium>=4.45.0
+tornado>=6.5.10
+SQLAlchemy>=2.0.54,<2.1
+alembic>=1.20.0
 tzlocal>=5.4.4
-pytz>=2026.2
+pytz>=2026.3.post1
 humanize>=4.16.0
-obspy>=1.5.0
+obspy>=1.5.1
 jsonpickle>=4.1.2
 apscheduler>=3.11.3
-python-slugify>=8.0.4
+python-slugify>=9.1.1
 xmlunittest>=1.0.1
 pyyaml>=6.0.3
 requests>=2.34.2

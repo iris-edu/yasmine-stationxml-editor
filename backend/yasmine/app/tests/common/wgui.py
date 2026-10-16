@@ -27,6 +27,7 @@
 #
 #
 # 2019/10/07 : version 2.0.0 initial commit
+# 2026-09-22, version 4.2.0-beta: ASGSR, Alexey Emanov
 #
 # ****************************************************************************/
 
@@ -43,7 +44,8 @@ from selenium.webdriver.support.abstract_event_listener import AbstractEventList
 from selenium.webdriver.support.event_firing_webdriver import EventFiringWebDriver
 from selenium.webdriver.support.wait import WebDriverWait
 
-from yasmine.app.settings import TORNADO_PORT, TMP_ROOT
+from yasmine.app.settings import TMP_ROOT
+from yasmine.app.tests.common import gui_test_host, gui_test_port
 
 
 class ScreenshotListener(AbstractEventListener):
@@ -63,17 +65,40 @@ class SeletiounTestMixin(unittest.TestCase):
         'is_masked': "Ext.getBody().isMasked()"
     }
 
-#     def setUp(self):
-#         options = webdriver.ChromeOptions()
-#         options.add_argument('headless')
-#         options.add_argument("--no-sandbox")
-#         options.add_argument("--disable-dev-shm-usage")
-#         self.driver = EventFiringWebDriver(webdriver.Chrome(options=options), ScreenshotListener())
-#         self.driver.set_page_load_timeout(10)
-#         self.driver.set_script_timeout(10)
-#         self.driver.maximize_window()
-#         self.driver.get(self.get_host())
-#         self.wait_content_is_ready()
+    def setUp(self):
+        options = webdriver.ChromeOptions()
+        options.add_argument('headless')
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        options.set_capability('goog:loggingPrefs', {'browser': 'ALL'})
+        self.driver = EventFiringWebDriver(webdriver.Chrome(options=options), ScreenshotListener())
+        self.driver.set_page_load_timeout(60)
+        self.driver.set_script_timeout(30)
+        self._install_viewport_override()
+        self.driver.set_window_size(1440, 900)
+        self.driver.get(self.get_host())
+        self.install_pageerror_probe()
+        self.wait_content_is_ready()
+
+    def install_pageerror_probe(self):
+        self.driver.execute_script("""
+            if (!window.__yasminePageErrors) {
+                window.__yasminePageErrors = [];
+                window.addEventListener('error', function (event) {
+                    window.__yasminePageErrors.push(String(
+                        (event && event.message) || event
+                    ));
+                });
+            }
+        """)
+
+    def page_errors(self):
+        try:
+            return self.driver.execute_script(
+                "return window.__yasminePageErrors || [];"
+            ) or []
+        except Exception:
+            return []
 
     def wait_content_is_ready(self):
         self.wait_js("document.readyState=='complete' && window.Ext != undefined && window.Ext.ComponentQuery != undefined && {app-main}.length>0 && {app-main}[0].rendered"  # nopep8
@@ -100,17 +125,68 @@ class SeletiounTestMixin(unittest.TestCase):
         cmp_id = self.driver.execute_script("return %s.id" % query)
         self.driver.find_element(By.ID, cmp_id).click()
 
+    SCREENSHOT_ROOT = os.path.join(TMP_ROOT, 'gui-screenshots')
+
+    def screenshot_dir(self):
+        os.makedirs(self.SCREENSHOT_ROOT, exist_ok=True)
+        return self.SCREENSHOT_ROOT
+
+    def save_screenshot(self, name):
+        safe = ''.join(ch if ch.isalnum() or ch in '-_.' else '_' for ch in name)
+        path = os.path.join(self.screenshot_dir(), '%s.png' % safe)
+        self.driver.get_screenshot_as_file(path)
+        return path
+
+    def _install_viewport_override(self):
+        # macOS Chrome will not open a window narrower than about 500px.
+        # Device metrics make the CSS viewport match the size the test asked for.
+        raw_set_size = self.driver.set_window_size
+
+        def set_window_size(width, height, windowHandle='current'):
+            raw_set_size(max(int(width), 800), max(int(height), 800), windowHandle)
+            self.driver.execute_cdp_cmd('Emulation.setDeviceMetricsOverride', {
+                'width': int(width),
+                'height': int(height),
+                'deviceScaleFactor': 1,
+                'mobile': False,
+            })
+
+        self.driver.set_window_size = set_window_size
+
+    def resize_viewport(self, width, height):
+        self.driver.set_window_size(width, height)
+        self.driver.execute_script("""
+            if (window.Ext && Ext.GlobalEvents) {
+                Ext.GlobalEvents.fireEvent('resize');
+            }
+            if (window.yasmine && yasmine.utils && yasmine.utils.ResponsiveUtil) {
+                yasmine.utils.ResponsiveUtil.applyBodyCls();
+            }
+        """)
+
     def get_host(self):
-        return "http://127.0.0.1:%s" % TORNADO_PORT
+        return "http://%s:%s" % (gui_test_host(), gui_test_port())
 
     def open_page(self, relative_url):
         self.driver.get("%s/%s" % (self.get_host(), relative_url))
+        self.install_pageerror_probe()
         self.wait_content_is_ready()
+
+    def redirect_to(self, token):
+        self.driver.execute_script(
+            """
+            var main = Ext.ComponentQuery.query('app-main')[0];
+            if (main && main.getController) {
+                main.getController().redirectTo(arguments[0], true);
+            }
+            """,
+            token,
+        )
 
     def refresh_page(self):
         self.driver.get(self.driver.current_url)
         self.wait_content_is_ready()
 
-#     def tearDown(self):
-#         self.driver.close()
-#         self.driver.quit()
+    def tearDown(self):
+        if getattr(self, 'driver', None):
+            self.driver.quit()

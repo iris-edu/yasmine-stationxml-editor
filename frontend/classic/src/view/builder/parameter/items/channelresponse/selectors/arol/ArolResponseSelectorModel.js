@@ -50,6 +50,10 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
 
     minFrequency: 0.001,
     maxFrequency: null,
+    plotStartStage: null,
+    plotEndStage: null,
+    hasPlotStages: false,
+    plotLoading: false,
 
     datalogger: {
       keys: null,
@@ -70,6 +74,12 @@ Ext.define('yasmine.view.xml.builder.parameter.items.channelresponse.arolselecto
 
     datalogger_file: '',
     sensor_file: '',
+  },
+  stores: {
+    plotStageStore: {
+      fields: ['number', 'label'],
+      data: []
+    }
   },
   formulas: {
     dataloggerStatus: function (get) {

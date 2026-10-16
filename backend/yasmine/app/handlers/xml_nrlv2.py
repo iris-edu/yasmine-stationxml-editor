@@ -1,3 +1,4 @@
+# 2026-09-24, version 4.3.1-beta: ASGSR, Alexey Emanov
 # ****************************************************************************
 #
 # This file is part of the yasmine editing tool.
@@ -10,19 +11,21 @@
 #
 # ****************************************************************************/
 
-import io
-import re
-import sys
 from random import random
 
 from yasmine.app.handlers.base import AsyncThreadMixin, BaseHandler
-from yasmine.app.helpers.nrl.nrlv2_online import Nrlv2OnlineHelper, Nrlv2OnlineError
-from yasmine.app.helpers.utils.utils import ChannelUtils
+from yasmine.app.helpers.nrl.nrlv2_online import (
+    NRL_SINGLE_ELEMENTS,
+    Nrlv2OnlineHelper,
+    Nrlv2OnlineError,
+)
+from yasmine.app.helpers.utils.utils import ChannelUtils, plot_max_frequency, response_plot_stages
 from yasmine.app.settings import MEDIA_ROOT
-from yasmine.app.utils.response_plot import polynomial_or_polezero_response, detect_plot_output
-
-_RE_STRIP_FILE_LINE = re.compile(r'^.+?\.py:\d+:?\s*')
-
+from yasmine.app.utils.response_plot import (
+    detect_plot_output,
+    format_plot_failure,
+    polynomial_or_polezero_response,
+)
 
 def _get_nrlv2_helper(application):
     """Get Nrlv2OnlineHelper if NRLv2 online is enabled."""
@@ -126,8 +129,11 @@ class Nrlv2SensorsHandler(AsyncThreadMixin, BaseHandler):
         if path in ('0', '', 'root'):
             path = None
         try:
-            tree = helper.get_sensors_keys(path=path or None)
-            return {'data': tree}
+            tree, element_help = helper.get_element_nodes('sensor', path or None)
+            payload = {'data': tree}
+            if element_help:
+                payload['help'] = element_help
+            return payload
         except Nrlv2OnlineError as e:
             return {'success': False, 'errorCode': e.code, 'message': e.message}
 
@@ -186,8 +192,11 @@ class Nrlv2DataloggersHandler(AsyncThreadMixin, BaseHandler):
         if path in ('0', '', 'root'):
             path = None
         try:
-            tree = helper.get_dataloggers_keys(path=path or None)
-            return {'data': tree}
+            tree, element_help = helper.get_element_nodes('datalogger', path or None)
+            payload = {'data': tree}
+            if element_help:
+                payload['help'] = element_help
+            return payload
         except Nrlv2OnlineError as e:
             return {'success': False, 'errorCode': e.code, 'message': e.message}
 
@@ -242,6 +251,8 @@ class Nrlv2ChannelRespHandler(AsyncThreadMixin, BaseHandler):
         source = self.get_argument('source', None)
         min_fq = self.get_argument('min', None)
         max_fq = self.get_argument('max', None)
+        start_stage = self.get_argument('start_stage', None)
+        end_stage = self.get_argument('end_stage', None)
         try:
             response = helper.get_channel_response_obj(instconfig, source=source)
             response_str = polynomial_or_polezero_response(response)
@@ -249,9 +260,6 @@ class Nrlv2ChannelRespHandler(AsyncThreadMixin, BaseHandler):
             return {'success': False, 'errorCode': e.code, 'message': e.message}
         except Exception as e:
             return {'success': False, 'message': f'Cannot build channel response.<br> {e}'}
-        stderr_capture = io.StringIO()
-        old_stderr = sys.stderr
-        sys.stderr = stderr_capture
         try:
             plot_folder = MEDIA_ROOT + '/plots'
             file_name = instconfig.replace('/', '_').replace(':', '_')
@@ -262,6 +270,8 @@ class Nrlv2ChannelRespHandler(AsyncThreadMixin, BaseHandler):
                 float(min_fq) if min_fq else None,
                 float(max_fq) if max_fq else None,
                 instconfig=instconfig,
+                start_stage=start_stage,
+                end_stage=end_stage,
             )
             csv_file = ChannelUtils.create_response_csv(
                 response,
@@ -270,6 +280,8 @@ class Nrlv2ChannelRespHandler(AsyncThreadMixin, BaseHandler):
                 float(min_fq) if min_fq else None,
                 float(max_fq) if max_fq else None,
                 instconfig=instconfig,
+                start_stage=start_stage,
+                end_stage=end_stage,
             )
             plot_output = detect_plot_output(response, instconfig)
             return {
@@ -277,29 +289,89 @@ class Nrlv2ChannelRespHandler(AsyncThreadMixin, BaseHandler):
                 'text': response_str,
                 'plot_output': plot_output,
                 'plot_url': f'/api/channel/response/plots/plots/{plot_file}?_dc={random()}',
-                'csv_url': f'/api/channel/response/plots/plots/{csv_file}?_dc={random()}'
+                'csv_url': f'/api/channel/response/plots/plots/{csv_file}?_dc={random()}',
+                'max_frequency': plot_max_frequency(
+                    response,
+                    float(max_fq) if max_fq else None,
+                    float(min_fq) if min_fq else None,
+                ),
+                'stages': response_plot_stages(response),
             }
+        except ValueError as err:
+            return {'success': False, 'message': str(err)}
         except Exception as err:
-            err_str = str(err).lower()
-            if 'units mismatch' in err_str or 'check_channel' in err_str or 'illegal resp format' in err_str:
-                msg = (
-                    'Cannot generate plot: units mismatch between sensor and datalogger stages. '
-                    'This may indicate an incompatible combination. '
-                    'The response data is available and can still be added.'
-                )
-            else:
-                err_str = _RE_STRIP_FILE_LINE.sub('', str(err)).strip() or str(err)
-                stderr_output = stderr_capture.getvalue()
-                lines = [f'Cannot generate plot. {err_str}']
-                if stderr_output:
-                    for line in stderr_output.strip().split('\n'):
-                        s = _RE_STRIP_FILE_LINE.sub('', line.strip()).strip()
-                        if s and any(kw in s for kw in (
-                            'EVRESP', 'units mismatch', 'sampling rate', 'UserWarning',
-                            'inconsistent', 'check_channel', 'skipping'
-                        )):
-                            lines.append(s)
-                msg = '\n'.join(lines)
-            return {'success': True, 'text': response_str, 'message': msg, 'plot_failed': True}
-        finally:
-            sys.stderr = old_stderr
+            return {
+                'success': True,
+                'text': response_str,
+                'message': format_plot_failure(err, response),
+                'plot_failed': True,
+            }
+
+
+def _single_element(element):
+    if element not in NRL_SINGLE_ELEMENTS:
+        return None
+    return element
+
+
+class Nrlv2ElementTreeHandler(AsyncThreadMixin, BaseHandler):
+    """GET /api/nrlv2/integrated/ or /api/nrlv2/soh/ — manufacturer/model tree."""
+
+    def async_get(self, element, path='', **__):
+        if not _single_element(element):
+            return {'success': False, 'errorCode': 'NRLV2_BAD_REQUEST', 'message': 'unsupported element'}
+        helper, err = _get_nrlv2_helper(self.application)
+        if err:
+            return {'success': False, 'errorCode': err, 'message': err}
+        path = (path or self.get_argument('node', '') or '').strip('/')
+        if path in ('0', '', 'root'):
+            path = None
+        try:
+            tree, element_help = helper.get_element_nodes(element, path=path or None)
+            payload = {'data': tree}
+            if element_help:
+                payload['help'] = element_help
+            return payload
+        except Nrlv2OnlineError as e:
+            return {'success': False, 'errorCode': e.code, 'message': e.message}
+
+
+class Nrlv2ElementConfigsHandler(AsyncThreadMixin, BaseHandler):
+    """GET /api/nrlv2/<element>/configurations/?manufacturer=&model="""
+
+    def async_get(self, element, **__):
+        if not _single_element(element):
+            return {'success': False, 'errorCode': 'NRLV2_BAD_REQUEST', 'message': 'unsupported element'}
+        helper, err = _get_nrlv2_helper(self.application)
+        if err:
+            return {'success': False, 'errorCode': err, 'message': err}
+        manufacturer = self.get_argument('manufacturer', None)
+        model = self.get_argument('model', None)
+        if not manufacturer or not model:
+            return {'success': False, 'errorCode': 'NRLV2_BAD_REQUEST', 'message': 'manufacturer and model required'}
+        try:
+            data = helper.get_element_configurations(element, manufacturer, model)
+            return {'success': True, 'data': data}
+        except Nrlv2OnlineError as e:
+            return {'success': False, 'errorCode': e.code, 'message': e.message}
+
+
+class Nrlv2ElementRespHandler(AsyncThreadMixin, BaseHandler):
+    """GET /api/nrlv2/<element>/response/?instconfig= — preview text for one instrument."""
+
+    def async_get(self, element, **__):
+        if not _single_element(element):
+            return {'success': False, 'errorCode': 'NRLV2_BAD_REQUEST', 'message': 'unsupported element'}
+        helper, err = _get_nrlv2_helper(self.application)
+        if err:
+            return {'success': False, 'errorCode': err, 'message': err}
+        instconfig = self.get_argument('instconfig', None)
+        if not instconfig:
+            return {'success': False, 'errorCode': 'NRLV2_BAD_REQUEST', 'message': 'instconfig required'}
+        source = self.get_argument('source', None)
+        try:
+            text = helper.get_element_response_str(instconfig, source=source)
+            self.set_header('Content-Type', 'text/plain')
+            return text
+        except Nrlv2OnlineError as e:
+            return {'success': False, 'errorCode': e.code, 'message': e.message}
